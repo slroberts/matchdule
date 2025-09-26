@@ -1,23 +1,6 @@
+import { Game } from '@/types/schedule';
 import { parse } from 'csv-parse/sync';
 
-export type Game = {
-  id: string;
-  week: string | null;
-  dateISO: string; // anchored to 12:00 UTC for the game’s calendar day
-  startISO: string | null; // local wall clock → ISO
-  endISO: string | null; // local wall clock → ISO
-  timeText: string;
-  day: string;
-  team: string;
-  location: string;
-  opponent: string;
-  homeAway: 'HOME' | 'AWAY' | 'TBD';
-  result: 'W' | 'L' | 'D' | null;
-  scoreFor: number | null;
-  scoreAgainst: number | null;
-};
-
-// CSV columns expected for data rows
 type Row = {
   Date?: string;
   Day?: string;
