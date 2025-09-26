@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Clock, MapPin, Share2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardHeader, CardContent } from "../ui/card";
-import { DividerDot, HAChip, StatusChip, TeamLine } from ".";
+import { HAChip, StatusChip, TeamLine } from ".";
 import { Game } from "@/types/schedule";
 
 export default function GameCard({ game }: { game: Game }) {
@@ -28,26 +28,34 @@ export default function GameCard({ game }: { game: Game }) {
         leftAccent,
       )}
     >
+      <div className="absolute right-0 top-0">
+        <StatusChip game={game} />
+      </div>
+
       {/* Top meta strip */}
-      <CardHeader className="-mb-2">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <StatusChip game={game} />
-          <DividerDot />
-          <div className="inline-flex items-center gap-1">
-            <Clock className="h-4 w-4" aria-hidden />
-            <span className="tabular-nums">{game.timeText || "TBD"}</span>
-          </div>
-          <DividerDot className="hidden sm:inline" />
-          <div className="hidden sm:inline-flex items-center gap-2">
-            <HAChip value={game.homeAway} />
-            <DividerDot />
-            <MapPin className="h-4 w-4" aria-hidden />
-            <span
-              className="truncate max-w-[36ch]"
-              title={game.location || undefined}
-            >
-              {game.location || "TBD"}
-            </span>
+      <CardHeader>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          {/* LEFT — Primary: Time + Location */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Time (prominent) */}
+            <div className="inline-flex items-center gap-1.5 rounded-md bg-muted/40 px-2 py-1 ring-1 ring-border/60">
+              <Clock className="h-4 w-4" aria-hidden />
+              <span className="text-sm font-semibold tabular-nums tracking-tight">
+                {game.timeText || "TBD"}
+              </span>
+            </div>
+
+            {/* Location pill */}
+            <div className="inline-flex max-w-[70vw] items-center gap-1.5 rounded-full bg-background/70 px-2.5 py-1 ring-1 ring-border sm:max-w-[42ch]">
+              <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+              <span
+                className="truncate text-sm font-medium"
+                title={game.location || undefined}
+              >
+                {game.location || "Location TBD"}
+              </span>
+              <HAChip value={game.homeAway} />
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -66,14 +74,6 @@ export default function GameCard({ game }: { game: Game }) {
             initial={game.opponent.split(" ").at(0)?.[0] ?? "O"}
             score={hasScore ? game.scoreAgainst : null}
           />
-        </div>
-
-        {/* Mobile-only extra meta */}
-        <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground sm:hidden">
-          <HAChip value={game.homeAway} />
-          <DividerDot />
-          <MapPin className="h-4 w-4" aria-hidden />
-          <span className="truncate">{game.location || "TBD"}</span>
         </div>
 
         {/* Actions */}
