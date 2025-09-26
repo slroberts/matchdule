@@ -1,5 +1,5 @@
+import { Game } from "@/types/schedule";
 import { useEffect, useState } from "react";
-import { Game } from "@/lib/schedule";
 
 export function useSchedule() {
   const [data, setData] = useState<Game[] | null>(null);
