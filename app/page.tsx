@@ -1,37 +1,37 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Info, AlertTriangle } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarDays, Info, AlertTriangle } from "lucide-react";
 
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+} from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-import { useSchedule } from '@/hooks/useSchedule';
+import { useSchedule } from "@/hooks/useSchedule";
 import {
   ControlsBar,
   DaySection,
   EmptyState,
   LoadingList,
-} from '@/components/schedule';
-import type { Game, TeamFilter } from '@/types/schedule';
+} from "@/components/schedule";
+import type { Game, TeamFilter } from "@/types/schedule";
 
 export default function MatchduleWeek() {
   const { data, loading, error } = useSchedule();
 
-  const [season, setSeason] = useState('Fall 2025');
+  const [season, setSeason] = useState("Fall 2025");
   const [week, setWeek] = useState<string | null>(null);
-  const [teamFilter, setTeamFilter] = useState<TeamFilter>('All Teams');
+  const [teamFilter, setTeamFilter] = useState<TeamFilter>("All Teams");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const TZ = 'America/New_York';
+  const TZ = "America/New_York";
 
   // ---------- helpers for week defaulting ----------
   function atLocalMidnight(d: Date) {
@@ -66,7 +66,7 @@ export default function MatchduleWeek() {
         ranges = [...explicit.entries()].map(([label, r]) => ({ label, ...r }));
       } else if (inferred.size) {
         const sorted = [...inferred.values()].sort(
-          (a, b) => a.getTime() - b.getTime()
+          (a, b) => a.getTime() - b.getTime(),
         );
         ranges = sorted.map((d, i) => ({
           label: `Week ${i + 1}`,
@@ -80,7 +80,7 @@ export default function MatchduleWeek() {
       const todayMid = atLocalMidnight(today);
 
       const containing = ranges.find(
-        (r) => todayMid >= r.min && todayMid <= r.max
+        (r) => todayMid >= r.min && todayMid <= r.max,
       );
       if (containing) return containing.label;
 
@@ -100,19 +100,19 @@ export default function MatchduleWeek() {
       }
       return bestPast ? bestPast.label : null;
     },
-    []
+    [],
   );
 
   const weekOptions = useMemo(() => {
     if (!data?.length) return [] as string[];
     const labels = Array.from(
-      new Set(data.map((g) => g.week || '').filter(Boolean))
+      new Set(data.map((g) => g.week || "").filter(Boolean)),
     ) as string[];
     if (labels.length) return labels;
     const dates = Array.from(
       new Set(
-        data.map((g) => atLocalMidnight(new Date(g.dateISO)).toDateString())
-      )
+        data.map((g) => atLocalMidnight(new Date(g.dateISO)).toDateString()),
+      ),
     ).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
     return dates.map((_, i) => `Week ${i + 1}`);
   }, [data]);
@@ -127,12 +127,12 @@ export default function MatchduleWeek() {
   const teamMatcher = useMemo(
     () =>
       ({
-        'All Teams': () => true,
-        'B&G 2017': (s: string) => /B&G 2017\b/.test(s),
-        'B&G 2015': (s: string) => /B&G 2015\b/.test(s),
-        'Soricha 2014': (s: string) => /Soricha 2014\b/.test(s),
-      } as Record<TeamFilter, (s: string) => boolean>),
-    []
+        "All Teams": () => true,
+        "B&G 2017": (s: string) => /B&G 2017\b/.test(s),
+        "B&G 2015": (s: string) => /B&G 2015\b/.test(s),
+        "Soricha 2014": (s: string) => /Soricha 2014\b/.test(s),
+      }) as Record<TeamFilter, (s: string) => boolean>,
+    [],
   );
 
   const weekGames = useMemo(() => {
@@ -145,12 +145,12 @@ export default function MatchduleWeek() {
     const m: Record<string, Game[]> = {};
     for (const g of weekGames) {
       const d = new Date(g.dateISO);
-      const label = `${d.toLocaleDateString('en-US', {
-        weekday: 'short',
+      const label = `${d.toLocaleDateString("en-US", {
+        weekday: "short",
         timeZone: TZ,
-      })} • ${d.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
+      })} • ${d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
         timeZone: TZ,
       })}`;
       (m[label] ||= []).push(g);
@@ -192,8 +192,8 @@ export default function MatchduleWeek() {
       const gapMin = Math.round((start2 - end1) / 60000);
 
       if (gapMin >= 0 && gapMin < 75) {
-        const t1 = g1.timeText.replace(/\s+/g, '');
-        const t2 = g2.timeText.replace(/\s+/g, '');
+        const t1 = g1.timeText.replace(/\s+/g, "");
+        const t2 = g2.timeText.replace(/\s+/g, "");
         const team1 = g1.team.match(/U\d+/)?.[0] ?? g1.team;
         const team2 = g2.team.match(/U\d+/)?.[0] ?? g2.team;
         msg = `${team1} ${t1} → ${team2} ${t2} (${gapMin} min)`;
@@ -204,12 +204,12 @@ export default function MatchduleWeek() {
   }, [weekGames]);
 
   return (
-    <div className='mx-auto max-w-xl px-4 py-5 md:py-6 space-y-4'>
-      <header className='space-y-2.5'>
-        <div className='flex items-center gap-2'>
-          <CalendarDays className='h-5 w-5' />
-          <h1 className='text-xl font-semibold tracking-tight'>Matchdule</h1>
-          <span className='text-sm text-muted-foreground'>
+    <div className="mx-auto max-w-xl px-4 py-5 md:py-6 space-y-4">
+      <header className="space-y-2.5">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-5 w-5" />
+          <h1 className="text-xl font-semibold tracking-tight">Matchdule</h1>
+          <span className="text-sm text-muted-foreground">
             — Know who plays when—always.
           </span>
         </div>
@@ -227,46 +227,46 @@ export default function MatchduleWeek() {
 
         {/* Filters sheet (opened via ControlsBar button) */}
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-          <SheetContent side='right' className='w-[360px]'>
+          <SheetContent side="right" className="w-[360px]">
             <SheetHeader>
               <SheetTitle>Filters</SheetTitle>
             </SheetHeader>
 
-            <div className='mt-4 space-y-4'>
-              <Tabs defaultValue='ha'>
-                <TabsList className='grid grid-cols-3'>
-                  <TabsTrigger value='ha'>Home/Away</TabsTrigger>
-                  <TabsTrigger value='result'>Result</TabsTrigger>
-                  <TabsTrigger value='time'>Time</TabsTrigger>
+            <div className="mt-4 space-y-4">
+              <Tabs defaultValue="ha">
+                <TabsList className="grid grid-cols-3">
+                  <TabsTrigger value="ha">Home/Away</TabsTrigger>
+                  <TabsTrigger value="result">Result</TabsTrigger>
+                  <TabsTrigger value="time">Time</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value='ha' className='pt-3 space-x-2'>
-                  <Badge className='me-2 rounded-full' variant='secondary'>
+                <TabsContent value="ha" className="pt-3 space-x-2">
+                  <Badge className="me-2 rounded-full" variant="secondary">
                     Home
                   </Badge>
-                  <Badge className='me-2 rounded-full' variant='secondary'>
+                  <Badge className="me-2 rounded-full" variant="secondary">
                     Away
                   </Badge>
-                  <Badge className='rounded-full' variant='secondary'>
+                  <Badge className="rounded-full" variant="secondary">
                     TBD
                   </Badge>
                 </TabsContent>
 
-                <TabsContent value='result' className='pt-3 space-x-2'>
-                  <Badge variant='secondary' className='rounded-full'>
+                <TabsContent value="result" className="pt-3 space-x-2">
+                  <Badge variant="secondary" className="rounded-full">
                     W
                   </Badge>
-                  <Badge variant='secondary' className='rounded-full'>
+                  <Badge variant="secondary" className="rounded-full">
                     L
                   </Badge>
-                  <Badge variant='secondary' className='rounded-full'>
+                  <Badge variant="secondary" className="rounded-full">
                     D
                   </Badge>
                 </TabsContent>
 
                 <TabsContent
-                  value='time'
-                  className='pt-3 text-sm text-muted-foreground'
+                  value="time"
+                  className="pt-3 text-sm text-muted-foreground"
                 >
                   Morning • Afternoon • Evening
                 </TabsContent>
@@ -274,8 +274,8 @@ export default function MatchduleWeek() {
 
               <Separator />
 
-              <div className='flex justify-end gap-2'>
-                <Button variant='ghost' onClick={() => setFiltersOpen(false)}>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setFiltersOpen(false)}>
                   Cancel
                 </Button>
                 <Button onClick={() => setFiltersOpen(false)}>Apply</Button>
@@ -287,22 +287,22 @@ export default function MatchduleWeek() {
 
       {/* Body */}
       {loading || week === null ? (
-        <div className='mx-auto max-w-2xl px-4 py-6 text-sm text-muted-foreground'>
+        <div className="mx-auto max-w-2xl px-4 py-6 text-sm text-muted-foreground">
           <LoadingList />
         </div>
       ) : error ? (
-        <div className='text-sm text-red-600'>Error: {error}</div>
+        <div className="text-sm text-red-600">Error: {error}</div>
       ) : byDay.length === 0 ? (
         <EmptyState />
       ) : (
         <div>
           {!!tightGapMessage && (
-            <Alert variant='destructive' className='rounded-2xl'>
-              <AlertTriangle className='h-4 w-4' />
+            <Alert variant="destructive" className="rounded-2xl">
+              <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Heads up</AlertTitle>
               <AlertDescription>
-                Tight gap this week:{' '}
-                <span className='font-medium'>{tightGapMessage}</span>
+                Tight gap this week:{" "}
+                <span className="font-medium">{tightGapMessage}</span>
               </AlertDescription>
             </Alert>
           )}
@@ -311,8 +311,8 @@ export default function MatchduleWeek() {
             <DaySection key={label} dateLabel={label} games={games} />
           ))}
 
-          <div className='mt-4 text-xs text-muted-foreground flex items-center gap-2'>
-            <Info className='h-4 w-4' /> Tap a card for details, maps, and
+          <div className="mt-4 text-xs text-muted-foreground flex items-center gap-2">
+            <Info className="h-4 w-4" /> Tap a card for details, maps, and
             sharing.
           </div>
         </div>

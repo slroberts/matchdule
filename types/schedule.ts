@@ -1,4 +1,4 @@
-export type TeamFilter = 'All Teams' | 'B&G 2017' | 'B&G 2015' | 'Soricha 2014';
+export type TeamFilter = "All Teams" | "B&G 2017" | "B&G 2015" | "Soricha 2014";
 export type Game = {
   id: string;
   week: string | null;
@@ -10,8 +10,8 @@ export type Game = {
   team: string;
   location: string;
   opponent: string;
-  homeAway: 'HOME' | 'AWAY' | 'TBD';
-  result: 'W' | 'L' | 'D' | null;
+  homeAway: "HOME" | "AWAY" | "TBD";
+  result: "W" | "L" | "D" | null;
   scoreFor: number | null;
   scoreAgainst: number | null;
 };

@@ -1,5 +1,5 @@
-import { Game } from '@/types/schedule';
-import { parse } from 'csv-parse/sync';
+import { Game } from "@/types/schedule";
+import { parse } from "csv-parse/sync";
 
 type Row = {
   Date?: string;
@@ -8,8 +8,8 @@ type Row = {
   Team?: string;
   Location?: string;
   Opponent?: string;
-  'Home/Away'?: string;
-  'W/L/D'?: string;
+  "Home/Away"?: string;
+  "W/L/D"?: string;
   Score?: string;
 };
 
@@ -23,12 +23,12 @@ function parseScore(score?: string): [number | null, number | null] {
   return m ? [Number(m[1]), Number(m[2])] : [null, null];
 }
 
-function normalizeHA(v?: string): 'HOME' | 'AWAY' | 'TBD' {
-  const s = (v || '').trim().toUpperCase();
-  if (s.startsWith('HOME') || s === 'H') return 'HOME';
-  if (s.startsWith('AWAY') || s === 'A') return 'AWAY';
-  if (s === 'TBD' || !s) return 'TBD';
-  return 'TBD';
+function normalizeHA(v?: string): "HOME" | "AWAY" | "TBD" {
+  const s = (v || "").trim().toUpperCase();
+  if (s.startsWith("HOME") || s === "H") return "HOME";
+  if (s.startsWith("AWAY") || s === "A") return "AWAY";
+  if (s === "TBD" || !s) return "TBD";
+  return "TBD";
 }
 
 /** Parse "MM/DD/YYYY" strictly into numeric parts. Returns null if not in MDY. */
@@ -48,7 +48,7 @@ export async function fetchSchedule(): Promise<Game[]> {
   const gid = process.env.NEXT_PUBLIC_SCHEDULE_GID!;
   const url = csvUrl(id, gid);
 
-  const res = await fetch(url, { cache: 'no-store' });
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to fetch CSV: ${res.status}`);
   const csv = await res.text();
 
@@ -74,7 +74,7 @@ export async function fetchSchedule(): Promise<Game[]> {
 
     // Anchor the calendar date to "noon UTC" to prevent SSR timezone drift
     const dateISO = new Date(
-      Date.UTC(year, month - 1, day, 12, 0, 0)
+      Date.UTC(year, month - 1, day, 12, 0, 0),
     ).toISOString();
 
     // Build start/end from components (local arithmetic)
@@ -83,12 +83,12 @@ export async function fetchSchedule(): Promise<Game[]> {
       end: string | null;
       timeText: string;
     } {
-      const raw = (r.Time || '').trim();
-      if (!raw || raw.toUpperCase() === 'TBD') {
-        return { start: null, end: null, timeText: 'TBD' };
+      const raw = (r.Time || "").trim();
+      if (!raw || raw.toUpperCase() === "TBD") {
+        return { start: null, end: null, timeText: "TBD" };
       }
 
-      const norm = raw.replace(/\s+/g, '').toUpperCase();
+      const norm = raw.replace(/\s+/g, "").toUpperCase();
 
       const toHM = (s: string) => {
         // supports "8:00AM", "5:15PM", "17:15", "800", "1715"
@@ -100,8 +100,8 @@ export async function fetchSchedule(): Promise<Game[]> {
           h = Number(m12[1]);
           mi = Number(m12[2] || 0);
           const ap = m12[3];
-          if (ap === 'PM' && h < 12) h += 12;
-          if (ap === 'AM' && h === 12) h = 0;
+          if (ap === "PM" && h < 12) h += 12;
+          if (ap === "AM" && h === 12) h = 0;
         } else if (m24) {
           h = Number(m24[1]);
           mi = Number(m24[2] || 0);
@@ -114,16 +114,16 @@ export async function fetchSchedule(): Promise<Game[]> {
       const toISO = (h: number, mi: number) =>
         new Date(year, month - 1, day, h, mi, 0).toISOString();
 
-      if (norm.includes('-')) {
+      if (norm.includes("-")) {
         // Range like "8:00-9:00 AM" or "4:00-5:00PM"
         const [Lraw, Rraw] = raw
-          .split('-', 2)
+          .split("-", 2)
           .map((s) => s.trim().toUpperCase());
         const ap = Rraw.match(/\b(AM|PM)\b/)?.[1];
         const Lfix = /\b(AM|PM)\b/.test(Lraw) || !ap ? Lraw : `${Lraw} ${ap}`;
 
-        const a = toHM(Lfix.replace(/\s+/g, ''));
-        const b = toHM(Rraw.replace(/\s+/g, ''));
+        const a = toHM(Lfix.replace(/\s+/g, ""));
+        const b = toHM(Rraw.replace(/\s+/g, ""));
         if (!a || !b) return { start: null, end: null, timeText: raw };
 
         return {
@@ -143,29 +143,29 @@ export async function fetchSchedule(): Promise<Game[]> {
         day,
         a.h,
         a.mi + 60,
-        0
+        0,
       ).toISOString();
       return { start, end, timeText: raw };
     }
 
     const { start, end, timeText } = parseTimeRangeLocal();
     const [scoreFor, scoreAgainst] = parseScore(r.Score);
-    const resultRaw = (r['W/L/D'] || '').toUpperCase() as Game['result'];
+    const resultRaw = (r["W/L/D"] || "").toUpperCase() as Game["result"];
 
     games.push({
-      id: `g_${r.Date}_${r.Team}_${r.Opponent}`.replace(/\s+/g, ''),
+      id: `g_${r.Date}_${r.Team}_${r.Opponent}`.replace(/\s+/g, ""),
       week: currentWeek,
       dateISO,
       startISO: start,
       endISO: end,
       timeText,
-      day: (r.Day || '').trim(),
-      team: (r.Team || '').trim(),
-      location: (r.Location || '').trim(),
-      opponent: (r.Opponent || '').trim(),
-      homeAway: normalizeHA(r['Home/Away']),
+      day: (r.Day || "").trim(),
+      team: (r.Team || "").trim(),
+      location: (r.Location || "").trim(),
+      opponent: (r.Opponent || "").trim(),
+      homeAway: normalizeHA(r["Home/Away"]),
       result:
-        resultRaw === 'W' || resultRaw === 'L' || resultRaw === 'D'
+        resultRaw === "W" || resultRaw === "L" || resultRaw === "D"
           ? resultRaw
           : null,
       scoreFor,
