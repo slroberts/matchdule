@@ -45,6 +45,7 @@ export default function MatchduleWeek() {
   const [week, setWeek] = useState<string | null>(null);
   const [teamFilter, setTeamFilter] = useState<TeamFilter>('All Teams');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const TZ = 'America/New_York';
 
   // ---------- helpers for week defaulting ----------
   function atLocalMidnight(d: Date) {
@@ -160,12 +161,15 @@ export default function MatchduleWeek() {
     const m: Record<string, Game[]> = {};
     for (const g of weekGames) {
       const d = new Date(g.dateISO);
-      const label = `${d.toLocaleDateString(undefined, {
+      const label = `${d.toLocaleDateString('en-US', {
         weekday: 'short',
-      })} • ${d.toLocaleDateString(undefined, {
+        timeZone: TZ,
+      })} • ${d.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
+        timeZone: TZ,
       })}`;
+
       (m[label] ||= []).push(g);
     }
     Object.values(m).forEach((arr) => {
@@ -323,11 +327,6 @@ export default function MatchduleWeek() {
           <span className='text-sm text-muted-foreground'>
             — Know who plays when—always.
           </span>
-          <div className='ms-auto'>
-            <Button variant='ghost' size='icon' aria-label='Settings'>
-              <Settings className='h-5 w-5' />
-            </Button>
-          </div>
         </div>
 
         <div className='flex flex-wrap items-center gap-2'>

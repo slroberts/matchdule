@@ -3,9 +3,9 @@ import { parse } from 'csv-parse/sync';
 export type Game = {
   id: string;
   week: string | null;
-  dateISO: string;
-  startISO: string | null;
-  endISO: string | null;
+  dateISO: string; // anchored to 12:00 UTC for the game’s calendar day
+  startISO: string | null; // local wall clock → ISO
+  endISO: string | null; // local wall clock → ISO
   timeText: string;
   day: string;
   team: string;
@@ -48,40 +48,16 @@ function normalizeHA(v?: string): 'HOME' | 'AWAY' | 'TBD' {
   return 'TBD';
 }
 
-// Accepts: "8:00-9:00 AM", "4:00-5:00PM", "11:00 AM", "17:15", "TBD"
-function parseTimeRange(dateStr: string, timeCell?: string) {
-  if (!timeCell) return { start: null, end: null, timeText: 'TBD' };
-  const raw = timeCell.trim();
-  if (!raw || raw.toUpperCase() === 'TBD')
-    return { start: null, end: null, timeText: 'TBD' };
-
-  // Try ranges
-  const range = raw.replace(/\s+/g, '').toUpperCase();
-  const hasDash = range.includes('-');
-
-  const toISO = (d: Date) => (isNaN(d.getTime()) ? null : d.toISOString());
-
-  if (hasDash) {
-    const [left, right] = raw.split('-', 2).map((s) => s.trim());
-    // inherit AM/PM from right if missing on left
-    const ampm = right.match(/\b(AM|PM)\b/i)?.[1] ?? '';
-    const leftFixed = /\b(AM|PM)\b/i.test(left)
-      ? left
-      : ampm
-      ? `${left} ${ampm}`
-      : left;
-
-    const start = new Date(`${dateStr} ${leftFixed}`);
-    const end = new Date(`${dateStr} ${right}`);
-    return { start: toISO(start), end: toISO(end), timeText: raw };
-  }
-
-  // Single time (12h or 24h); assume 60m duration
-  const start = new Date(`${dateStr} ${raw}`);
-  const end = isNaN(start.getTime())
-    ? null
-    : new Date(start.getTime() + 60 * 60 * 1000);
-  return { start: toISO(start), end: toISO(end as Date), timeText: raw };
+/** Parse "MM/DD/YYYY" strictly into numeric parts. Returns null if not in MDY. */
+function parseMDY(input: string) {
+  const m = input.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const month = Number(m[1]);
+  const day = Number(m[2]);
+  const year = Number(m[3]);
+  if (month < 1 || month > 12) return null;
+  if (day < 1 || day > 31) return null;
+  return { year, month, day };
 }
 
 export async function fetchSchedule(): Promise<Game[]> {
@@ -109,8 +85,87 @@ export async function fetchSchedule(): Promise<Game[]> {
     // If it doesn't look like a game row, skip
     if (!r.Date || !r.Team) continue;
 
-    const dateISO = new Date(r.Date).toISOString();
-    const { start, end, timeText } = parseTimeRange(r.Date, r.Time);
+    const parts = parseMDY(r.Date);
+    if (!parts) continue; // ignore non-game/non-date rows
+    const { year, month, day } = parts;
+
+    // Anchor the calendar date to "noon UTC" to prevent SSR timezone drift
+    const dateISO = new Date(
+      Date.UTC(year, month - 1, day, 12, 0, 0)
+    ).toISOString();
+
+    // Build start/end from components (local arithmetic)
+    function parseTimeRangeLocal(): {
+      start: string | null;
+      end: string | null;
+      timeText: string;
+    } {
+      const raw = (r.Time || '').trim();
+      if (!raw || raw.toUpperCase() === 'TBD') {
+        return { start: null, end: null, timeText: 'TBD' };
+      }
+
+      const norm = raw.replace(/\s+/g, '').toUpperCase();
+
+      const toHM = (s: string) => {
+        // supports "8:00AM", "5:15PM", "17:15", "800", "1715"
+        const m12 = s.match(/^(\d{1,2})(?::?(\d{2}))?(AM|PM)$/);
+        const m24 = s.match(/^(\d{1,2})(?::?(\d{2}))$/);
+        let h = 0,
+          mi = 0;
+        if (m12) {
+          h = Number(m12[1]);
+          mi = Number(m12[2] || 0);
+          const ap = m12[3];
+          if (ap === 'PM' && h < 12) h += 12;
+          if (ap === 'AM' && h === 12) h = 0;
+        } else if (m24) {
+          h = Number(m24[1]);
+          mi = Number(m24[2] || 0);
+        } else {
+          return null;
+        }
+        return { h, mi };
+      };
+
+      const toISO = (h: number, mi: number) =>
+        new Date(year, month - 1, day, h, mi, 0).toISOString();
+
+      if (norm.includes('-')) {
+        // Range like "8:00-9:00 AM" or "4:00-5:00PM"
+        const [Lraw, Rraw] = raw
+          .split('-', 2)
+          .map((s) => s.trim().toUpperCase());
+        const ap = Rraw.match(/\b(AM|PM)\b/)?.[1];
+        const Lfix = /\b(AM|PM)\b/.test(Lraw) || !ap ? Lraw : `${Lraw} ${ap}`;
+
+        const a = toHM(Lfix.replace(/\s+/g, ''));
+        const b = toHM(Rraw.replace(/\s+/g, ''));
+        if (!a || !b) return { start: null, end: null, timeText: raw };
+
+        return {
+          start: toISO(a.h, a.mi),
+          end: toISO(b.h, b.mi),
+          timeText: raw,
+        };
+      }
+
+      // Single time → assume 60 minutes
+      const a = toHM(norm);
+      if (!a) return { start: null, end: null, timeText: raw };
+      const start = toISO(a.h, a.mi);
+      const end = new Date(
+        year,
+        month - 1,
+        day,
+        a.h,
+        a.mi + 60,
+        0
+      ).toISOString();
+      return { start, end, timeText: raw };
+    }
+
+    const { start, end, timeText } = parseTimeRangeLocal();
     const [scoreFor, scoreAgainst] = parseScore(r.Score);
     const resultRaw = (r['W/L/D'] || '').toUpperCase() as Game['result'];
 
@@ -135,7 +190,7 @@ export async function fetchSchedule(): Promise<Game[]> {
     });
   }
 
-  // Sort by start (TBD at end of same day)
+  // Sort by day then time (TBD at end of the day)
   games.sort((a, b) => {
     const da = a.dateISO.localeCompare(b.dateISO);
     if (da !== 0) return da;
