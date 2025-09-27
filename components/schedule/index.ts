@@ -1,16 +1,16 @@
-import HAChip from "./HAChip";
-import StatusChip from "./StatusChip";
-import TeamLine from "./TeamLine";
-import DividerDot from "./DividerDot";
-import GameCard from "./GameCard";
-import DaySection from "./DaySection";
-import ControlsBar from "./ControlsBar";
-import LoadingList from "./LoadingList";
-import EmptyState from "./EmptyState";
+import HAChip from './HAChip';
+import StatusRibbon from './StatusRibbon';
+import TeamLine from './TeamLine';
+import DividerDot from './DividerDot';
+import GameCard from './GameCard';
+import DaySection from './DaySection';
+import ControlsBar from './ControlsBar';
+import LoadingList from './LoadingList';
+import EmptyState from './EmptyState';
 
 export {
   HAChip,
-  StatusChip,
+  StatusRibbon,
   TeamLine,
   DividerDot,
   GameCard,

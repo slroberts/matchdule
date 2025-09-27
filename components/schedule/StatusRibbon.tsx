@@ -14,8 +14,8 @@ export default function StatusRibbon({ game }: { game: Game }) {
     label === "LIVE"
       ? "bg-emerald-600 text-white"
       : label === "FINAL"
-      ? "bg-muted-foreground/90 text-white dark:text-white"
-      : "bg-amber-600 text-white";
+      ? "bg-muted-foreground/80 text-white dark:text-white"
+      : "bg-blue-900 text-white";
 
   return (
     <span
@@ -23,7 +23,7 @@ export default function StatusRibbon({ game }: { game: Game }) {
       className={cn(
         "pointer-events-none absolute right-0 top-0 select-none",
         "rounded-bl-md px-2 py-1 text-[10px] font-semibold tracking-wide",
-        "shadow-sm ring-1 ring-black/5",
+        "ring-1 ring-black/5",
         tone,
       )}
     >
