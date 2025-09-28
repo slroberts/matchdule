@@ -1,5 +1,5 @@
 import { Game } from "@/types/schedule";
-import { Badge } from "../ui/badge";
+import { Badge } from "../../ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function HAChip({ value }: { value: Game["homeAway"] }) {
