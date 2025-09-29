@@ -1,4 +1,4 @@
-import { hourInTZ, fmtTime, fmtFull, parseISOSafe } from "@/lib/date";
+import { hourInTZ, fmtTime, fmtFull, parseISOZoned } from "@/lib/date";
 import { Clock, Sun, Sunset, Moon } from "lucide-react";
 
 type TimeBadgeProps = {
@@ -14,7 +14,7 @@ export default function TimeBadge({
   fallback = "TBD",
   soonMin = 90,
 }: TimeBadgeProps) {
-  const d = parseISOSafe(startISO);
+  const d = parseISOZoned(startISO, tz);
 
   if (!d) {
     return (

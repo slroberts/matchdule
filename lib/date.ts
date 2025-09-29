@@ -2,27 +2,25 @@ export function atLocalMidnight(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-// If it has an explicit zone, trust it. If it's naive, treat as local time.
-// (Do NOT append 'Z' — that would force UTC and shift by 4–5 hours.)
-const hasTZ = (s: string) => /Z|[+-]\d{2}:?\d{2}$/.test(s);
+/**
+ * Interpret a naive ISO string (no Z/offset) as *local wall time in `tz`*,
+ * converting to the correct UTC instant (DST-aware). If the string already
+ * has Z/offset, it’s parsed as-is.
+ */
+export function parseISOZoned(iso?: string | null, tz = "America/New_York") {
+  if (!iso) return null;
+  const hasTZ = /Z|[+-]\d{2}:?\d{2}$/.test(iso);
+  if (hasTZ) return new Date(iso);
 
-export const parseISOSafe = (iso?: string | null) =>
-  iso ? new Date(iso) : null;
-
-function parseParts(iso: string) {
   const m = iso.match(
     /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/,
   );
-  if (!m) return null;
+  if (!m) return new Date(iso);
   const [, y, mo, d, h, mi, s] = m;
-  return { y: +y, mo: +mo - 1, d: +d, h: +h, mi: +mi, s: +(s ?? 0) };
-}
+  const utcGuess = Date.UTC(+y, +mo - 1, +d, +h, +mi, +(s ?? 0));
 
-// Compute the timezone offset (ms) for a given UTC instant in an IANA tz.
-// Positive result means the zone is *ahead* of UTC at that instant.
-function tzOffsetMs(atUTC: Date, timeZone: string) {
   const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone,
+    timeZone: tz,
     hour12: false,
     year: "numeric",
     month: "2-digit",
@@ -32,7 +30,7 @@ function tzOffsetMs(atUTC: Date, timeZone: string) {
     second: "2-digit",
   });
   const parts = Object.fromEntries(
-    fmt.formatToParts(atUTC).map((p) => [p.type, p.value]),
+    fmt.formatToParts(new Date(utcGuess)).map((p) => [p.type, p.value]),
   );
   const asUTC = Date.UTC(
     +parts.year,
@@ -42,29 +40,9 @@ function tzOffsetMs(atUTC: Date, timeZone: string) {
     +parts.minute,
     +parts.second,
   );
-  return asUTC - atUTC.getTime();
-}
+  const offset = asUTC - utcGuess;
 
-/**
- * Interpret a naive ISO string (no Z/offset) as *local wall time in `tz`*,
- * converting to the correct UTC instant (DST-aware). If the string already
- * has Z/offset, it’s parsed as-is.
- */
-export function parseISOZoned(iso?: string | null, tz = "America/New_York") {
-  if (!iso) return null;
-  if (hasTZ(iso)) return new Date(iso); // already absolute
-
-  const p = parseParts(iso);
-  if (!p) {
-    // Fallback: let Date try, but this can be env-dependent; avoid if possible.
-    return new Date(iso);
-  }
-  // Start with a UTC guess at the same wall clock time
-  const utcGuess = Date.UTC(p.y, p.mo, p.d, p.h, p.mi, p.s);
-  // Find what that wall time corresponds to in the tz, including DST
-  const off = tzOffsetMs(new Date(utcGuess), tz);
-  // Subtract the zone offset to get the real UTC instant
-  return new Date(utcGuess - off);
+  return new Date(utcGuess - offset);
 }
 
 export const hourInTZ = (d: Date, tz: string) =>
