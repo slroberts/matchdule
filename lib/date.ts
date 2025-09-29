@@ -2,7 +2,12 @@ export function atLocalMidnight(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
+// If it has an explicit zone, trust it. If it's naive, treat as local time.
+// (Do NOT append 'Z' — that would force UTC and shift by 4–5 hours.)
 const hasTZ = (s: string) => /Z|[+-]\d{2}:?\d{2}$/.test(s);
+
+export const parseISOSafe = (iso?: string | null) =>
+  iso ? new Date(iso) : null;
 
 function parseParts(iso: string) {
   const m = iso.match(
