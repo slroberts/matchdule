@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -119,4 +119,14 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.avatar--bandg {
+  background: conic-gradient(from 0deg, #111 0%, #dc2626 70%);
+}
+.avatar--soricha {
+  background: conic-gradient(from 0deg, #1d4ed8 0%, #facc15 70%);
+}
+.avatar--opp {
+  background: conic-gradient(from 0deg, #1d4ed8 0%, #facc15 70%);
 }
