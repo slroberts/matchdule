@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Info, AlertTriangle } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useEffect, useState } from "react";
+import { Info, AlertTriangle } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 import {
   Header,
@@ -19,14 +19,14 @@ import {
   useWeekGames,
   useDaysGrouping,
   useTightGap,
-} from '@/hooks';
+} from "@/hooks";
 
 export default function MatchduleWeekPage() {
   const { data, loading, error } = useSchedule();
 
-  const [season, setSeason] = useState('Fall 2025');
+  const [season, setSeason] = useState("Fall 2025");
   const [week, setWeek] = useState<string | null>(null);
-  const [teamFilter, setTeamFilter] = useState<TeamFilter>('All Teams');
+  const [teamFilter, setTeamFilter] = useState<TeamFilter>("All Teams");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     homeAway: [],
@@ -65,7 +65,7 @@ export default function MatchduleWeekPage() {
   }, [scope]);
 
   return (
-    <div className='mx-auto max-w-xl px-4 py-5 md:py-6 space-y-4'>
+    <div className="mx-auto max-w-xl px-4 py-5 md:py-6 space-y-4">
       <Header
         season={season}
         setSeason={setSeason}
@@ -89,18 +89,18 @@ export default function MatchduleWeekPage() {
           <LoadingList />
         </div>
       ) : error ? (
-        <div className='text-sm text-red-600'>Error: {error}</div>
+        <div className="text-sm text-red-600">Error: {error}</div>
       ) : byDay.length === 0 ? (
         <EmptyState />
       ) : (
         <div>
           {!!tightGapMessage && (
-            <Alert variant='destructive' className='rounded-2xl'>
-              <AlertTriangle className='h-4 w-4' />
+            <Alert variant="destructive" className="rounded-2xl">
+              <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Heads up</AlertTitle>
               <AlertDescription>
-                Tight gap this week:{' '}
-                <span className='font-medium'>{tightGapMessage}</span>
+                Tight gap this week:{" "}
+                <span className="font-medium">{tightGapMessage}</span>
               </AlertDescription>
             </Alert>
           )}
@@ -109,8 +109,8 @@ export default function MatchduleWeekPage() {
             <DaySection key={label} dateLabel={label} games={games} />
           ))}
 
-          <div className='mt-4 text-xs text-muted-foreground flex items-center gap-2'>
-            <Info className='h-4 w-4' /> Tap a card for details, maps, and
+          <div className="mt-4 text-xs text-muted-foreground flex items-center gap-2">
+            <Info className="h-4 w-4" /> Tap a card for details, maps, and
             sharing.
           </div>
         </div>

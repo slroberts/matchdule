@@ -40,7 +40,7 @@ export default function GameCard({ game }: { game: Game }) {
           {/* LEFT — Time + Location (primary) */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Time badge */}
-            <div className="inline-flex items-center gap-2 rounded-md bg-muted/40 px-3 py-1.5 ring-1 ring-border/60">
+            <div className="inline-flex items-center gap-1.5 rounded-md  px-3 py-1.5 ring-1 ring-border/60">
               <Clock className="h-3.5 w-3.5" aria-hidden />
 
               <span className="text-sm font-semibold tabular-nums tracking-tight">
@@ -49,7 +49,7 @@ export default function GameCard({ game }: { game: Game }) {
             </div>
 
             {/* Location pill */}
-            <div className="inline-flex max-w-[80vw] items-center gap-2 rounded-full bg-background/70 px-3 py-1.5 ring-1 ring-border/60 sm:max-w-[46ch]">
+            <div className="inline-flex max-w-[80vw] items-center gap-1.5 rounded-full bg-background/70 px-3 py-1.5 ring-1 ring-border/60 sm:max-w-[46ch]">
               <MapPin className="h-4 w-4 shrink-0" aria-hidden />
               <span
                 className="truncate text-sm font-medium"
@@ -81,17 +81,35 @@ export default function GameCard({ game }: { game: Game }) {
         </div>
 
         {/* Actions */}
-        <div className="mt-4 flex items-center gap-2  pt-3">
-          <Button variant="secondary" size="sm" className="rounded-full">
-            <MapPin className="h-4 w-4 mr-1" aria-hidden /> Map
+        <div className="mt-4 pt-3 grid grid-cols-3 gap-2 sm:flex sm:items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full w-full sm:w-auto"
+            aria-label="Open map"
+            title="Open map"
+          >
+            <MapPin className="h-4 w-4 mr-1" aria-hidden />
+            <span className="hidden xs:inline">Map</span>
           </Button>
-          <Button variant="secondary" size="sm" className="rounded-full">
-            <Share2 className="h-4 w-4 mr-1" aria-hidden /> Share
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full w-full sm:w-auto"
+            aria-label="Share game"
+            title="Share game"
+          >
+            <Share2 className="h-4 w-4 mr-1" aria-hidden />
+            <span className="hidden xs:inline">Share</span>
           </Button>
+
           <Button
             variant="default"
             size="sm"
-            className="ml-auto rounded-full focus-visible:ring-2"
+            className="rounded-full w-full sm:w-auto sm:ml-auto focus-visible:ring-2"
+            aria-label="View details"
+            title="View details"
           >
             Details
           </Button>

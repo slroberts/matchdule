@@ -1,15 +1,15 @@
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Daypart, Filters, HomeAway, Result } from '@/types/schedule';
-import { useState } from 'react';
+} from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Daypart, Filters, HomeAway, Result } from "@/types/schedule";
+import { useState } from "react";
 
 type FilterSheetProps = {
   open: boolean;
@@ -18,16 +18,16 @@ type FilterSheetProps = {
   onClear?: () => void;
 };
 
-const RESULT_LABELS: Record<'W' | 'L' | 'D', string> = {
-  W: 'Win',
-  L: 'Loss',
-  D: 'Draw',
+const RESULT_LABELS: Record<"W" | "L" | "D", string> = {
+  W: "Win",
+  L: "Loss",
+  D: "Draw",
 };
 
-const HOMEAWAY_LABELS: Record<'HOME' | 'AWAY' | 'TBD', string> = {
-  HOME: 'Home',
-  AWAY: 'Away',
-  TBD: 'TBD',
+const HOMEAWAY_LABELS: Record<"HOME" | "AWAY" | "TBD", string> = {
+  HOME: "Home",
+  AWAY: "Away",
+  TBD: "TBD",
 };
 
 export default function FilterSheet({
@@ -38,19 +38,19 @@ export default function FilterSheet({
 }: FilterSheetProps) {
   // selection state
   const [selectedHomeAway, setSelectedHomeAway] = useState<Set<HomeAway>>(
-    new Set()
+    new Set(),
   );
   const [selectedResults, setSelectedResults] = useState<Set<Result>>(
-    new Set()
+    new Set(),
   );
   const [selectedDayparts, setSelectedDayparts] = useState<Set<Daypart>>(
-    new Set()
+    new Set(),
   );
 
   // helpers
   const toggle = <T,>(
     set: React.Dispatch<React.SetStateAction<Set<T>>>,
-    v: T
+    v: T,
   ) =>
     set((prev) => {
       const next = new Set(prev);
@@ -87,39 +87,39 @@ export default function FilterSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side='right' className='w-[360px] sm:w-[380px] p-0'>
-        <div className='flex h-full flex-col'>
-          <div className='border-b'>
+      <SheetContent side="right" className="w-[360px] sm:w-[380px] p-0">
+        <div className="flex h-full flex-col">
+          <div className="border-b">
             <SheetHeader>
               <SheetTitle>Filters</SheetTitle>
-              <SheetDescription className='sr-only'>
+              <SheetDescription className="sr-only">
                 Choose options to narrow the games shown.
               </SheetDescription>
             </SheetHeader>
           </div>
 
-          <div className='flex-1 overflow-auto px-5 py-4'>
-            <Tabs defaultValue='ha'>
-              <TabsList className='grid grid-cols-3'>
-                <TabsTrigger value='ha'>Home/Away</TabsTrigger>
-                <TabsTrigger value='result'>Result</TabsTrigger>
-                <TabsTrigger value='time'>Time</TabsTrigger>
+          <div className="flex-1 overflow-auto px-5 py-4">
+            <Tabs defaultValue="ha">
+              <TabsList className="grid grid-cols-3">
+                <TabsTrigger value="ha">Home/Away</TabsTrigger>
+                <TabsTrigger value="result">Result</TabsTrigger>
+                <TabsTrigger value="time">Time</TabsTrigger>
               </TabsList>
 
-              <TabsContent value='ha' className='pt-3'>
-                <ul className='space-y-2'>
-                  {(['HOME', 'AWAY', 'TBD'] as const).map((v) => (
-                    <li key={v} className='flex items-center gap-2'>
+              <TabsContent value="ha" className="pt-3">
+                <ul className="space-y-2">
+                  {(["HOME", "AWAY", "TBD"] as const).map((v) => (
+                    <li key={v} className="flex items-center gap-2">
                       <Badge
-                        role='button'
+                        role="button"
                         aria-label={HOMEAWAY_LABELS[v]}
                         aria-pressed={isSelected(selectedHomeAway, v)}
                         onClick={() => filterHomeAway(v)}
-                        className='rounded-full cursor-pointer px-3 py-1 text-sm'
+                        className="rounded-full cursor-pointer px-3 py-1 text-sm"
                         variant={
                           isSelected(selectedHomeAway, v)
-                            ? 'default'
-                            : 'secondary'
+                            ? "default"
+                            : "secondary"
                         }
                         title={HOMEAWAY_LABELS[v]}
                       >
@@ -130,20 +130,20 @@ export default function FilterSheet({
                 </ul>
               </TabsContent>
 
-              <TabsContent value='result' className='pt-3'>
-                <ul className='space-y-2'>
-                  {(['W', 'L', 'D'] as const).map((v) => (
-                    <li key={v} className='flex items-center gap-2'>
+              <TabsContent value="result" className="pt-3">
+                <ul className="space-y-2">
+                  {(["W", "L", "D"] as const).map((v) => (
+                    <li key={v} className="flex items-center gap-2">
                       <Badge
-                        role='button'
+                        role="button"
                         aria-label={RESULT_LABELS[v]}
                         aria-pressed={isSelected(selectedResults, v)}
                         onClick={() => filterResults(v)}
-                        className='rounded-full cursor-pointer px-3 py-1 text-sm'
+                        className="rounded-full cursor-pointer px-3 py-1 text-sm"
                         variant={
                           isSelected(selectedResults, v)
-                            ? 'default'
-                            : 'secondary'
+                            ? "default"
+                            : "secondary"
                         }
                         title={RESULT_LABELS[v]}
                       >
@@ -154,19 +154,19 @@ export default function FilterSheet({
                 </ul>
               </TabsContent>
 
-              <TabsContent value='time' className='pt-3'>
-                <ul className='space-y-2'>
-                  {(['morning', 'afternoon', 'evening'] as const).map((v) => (
-                    <li key={v} className='flex items-center gap-2'>
+              <TabsContent value="time" className="pt-3">
+                <ul className="space-y-2">
+                  {(["morning", "afternoon", "evening"] as const).map((v) => (
+                    <li key={v} className="flex items-center gap-2">
                       <Badge
-                        role='button'
+                        role="button"
                         aria-pressed={isSelected(selectedDayparts, v)}
                         onClick={() => filterTime(v)}
-                        className='rounded-full cursor-pointer capitalize px-3 py-1 text-sm'
+                        className="rounded-full cursor-pointer capitalize px-3 py-1 text-sm"
                         variant={
                           isSelected(selectedDayparts, v)
-                            ? 'default'
-                            : 'secondary'
+                            ? "default"
+                            : "secondary"
                         }
                       >
                         {v}
@@ -178,12 +178,12 @@ export default function FilterSheet({
             </Tabs>
           </div>
 
-          <div className='border-t px-5 py-3 flex items-center justify-between'>
-            <Button variant='ghost' onClick={clearAll}>
+          <div className="border-t px-5 py-3 flex items-center justify-between">
+            <Button variant="ghost" onClick={clearAll}>
               Clear
             </Button>
-            <div className='space-x-2'>
-              <Button variant='ghost' onClick={() => onOpenChange(false)}>
+            <div className="space-x-2">
+              <Button variant="ghost" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button onClick={applyAll}>Apply</Button>
