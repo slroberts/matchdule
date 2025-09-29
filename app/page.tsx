@@ -21,10 +21,9 @@ import {
   useDaysGrouping,
   useTightGap,
 } from '@/hooks';
-import { useRouter } from 'next/navigation';
 
 export default function MatchduleWeekPage() {
-  const { data, loading, error } = useSchedule();
+  const { data, loading, error, refetch } = useSchedule();
 
   const [season, setSeason] = useState('Fall 2025');
   const [week, setWeek] = useState<string | null>(null);
@@ -51,7 +50,6 @@ export default function MatchduleWeekPage() {
   );
   const byDay = useDaysGrouping(weekGames, 'America/New_York');
   const tightGapMessage = useTightGap(weekGames, 75);
-  const router = useRouter();
 
   useEffect(() => {
     if (week === null && data?.length) {
@@ -68,7 +66,7 @@ export default function MatchduleWeekPage() {
   }, [scope]);
 
   return (
-    <PullToRefresh onRefresh={() => router.refresh()}>
+    <PullToRefresh onRefresh={refetch}>
       <div className='mx-auto max-w-xl -mt-8 px-4 py-5 md:py-6 space-y-4'>
         <Header
           season={season}

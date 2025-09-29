@@ -1,31 +1,38 @@
-import { Game } from "@/types/schedule";
-import { useEffect, useState } from "react";
+import useSWR, { type KeyedMutator } from 'swr';
+import type { Game } from '@/types/schedule';
+import { fetchSchedule } from '@/lib/schedule';
 
-export function useSchedule() {
-  const [data, setData] = useState<Game[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setErr] = useState<string | null>(null);
+type UseSchedule = {
+  data: Game[] | undefined;
+  loading: boolean;
+  error: string | null;
+  isValidating: boolean;
+  /** Revalidate from the network */
+  refetch: () => Promise<void>;
+  /** SWR mutate passthrough (optimistic updates etc.) */
+  mutate: KeyedMutator<Game[]>;
+};
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/schedule", { cache: "no-store" });
-        const json = await res.json();
-        if (!alive) return;
-        if (!json.ok) throw new Error(json.error || "Failed");
-        setData(json.data);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (e: any) {
-        setErr(e?.message ?? "Error");
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+export function useSchedule(): UseSchedule {
+  const { data, error, isValidating, mutate } = useSWR<Game[]>(
+    'schedule',
+    fetchSchedule,
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: true,
+      revalidateOnReconnect: true,
+    }
+  );
 
-  return { data, loading, error };
+  return {
+    data,
+    loading: !data && !error,
+    error: error ? (error as Error).message : null,
+    isValidating,
+    // swallow the data return so the type is Promise<void>
+    refetch: async () => {
+      await mutate();
+    },
+    mutate,
+  };
 }
