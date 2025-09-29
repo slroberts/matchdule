@@ -8,6 +8,7 @@ import LoadingList from "./LoadingList";
 import EmptyState from "./EmptyState";
 import Header from "./Header";
 import FilterSheet from "./FilterSheet";
+import MapLink from "./game-card/MapLink";
 
 export {
   HAChip,
@@ -20,4 +21,5 @@ export {
   EmptyState,
   Header,
   FilterSheet,
+  MapLink,
 };

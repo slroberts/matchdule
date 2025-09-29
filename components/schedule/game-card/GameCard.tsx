@@ -1,8 +1,12 @@
+// GameCard.tsx
+"use client";
+
+import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Clock, MapPin, Share2 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Card, CardHeader, CardContent } from "../../ui/card";
-import { HAChip, StatusRibbon, TeamLine } from "..";
+import { HAChip, MapLink, StatusRibbon, TeamLine } from "..";
 import { Game } from "@/types/schedule";
 
 export default function GameCard({ game }: { game: Game }) {
@@ -25,7 +29,6 @@ export default function GameCard({ game }: { game: Game }) {
       className={cn(
         "relative overflow-hidden rounded-xl border border-muted/40 transition-all",
         "hover:shadow-md focus-within:shadow-md",
-        // subtle left accent
         'before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-[""]',
         leftAccent,
       )}
@@ -34,22 +37,17 @@ export default function GameCard({ game }: { game: Game }) {
         <StatusRibbon game={game} />
       </div>
 
-      {/* Top meta strip */}
       <CardHeader className="pt-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          {/* LEFT — Time + Location (primary) */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Time badge */}
-            <div className="inline-flex items-center gap-1.5 rounded-md  px-3 py-1.5 ring-1 ring-border/60">
-              <Clock className="h-3.5 w-3.5" aria-hidden />
+        <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4">
+          <div className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ring-1 ring-border/60">
+            <Clock className="h-3.5 w-3.5" aria-hidden />
+            <span className="text-sm font-semibold tabular-nums tracking-tight">
+              {game.timeText || "TBD"}
+            </span>
+          </div>
 
-              <span className="text-sm font-semibold tabular-nums tracking-tight">
-                {game.timeText || "TBD"}
-              </span>
-            </div>
-
-            {/* Location pill */}
-            <div className="inline-flex max-w-[80vw] items-center gap-1.5 rounded-full bg-background/70 px-3 py-1.5 ring-1 ring-border/60 sm:max-w-[46ch]">
+          <MapLink address={game.location || undefined}>
+            <div className="inline-flex min-w-0 max-w-[80vw] items-center gap-1.5 rounded-full bg-background/70 px-3 py-1.5 ring-1 ring-border/60 sm:max-w-[46ch]">
               <MapPin className="h-4 w-4 shrink-0" aria-hidden />
               <span
                 className="truncate text-sm font-medium"
@@ -60,12 +58,11 @@ export default function GameCard({ game }: { game: Game }) {
               <span className="mx-1 h-4 w-px bg-border/60" aria-hidden />
               <HAChip value={game.homeAway} />
             </div>
-          </div>
+          </MapLink>
         </div>
       </CardHeader>
 
       <CardContent className="pt-0">
-        {/* Teams block: names left, scores right — crisp alignment */}
         <div className="rounded-lg border border-border/60 bg-card/40">
           <TeamLine
             name={game.team}
@@ -80,25 +77,22 @@ export default function GameCard({ game }: { game: Game }) {
           />
         </div>
 
-        {/* Actions */}
         <div className="mt-4 pt-3 grid grid-cols-3 gap-2 sm:flex sm:items-center">
           <Button
             variant="outline"
             size="sm"
             className="rounded-full w-full sm:w-auto"
-            aria-label="Open map"
-            title="Open map"
           >
-            <MapPin className="h-4 w-4 mr-1" aria-hidden />
-            <span className="hidden xs:inline">Map</span>
+            <MapLink address={game.location || undefined}>
+              <MapPin className="h-4 w-4 mr-1" aria-hidden />
+              <span className="hidden xs:inline">Map</span>
+            </MapLink>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
             className="rounded-full w-full sm:w-auto"
-            aria-label="Share game"
-            title="Share game"
           >
             <Share2 className="h-4 w-4 mr-1" aria-hidden />
             <span className="hidden xs:inline">Share</span>
@@ -108,8 +102,6 @@ export default function GameCard({ game }: { game: Game }) {
             variant="default"
             size="sm"
             className="rounded-full w-full sm:w-auto sm:ml-auto focus-visible:ring-2"
-            aria-label="View details"
-            title="View details"
           >
             Details
           </Button>
