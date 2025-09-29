@@ -48,10 +48,7 @@ export default function GameCard({ game }: { game: Game }) {
 
       <CardHeader className="pt-2">
         <div className="flex flex-wrap items-center gap-2">
-          <TimeBadge
-            startISO={game.startISO ?? undefined}
-            tz="America/New_York"
-          />
+          <TimeBadge startISO={game.startISO} tz="America/New_York" />
 
           <MapLink address={game.location || undefined}>
             <div className="inline-flex min-w-0 max-w-[80vw] items-center gap-1.5 rounded-full bg-background/70 px-3 py-1.5 ring-1 ring-border/60 sm:max-w-[46ch]">

@@ -111,8 +111,19 @@ export async function fetchSchedule(): Promise<Game[]> {
         return { h, mi };
       };
 
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const toNaiveISO = (
+        y: number,
+        m: number,
+        d: number,
+        h: number,
+        mi: number,
+        s = 0,
+      ) => `${y}-${pad(m)}-${pad(d)}T${pad(h)}:${pad(mi)}:${pad(s)}`;
+
+      // in parseTimeRangeLocal()
       const toISO = (h: number, mi: number) =>
-        new Date(year, month - 1, day, h, mi, 0).toISOString();
+        toNaiveISO(year, month, day, h, mi);
 
       if (norm.includes("-")) {
         // Range like "8:00-9:00 AM" or "4:00-5:00PM"
@@ -137,14 +148,7 @@ export async function fetchSchedule(): Promise<Game[]> {
       const a = toHM(norm);
       if (!a) return { start: null, end: null, timeText: raw };
       const start = toISO(a.h, a.mi);
-      const end = new Date(
-        year,
-        month - 1,
-        day,
-        a.h,
-        a.mi + 60,
-        0,
-      ).toISOString();
+      const end = toNaiveISO(year, month, day, a.h, a.mi + 60);
       return { start, end, timeText: raw };
     }
 
