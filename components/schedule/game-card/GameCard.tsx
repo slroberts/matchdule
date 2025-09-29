@@ -1,20 +1,14 @@
-// GameCard.tsx
 "use client";
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Clock, MapPin, Share2 } from "lucide-react";
+import { MapPin, Share2 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Card, CardHeader, CardContent } from "../../ui/card";
-import { HAChip, MapLink, StatusRibbon, TeamLine } from "..";
 import { Game } from "@/types/schedule";
+import { HAChip, MapLink, StatusRibbon, TeamLine, TimeBadge } from ".";
 
 export default function GameCard({ game }: { game: Game }) {
-  const hasScore =
-    game.result ||
-    (typeof game.scoreFor === "number" &&
-      typeof game.scoreAgainst === "number");
-
   const leftAccent =
     game.result === "W"
       ? "before:bg-emerald-500"
@@ -23,6 +17,16 @@ export default function GameCard({ game }: { game: Game }) {
       : game.result === "D"
       ? "before:bg-zinc-400"
       : null;
+
+  const teamAvatarClass = game.team.includes("B&G")
+    ? "gradient bg-conic from-black to-red-600 to-70%"
+    : "gradient bg-conic from-blue-700 to-yellow-400 to-70%";
+
+  const bothScored =
+    typeof game.scoreFor === "number" && typeof game.scoreAgainst === "number";
+
+  const dimFor = bothScored ? game.scoreFor! < game.scoreAgainst! : false;
+  const dimAgainst = bothScored ? game.scoreAgainst! < game.scoreFor! : false;
 
   return (
     <Card
@@ -38,13 +42,11 @@ export default function GameCard({ game }: { game: Game }) {
       </div>
 
       <CardHeader className="pt-2">
-        <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4">
-          <div className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ring-1 ring-border/60">
-            <Clock className="h-3.5 w-3.5" aria-hidden />
-            <span className="text-sm font-semibold tabular-nums tracking-tight">
-              {game.timeText || "TBD"}
-            </span>
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <TimeBadge
+            startISO={game.startISO ?? undefined}
+            tz="America/New_York"
+          />
 
           <MapLink address={game.location || undefined}>
             <div className="inline-flex min-w-0 max-w-[80vw] items-center gap-1.5 rounded-full bg-background/70 px-3 py-1.5 ring-1 ring-border/60 sm:max-w-[46ch]">
@@ -66,14 +68,15 @@ export default function GameCard({ game }: { game: Game }) {
         <div className="rounded-lg border border-border/60 bg-card/40">
           <TeamLine
             name={game.team}
-            initial={game.team.split(" ").at(0)?.[0] ?? "T"}
-            score={hasScore ? game.scoreFor : null}
+            score={bothScored ? game.scoreFor : null}
+            dimScore={dimFor}
+            avatarClassName={teamAvatarClass}
           />
           <div className="h-px w-full bg-border/70" />
           <TeamLine
             name={game.opponent}
-            initial={game.opponent.split(" ").at(0)?.[0] ?? "O"}
-            score={hasScore ? game.scoreAgainst : null}
+            score={bothScored ? game.scoreAgainst : null}
+            dimScore={dimAgainst}
           />
         </div>
 
