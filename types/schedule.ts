@@ -10,8 +10,20 @@ export type Game = {
   team: string;
   location: string;
   opponent: string;
-  homeAway: "HOME" | "AWAY" | "TBD";
-  result: "W" | "L" | "D" | null;
+  homeAway: HomeAway;
+  result: Result;
   scoreFor: number | null;
   scoreAgainst: number | null;
 };
+
+export type HomeAway = "HOME" | "AWAY" | "TBD";
+export type Result = "W" | "L" | "D" | null;
+export type Daypart = "morning" | "afternoon" | "evening";
+
+export type Filters = {
+  homeAway: HomeAway[];
+  result: Result[];
+  dayparts: Daypart[];
+};
+
+export type FilterScope = "week" | "all";

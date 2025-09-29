@@ -3,20 +3,24 @@
 import { CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ControlsBar from "./ControlsBar";
-import { TeamFilter } from "@/types/schedule";
+import { Filters, FilterScope, TeamFilter } from "@/types/schedule";
 import { FilterSheet } from ".";
 
 interface HeaderProps {
   season: string;
   setSeason: React.Dispatch<React.SetStateAction<string>>;
   week: string | null;
-  setWeek: (v: string) => void;
+  setWeek: React.Dispatch<React.SetStateAction<string | null>>;
   teamFilter: TeamFilter;
   setTeamFilter: React.Dispatch<React.SetStateAction<TeamFilter>>;
   weekOptions: string[];
   filtersOpen: boolean;
   setFiltersOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onApplyFilters?: (f: Filters) => void;
+  onClearFilters?: () => void;
   subtitle?: string;
+  scope: FilterScope;
+  setScope: (v: FilterScope) => void;
 }
 
 export default function Header({
@@ -29,7 +33,11 @@ export default function Header({
   weekOptions,
   filtersOpen,
   setFiltersOpen,
+  onApplyFilters,
+  onClearFilters,
   subtitle = "— Know who plays when—always.",
+  scope,
+  setScope,
 }: HeaderProps) {
   return (
     <header
@@ -66,10 +74,17 @@ export default function Header({
           setTeamFilter={setTeamFilter}
           weekOptions={weekOptions}
           setFiltersOpen={setFiltersOpen}
+          scope={scope}
+          setScope={setScope}
         />
       </div>
 
-      <FilterSheet open={filtersOpen} onOpenChange={setFiltersOpen} />
+      <FilterSheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        onApply={onApplyFilters}
+        onClear={onClearFilters}
+      />
     </header>
   );
 }
