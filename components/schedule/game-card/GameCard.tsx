@@ -18,7 +18,12 @@ export default function GameCard({ game }: { game: Game }) {
       ? 'before:bg-zinc-400'
       : null;
 
-  const teamAvatarClass = game.team.includes('B&G')
+  const norm = (s: string) =>
+    s.replace(/&amp;/gi, '&').normalize('NFKC').replace(/\s+/g, ' ').trim();
+
+  const name = norm(game.team);
+
+  const teamAvatarClass = /\bB\s*&\s*G\b/i.test(name)
     ? 'avatar--bandg'
     : 'avatar--soricha';
 

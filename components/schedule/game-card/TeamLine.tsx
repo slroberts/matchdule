@@ -18,8 +18,8 @@ export default function TeamLine({
     <div className='flex items-center gap-3 px-3 py-2.5 sm:px-4'>
       <div
         className={cn(
-          'grid size-8 place-items-center rounded-full text-lg font-black sm:size-10',
-          'avatar--opp',
+          'grid size-8 place-items-center rounded-full text-lg font-black sm:size-9',
+          'text-white avatar--opp',
           avatarClassName
         )}
         aria-hidden

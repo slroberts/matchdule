@@ -122,11 +122,11 @@
 }
 
 .avatar--bandg {
-  background: conic-gradient(from 0deg, #111 0%, #dc2626 70%);
+  background: conic-gradient(from 0deg, #111 0%, #dc2626 70%) !important;
 }
 .avatar--soricha {
-  background: conic-gradient(from 0deg, #1d4ed8 0%, #facc15 70%);
+  background: conic-gradient(from 0deg, #1d4ed8 0%, #facc15 70%) !important;
 }
 .avatar--opp {
-  background: conic-gradient(from 0deg, #1d4ed8 0%, #facc15 70%);
+  background: conic-gradient(from 0deg, #323131 0%, #807e7e 70%);
 }
