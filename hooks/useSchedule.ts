@@ -1,6 +1,6 @@
-import useSWR, { type KeyedMutator } from 'swr';
-import type { Game } from '@/types/schedule';
-import { fetchSchedule } from '@/lib/schedule';
+import useSWR, { type KeyedMutator } from "swr";
+import type { Game } from "@/types/schedule";
+import { fetchSchedule } from "@/lib/schedule";
 
 type UseSchedule = {
   data: Game[] | undefined;
@@ -15,13 +15,13 @@ type UseSchedule = {
 
 export function useSchedule(): UseSchedule {
   const { data, error, isValidating, mutate } = useSWR<Game[]>(
-    'schedule',
+    "schedule",
     fetchSchedule,
     {
       revalidateOnFocus: false,
       revalidateIfStale: true,
       revalidateOnReconnect: true,
-    }
+    },
   );
 
   return {

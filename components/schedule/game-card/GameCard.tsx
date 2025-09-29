@@ -2,11 +2,18 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { MapPin, Share2 } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Card, CardHeader, CardContent } from "../../ui/card";
 import { Game } from "@/types/schedule";
-import { HAChip, MapLink, StatusRibbon, TeamLine, TimeBadge } from ".";
+import {
+  HAChip,
+  MapLink,
+  ShareMenu,
+  StatusRibbon,
+  TeamLine,
+  TimeBadge,
+} from ".";
 
 export default function GameCard({ game }: { game: Game }) {
   const leftAccent =
@@ -94,14 +101,7 @@ export default function GameCard({ game }: { game: Game }) {
             </MapLink>
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full w-full sm:w-auto"
-          >
-            <Share2 className="h-4 w-4 mr-1" aria-hidden />
-            <span className="hidden xs:inline">Share</span>
-          </Button>
+          <ShareMenu game={game} className="rounded-full w-full sm:w-auto" />
 
           <Button
             variant="default"

@@ -49,7 +49,7 @@ export default function Header({
     >
       {/* Title row */}
       <div className="flex items-center justify-between py-3">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 mb-2">
           <div className="min-w-0 flex items-center gap-1">
             <span>
               <CalendarDays className="h-6 w-6 text-primary" aria-hidden />
