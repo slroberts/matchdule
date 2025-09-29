@@ -17,9 +17,19 @@ export default function ShareMenu({ game, className }: Props) {
   const [open, setOpen] = React.useState(false);
   const data = buildShareData(game);
 
-  const onClickShare = async () => {
+  const onClickShare = async (e: React.MouseEvent) => {
+    // stop PopoverTrigger from toggling
+    e.preventDefault();
+    e.stopPropagation();
+
     const usedWebShare = await tryWebShare(game);
-    if (!usedWebShare) setOpen(true);
+    if (usedWebShare) {
+      // native sheet shown — keep popover closed
+      setOpen(false);
+      return;
+    }
+    // show popover fallback
+    setOpen((v) => !v);
   };
 
   return (
