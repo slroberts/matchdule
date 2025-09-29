@@ -9,8 +9,8 @@ import {
   DaySection,
   EmptyState,
   LoadingList,
-} from '@/components/schedule';
-import type { Filters, TeamFilter, FilterScope } from '@/types/schedule';
+} from "@/components/schedule";
+import type { Filters, TeamFilter, FilterScope } from "@/types/schedule";
 import {
   useSchedule,
   useDefaultWeek,
@@ -33,7 +33,7 @@ export default function MatchduleWeekPage() {
     result: [],
     dayparts: [],
   });
-  const [scope, setScope] = useState<FilterScope>('week');
+  const [scope, setScope] = useState<FilterScope>("week");
 
   const pickDefaultWeek = useDefaultWeek();
   const weekOptions = useWeekOptions(data);
@@ -44,10 +44,10 @@ export default function MatchduleWeekPage() {
     teamFilter,
     matchTeam,
     filters,
-    'America/New_York',
-    scope
+    "America/New_York",
+    scope,
   );
-  const byDay = useDaysGrouping(weekGames, 'America/New_York');
+  const byDay = useDaysGrouping(weekGames, "America/New_York");
   const tightGapMessage = useTightGap(weekGames, 75);
 
   useEffect(() => {
@@ -57,11 +57,11 @@ export default function MatchduleWeekPage() {
     }
   }, [data, week, weekOptions, pickDefaultWeek]);
   useEffect(() => {
-    const saved = localStorage.getItem('matchdule:scope') as FilterScope | null;
-    if (saved === 'week' || saved === 'all') setScope(saved);
+    const saved = localStorage.getItem("matchdule:scope") as FilterScope | null;
+    if (saved === "week" || saved === "all") setScope(saved);
   }, []);
   useEffect(() => {
-    localStorage.setItem('matchdule:scope', scope);
+    localStorage.setItem("matchdule:scope", scope);
   }, [scope]);
 
   return (
@@ -84,8 +84,8 @@ export default function MatchduleWeekPage() {
         setScope={setScope}
       />
 
-      {loading || (scope === 'week' && week === null) ? (
-        <div className='mx-auto max-w-2xl px-4 py-6 text-sm text-muted-foreground'>
+      {loading || (scope === "week" && week === null) ? (
+        <div className="mx-auto max-w-2xl px-4 py-6 text-sm text-muted-foreground">
           <LoadingList />
         </div>
       ) : error ? (

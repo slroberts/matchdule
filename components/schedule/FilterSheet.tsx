@@ -37,9 +37,15 @@ export default function FilterSheet({
   onClear,
 }: FilterSheetProps) {
   // selection state
-  const [ha, setHA] = useState<Set<HomeAway>>(new Set());
-  const [res, setRes] = useState<Set<Result>>(new Set());
-  const [parts, setParts] = useState<Set<Daypart>>(new Set());
+  const [selectedHomeAway, setSelectedHomeAway] = useState<Set<HomeAway>>(
+    new Set()
+  );
+  const [selectedResults, setSelectedResults] = useState<Set<Result>>(
+    new Set()
+  );
+  const [selectedDayparts, setSelectedDayparts] = useState<Set<Daypart>>(
+    new Set()
+  );
 
   // helpers
   const toggle = <T,>(
@@ -59,22 +65,22 @@ export default function FilterSheet({
   const isSelected = <T,>(set: Set<T>, v: T) => set.has(v);
 
   // filter functions
-  const filterHomeAway = (v: HomeAway) => toggle(setHA, v);
-  const filterResults = (v: Result) => toggle(setRes, v);
-  const filterTime = (v: Daypart) => toggle(setParts, v);
+  const filterHomeAway = (v: HomeAway) => toggle(setSelectedHomeAway, v);
+  const filterResults = (v: Result) => toggle(setSelectedResults, v);
+  const filterTime = (v: Daypart) => toggle(setSelectedDayparts, v);
 
   const clearAll = () => {
-    setHA(new Set());
-    setRes(new Set());
-    setParts(new Set());
+    setSelectedHomeAway(new Set());
+    setSelectedResults(new Set());
+    setSelectedDayparts(new Set());
     onClear?.();
   };
 
   const applyAll = () => {
     onApply?.({
-      homeAway: Array.from(ha),
-      result: Array.from(res),
-      dayparts: Array.from(parts),
+      homeAway: Array.from(selectedHomeAway),
+      result: Array.from(selectedResults),
+      dayparts: Array.from(selectedDayparts),
     });
     onOpenChange(false);
   };
@@ -107,10 +113,14 @@ export default function FilterSheet({
                       <Badge
                         role='button'
                         aria-label={HOMEAWAY_LABELS[v]}
-                        aria-pressed={isSelected(ha, v)}
+                        aria-pressed={isSelected(selectedHomeAway, v)}
                         onClick={() => filterHomeAway(v)}
                         className='rounded-full cursor-pointer px-3 py-1 text-sm'
-                        variant={isSelected(ha, v) ? 'default' : 'secondary'}
+                        variant={
+                          isSelected(selectedHomeAway, v)
+                            ? 'default'
+                            : 'secondary'
+                        }
                         title={HOMEAWAY_LABELS[v]}
                       >
                         {HOMEAWAY_LABELS[v]}
@@ -127,10 +137,14 @@ export default function FilterSheet({
                       <Badge
                         role='button'
                         aria-label={RESULT_LABELS[v]}
-                        aria-pressed={isSelected(res, v)}
+                        aria-pressed={isSelected(selectedResults, v)}
                         onClick={() => filterResults(v)}
                         className='rounded-full cursor-pointer px-3 py-1 text-sm'
-                        variant={isSelected(res, v) ? 'default' : 'secondary'}
+                        variant={
+                          isSelected(selectedResults, v)
+                            ? 'default'
+                            : 'secondary'
+                        }
                         title={RESULT_LABELS[v]}
                       >
                         {RESULT_LABELS[v]}
@@ -146,10 +160,14 @@ export default function FilterSheet({
                     <li key={v} className='flex items-center gap-2'>
                       <Badge
                         role='button'
-                        aria-pressed={isSelected(parts, v)}
+                        aria-pressed={isSelected(selectedDayparts, v)}
                         onClick={() => filterTime(v)}
                         className='rounded-full cursor-pointer capitalize px-3 py-1 text-sm'
-                        variant={isSelected(parts, v) ? 'default' : 'secondary'}
+                        variant={
+                          isSelected(selectedDayparts, v)
+                            ? 'default'
+                            : 'secondary'
+                        }
                       >
                         {v}
                       </Badge>
