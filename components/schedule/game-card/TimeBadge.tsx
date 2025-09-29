@@ -1,4 +1,4 @@
-import { parseISOSafe, hourInTZ, fmtTime, fmtFull } from "@/lib/date";
+import { parseISOZoned, hourInTZ, fmtTime, fmtFull } from "@/lib/date";
 import { Clock, Sun, Sunset, Moon } from "lucide-react";
 
 type TimeBadgeProps = {
@@ -14,7 +14,8 @@ export default function TimeBadge({
   fallback = "TBD",
   soonMin = 90,
 }: TimeBadgeProps) {
-  const d = parseISOSafe(startISO);
+  const d = parseISOZoned(startISO, tz);
+
   if (!d) {
     return (
       <div className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ring-1 ring-border/60">
@@ -24,7 +25,7 @@ export default function TimeBadge({
     );
   }
 
-  // Consistent “daypart” using the same tz as display
+  // Daypart in the same tz you display
   const h = hourInTZ(d, tz);
   const { label: daypart, Icon } =
     h >= 5 && h <= 11
@@ -35,7 +36,7 @@ export default function TimeBadge({
       ? { label: "Evening", Icon: Moon }
       : { label: "—", Icon: Clock };
 
-  // Relative timing (epoch math is TZ-agnostic)
+  // Relative timing is TZ-agnostic (epoch math)
   const minsAway = Math.round((d.getTime() - Date.now()) / 60000);
   const soon = minsAway >= 0 && minsAway <= soonMin;
   const past = minsAway < 0;
