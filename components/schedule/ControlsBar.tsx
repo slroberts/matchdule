@@ -22,6 +22,7 @@ type Props = {
   setFiltersOpen: (v: boolean) => void;
   scope: FilterScope;
   setScope: (v: FilterScope) => void;
+  refreshing: boolean;
 };
 
 export default function ControlsBar({
@@ -35,6 +36,7 @@ export default function ControlsBar({
   setFiltersOpen,
   scope,
   setScope,
+  refreshing,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -49,6 +51,7 @@ export default function ControlsBar({
               setScope("week");
               if (!week) setWeek(weekOptions[0] ?? null);
             }}
+            disabled={refreshing}
           >
             <span className="sm:hidden">Wk</span>
             <span className="hidden sm:inline">This Week</span>
@@ -62,6 +65,7 @@ export default function ControlsBar({
               setScope("all");
               setWeek(null);
             }}
+            disabled={refreshing}
           >
             <span className="sm:hidden">All</span>
             <span className="hidden sm:inline">All Weeks</span>
@@ -73,6 +77,7 @@ export default function ControlsBar({
           className="ml-auto h-8 rounded-full px-2 sm:px-3 shrink-0"
           onClick={() => setFiltersOpen(true)}
           aria-label="Open filters"
+          disabled={refreshing}
         >
           <Filter className="h-4 w-4 me-0 sm:me-2" />
           <span className="hidden sm:inline">Filters</span>
@@ -88,6 +93,7 @@ export default function ControlsBar({
               variant="outline"
               className="h-8 w-full rounded-full px-2"
               aria-label="Select season"
+              disabled={refreshing}
             >
               <span className="truncate text-xs sm:text-sm">{season}</span>
               <ChevronDown className="ms-1 h-3.5 w-3.5 sm:ms-2 sm:h-4 sm:w-4" />
@@ -127,7 +133,7 @@ export default function ControlsBar({
                   ? "Disabled when viewing all weeks"
                   : "Select week"
               }
-              disabled={scope === "all" || !weekOptions.length}
+              disabled={scope === "all" || !weekOptions.length || refreshing}
             >
               <span className="truncate text-xs sm:text-sm">
                 {week ?? "Week"}
@@ -167,6 +173,7 @@ export default function ControlsBar({
               variant="outline"
               className="h-8 w-full rounded-full px-2"
               aria-label="Select team"
+              disabled={refreshing}
             >
               <span className="truncate text-xs sm:text-sm">{teamFilter}</span>
               <ChevronDown className="ms-1 h-3.5 w-3.5 sm:ms-2 sm:h-4 sm:w-4" />

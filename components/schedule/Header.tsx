@@ -21,6 +21,7 @@ interface HeaderProps {
   subtitle?: string;
   scope: FilterScope;
   setScope: (v: FilterScope) => void;
+  refreshing: boolean;
 }
 
 export default function Header({
@@ -38,6 +39,7 @@ export default function Header({
   subtitle = "— Know who plays when—always.",
   scope,
   setScope,
+  refreshing,
 }: HeaderProps) {
   return (
     <header
@@ -76,6 +78,7 @@ export default function Header({
           setFiltersOpen={setFiltersOpen}
           scope={scope}
           setScope={setScope}
+          refreshing={refreshing}
         />
       </div>
 
