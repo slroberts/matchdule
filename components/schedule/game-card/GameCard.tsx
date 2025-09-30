@@ -90,23 +90,27 @@ export default function GameCard({ game }: { game: Game }) {
         </div>
 
         <div className="mt-4 pt-3 grid grid-cols-3 gap-2 sm:flex sm:items-center">
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full w-full sm:w-auto"
-          >
-            <MapLink address={game.location || undefined}>
+          <MapLink address={game.location || undefined}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full w-full sm:w-auto cursor-pointer"
+            >
               <MapPin className="h-4 w-4 mr-1" aria-hidden />
               <span className="hidden xs:inline">Map</span>
-            </MapLink>
-          </Button>
+            </Button>
+          </MapLink>
 
-          <ShareMenu game={game} className="rounded-full w-full sm:w-auto" />
+          <ShareMenu
+            game={game}
+            className="rounded-full w-full sm:w-auto cursor-pointer"
+          />
 
           <Button
             variant="default"
             size="sm"
-            className="rounded-full w-full sm:w-auto sm:ml-auto focus-visible:ring-2"
+            className="rounded-full w-full sm:w-auto sm:ml-auto focus-visible:ring-2 bg-zinc-500 cursor-pointer"
+            disabled
           >
             Details
           </Button>

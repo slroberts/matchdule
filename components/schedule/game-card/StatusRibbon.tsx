@@ -12,10 +12,10 @@ export default function StatusRibbon({ game }: { game: Game }) {
 
   const tone =
     label === "LIVE"
-      ? "bg-emerald-600 text-white"
+      ? "bg-emerald-500 text-white"
       : label === "FINAL"
       ? "bg-muted-foreground/80 text-white dark:text-white"
-      : "bg-blue-900 text-white";
+      : "bg-orange-400 text-white";
 
   return (
     <span
