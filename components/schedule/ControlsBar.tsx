@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -9,8 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Filter, Check } from "lucide-react";
 import type { FilterScope, TeamFilter } from "@/types/schedule";
-import * as React from "react";
-import { useState } from "react";
 
 type Props = {
   season: string;
@@ -23,41 +22,52 @@ type Props = {
   setFiltersOpen: (v: boolean) => void;
   scope: FilterScope;
   setScope: (v: FilterScope) => void;
-  refreshing: boolean;
+  refreshing: boolean; // already passed from parent
 };
 
-export default function ControlsBar({
-  season,
-  setSeason,
-  week,
-  setWeek,
-  teamFilter,
-  setTeamFilter,
-  weekOptions,
-  setFiltersOpen,
-  scope,
-  setScope,
-  refreshing,
-}: Props) {
-  const [seasonOpen, setSeasonOpen] = useState(false);
-  const [weekOpen, setWeekOpen] = useState(false);
-  const [teamOpen, setTeamOpen] = useState(false);
+export default function ControlsBar(props: Props) {
+  const {
+    season,
+    setSeason,
+    week,
+    setWeek,
+    teamFilter,
+    setTeamFilter,
+    weekOptions,
+    setFiltersOpen,
+    scope,
+    setScope,
+    refreshing,
+  } = props;
 
-  const guardOpen =
-    (set: React.Dispatch<React.SetStateAction<boolean>>) => (next: boolean) => {
-      if (refreshing) return; // ignore open requests while refreshing
-      set(next);
-    };
+  // NEW: controlled open states
+  const [openSeason, setOpenSeason] = React.useState(false);
+  const [openWeek, setOpenWeek] = React.useState(false);
+  const [openTeams, setOpenTeams] = React.useState(false);
 
-  const stopIfRefreshing: React.PointerEventHandler<HTMLButtonElement> = (
-    e,
-  ) => {
-    if (refreshing) e.preventDefault(); // block press on trigger
+  // Close immediately on pull start
+  React.useEffect(() => {
+    if (refreshing) {
+      setOpenSeason(false);
+      setOpenWeek(false);
+      setOpenTeams(false);
+    }
+  }, [refreshing]);
+
+  // Utility to block opening while refreshing
+  const guardOpen = (setter: (v: boolean) => void) => (next: boolean) => {
+    if (refreshing) return; // ignore open attempts
+    setter(next);
+  };
+
+  // Optional: prevent pointer from toggling while refreshing
+  const guardPointer: React.MouseEventHandler = (e) => {
+    if (refreshing) e.preventDefault();
   };
 
   return (
     <div className="space-y-4">
-      {/* Row 1: scope + filters */}
+      {/* Row 1 */}
       <div className="flex items-center gap-2">
         <div className="inline-flex rounded-full border border-border/60 p-0.5 shrink-0">
           <Button
@@ -101,20 +111,17 @@ export default function ControlsBar({
         </Button>
       </div>
 
-      {/* Row 2: three equal columns */}
+      {/* Row 2 */}
       <div className="grid grid-cols-3 gap-2">
         {/* Season */}
-        <DropdownMenu
-          open={!refreshing && seasonOpen}
-          onOpenChange={guardOpen(setSeasonOpen)}
-        >
-          <DropdownMenuTrigger asChild>
+        <DropdownMenu open={openSeason} onOpenChange={guardOpen(setOpenSeason)}>
+          <DropdownMenuTrigger asChild onPointerDown={guardPointer}>
             <Button
               variant="outline"
               className="h-8 w-full rounded-full px-2"
               aria-label="Select season"
+              aria-expanded={openSeason}
               disabled={refreshing}
-              onPointerDown={stopIfRefreshing}
             >
               <span className="truncate text-xs sm:text-sm">{season}</span>
               <ChevronDown className="ms-1 h-3.5 w-3.5 sm:ms-2 sm:h-4 sm:w-4" />
@@ -143,22 +150,19 @@ export default function ControlsBar({
         </DropdownMenu>
 
         {/* Week */}
-        <DropdownMenu
-          open={!refreshing && weekOpen}
-          onOpenChange={guardOpen(setWeekOpen)}
-        >
-          <DropdownMenuTrigger asChild>
+        <DropdownMenu open={openWeek} onOpenChange={guardOpen(setOpenWeek)}>
+          <DropdownMenuTrigger asChild onPointerDown={guardPointer}>
             <Button
               variant="outline"
               className="h-8 w-full rounded-full px-2 justify-between"
               aria-label="Select week"
+              aria-expanded={openWeek}
               title={
                 scope === "all"
                   ? "Disabled when viewing all weeks"
                   : "Select week"
               }
               disabled={scope === "all" || !weekOptions.length || refreshing}
-              onPointerDown={stopIfRefreshing}
             >
               <span className="truncate text-xs sm:text-sm">
                 {week ?? "Week"}
@@ -192,17 +196,14 @@ export default function ControlsBar({
         </DropdownMenu>
 
         {/* Teams */}
-        <DropdownMenu
-          open={!refreshing && teamOpen}
-          onOpenChange={guardOpen(setTeamOpen)}
-        >
-          <DropdownMenuTrigger asChild>
+        <DropdownMenu open={openTeams} onOpenChange={guardOpen(setOpenTeams)}>
+          <DropdownMenuTrigger asChild onPointerDown={guardPointer}>
             <Button
               variant="outline"
               className="h-8 w-full rounded-full px-2"
               aria-label="Select team"
+              aria-expanded={openTeams}
               disabled={refreshing}
-              onPointerDown={stopIfRefreshing}
             >
               <span className="truncate text-xs sm:text-sm">{teamFilter}</span>
               <ChevronDown className="ms-1 h-3.5 w-3.5 sm:ms-2 sm:h-4 sm:w-4" />

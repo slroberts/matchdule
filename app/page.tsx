@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Info, AlertTriangle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
@@ -22,6 +22,8 @@ import {
   useTightGap,
 } from "@/hooks";
 
+const TZ = "America/New_York";
+
 export default function MatchduleWeekPage() {
   const { data, loading, error, refetch } = useSchedule();
   const [refreshing, setRefreshing] = useState(false);
@@ -35,45 +37,59 @@ export default function MatchduleWeekPage() {
     result: [],
     dayparts: [],
   });
-  const [scope, setScope] = useState<FilterScope>("week");
+
+  // scope from localStorage (lazy init) + single writer effect
+  const [scope, setScope] = useState<FilterScope>(() => {
+    if (typeof window === "undefined") return "week";
+    const saved = localStorage.getItem("matchdule:scope") as FilterScope | null;
+    return saved === "week" || saved === "all" ? saved : "week";
+  });
+  useEffect(() => {
+    localStorage.setItem("matchdule:scope", scope);
+  }, [scope]);
 
   const pickDefaultWeek = useDefaultWeek();
   const weekOptions = useWeekOptions(data);
   const { matchTeam } = useTeamMatcher();
+
   const weekGames = useWeekGames(
     data,
     week,
     teamFilter,
     matchTeam,
     filters,
-    "America/New_York",
+    TZ,
     scope,
   );
-  const byDay = useDaysGrouping(weekGames, "America/New_York");
+  const byDay = useDaysGrouping(weekGames, TZ);
   const tightGapMessage = useTightGap(weekGames, 75);
 
-  async function handleRefresh() {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await refetch();
     } finally {
       setRefreshing(false);
     }
-  }
+  }, [refetch]);
 
+  // Auto-pick first/Default week once data arrives
   useEffect(() => {
     if (week === null && data?.length) {
       const chosen = pickDefaultWeek(data);
       setWeek(chosen ?? weekOptions[0] ?? null);
     }
   }, [data, week, weekOptions, pickDefaultWeek]);
+
+  // Close open menus when refreshing starts
   useEffect(() => {
-    const saved = localStorage.getItem("matchdule:scope") as FilterScope | null;
-    if (saved === "week" || saved === "all") setScope(saved);
-  }, []);
-  useEffect(() => {
-    localStorage.setItem("matchdule:scope", scope);
-  }, [scope]);
+    if (refreshing) setFiltersOpen(false);
+  }, [refreshing]);
+
+  const clearFilters = useCallback(
+    () => setFilters({ homeAway: [], result: [], dayparts: [] }),
+    [],
+  );
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
@@ -88,10 +104,8 @@ export default function MatchduleWeekPage() {
           weekOptions={weekOptions}
           filtersOpen={filtersOpen}
           setFiltersOpen={setFiltersOpen}
-          onApplyFilters={(f) => setFilters(f)}
-          onClearFilters={() =>
-            setFilters({ homeAway: [], result: [], dayparts: [] })
-          }
+          onApplyFilters={setFilters}
+          onClearFilters={clearFilters}
           scope={scope}
           setScope={setScope}
           refreshing={refreshing}
@@ -129,6 +143,7 @@ export default function MatchduleWeekPage() {
           </div>
         )}
       </div>
+
       {refreshing && (
         <div className="fixed inset-0 z-40 bg-transparent pointer-events-none" />
       )}
