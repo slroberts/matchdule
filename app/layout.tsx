@@ -17,6 +17,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Matchdule",
   description: "Know who plays when—always.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Matchdule",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({
