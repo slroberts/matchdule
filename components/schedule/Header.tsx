@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
-import { CalendarDays } from "lucide-react";
-import { cn } from "@/lib/utils";
-import ControlsBar from "./ControlsBar";
-import { Filters, FilterScope, TeamFilter } from "@/types/schedule";
-import { FilterSheet } from ".";
+import { cn } from '@/lib/utils';
+import ControlsBar from './ControlsBar';
+import { Filters, FilterScope, TeamFilter } from '@/types/schedule';
+import { FilterSheet } from '.';
+import MatchduleSymbol from '@/public/matchdule-symbol.svg';
+import MatchduleWord from '@/public/matchdule-wordmark.svg';
+import Image from 'next/image';
 
 interface HeaderProps {
   season: string;
@@ -36,37 +38,39 @@ export default function Header({
   setFiltersOpen,
   onApplyFilters,
   onClearFilters,
-  subtitle = "— Know who plays when—always.",
   scope,
   setScope,
   refreshing,
 }: HeaderProps) {
   return (
     <header
-      role="banner"
+      role='banner'
       className={cn(
-        "sticky top-0 z-40 -mx-4 px-4",
-        "bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75",
+        'sticky top-0 z-40 -mx-4 px-4',
+        'bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75'
       )}
     >
       {/* Title row */}
-      <div className="flex items-center justify-between py-3">
-        <div className="flex min-w-0 mb-2">
-          <div className="min-w-0 flex items-center gap-1">
-            <span>
-              <CalendarDays className="h-6 w-6 text-primary" aria-hidden />
-            </span>
-            <h1 className="truncate text-xl sm:text-xl font-bold tracking-tight">
-              Matchdule
-            </h1>
-            <p className="mt-0.5 truncate text-sm text-muted-foreground">
-              {subtitle}
-            </p>
-          </div>
+      <div className='flex items-center justify-between py-3'>
+        <div className='w-full flex flex-col items-center'>
+          <h1 className='w-full flex justify-center gap-1'>
+            <Image
+              src={MatchduleSymbol}
+              height={30}
+              width={32}
+              alt='Matchdule Logo Symbol'
+            />
+            <Image
+              src={MatchduleWord}
+              height={150}
+              width={190}
+              alt='Matchdule Logo Wordmark'
+            />
+          </h1>
         </div>
       </div>
       {/* Controls row */}
-      <div className="pb-3">
+      <div className='pb-3'>
         <ControlsBar
           season={season}
           setSeason={setSeason}
