@@ -1,4 +1,4 @@
-export type TeamFilter = "All Teams" | "B&G 2017" | "B&G 2015" | "Soricha 2014";
+export type TeamFilter = "All Teams" | "B&G 2017" | "Soricha 2014";
 export type Game = {
   id: string;
   week: string | null;

@@ -12,6 +12,7 @@ import { ChevronDown, Filter, Check } from "lucide-react";
 import type { FilterScope, TeamFilter } from "@/types/schedule";
 
 type Props = {
+  teams: string[];
   season: string;
   setSeason: (v: string) => void;
   week: string | null;
@@ -27,6 +28,7 @@ type Props = {
 
 export default function ControlsBar(props: Props) {
   const {
+    teams,
     season,
     setSeason,
     week,
@@ -216,20 +218,28 @@ export default function ControlsBar(props: Props) {
           >
             <DropdownMenuLabel>Teams</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {(
-              ["All Teams", "B&G 2017", "B&G 2015", "Soricha 2014"] as const
-            ).map((t) => (
-              <DropdownMenuItem
-                key={t}
-                onSelect={() => setTeamFilter(t)}
-                className="pr-8"
-              >
-                {t}
-                {t === teamFilter && (
-                  <Check className="ml-auto h-4 w-4 opacity-80" />
-                )}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuItem
+              onSelect={() => setTeamFilter("All Teams")}
+              className="pr-8"
+            >
+              {"All Teams"}
+              {"All Teams" === teamFilter && (
+                <Check className="ml-auto h-4 w-4 opacity-80" />
+              )}
+            </DropdownMenuItem>
+            {teams &&
+              teams.map((t) => (
+                <DropdownMenuItem
+                  key={t}
+                  onSelect={() => setTeamFilter(t as TeamFilter)}
+                  className="pr-8"
+                >
+                  {t}
+                  {t === teamFilter && (
+                    <Check className="ml-auto h-4 w-4 opacity-80" />
+                  )}
+                </DropdownMenuItem>
+              ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

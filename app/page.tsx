@@ -27,7 +27,7 @@ const TZ = "America/New_York";
 export default function MatchduleWeekPage() {
   const { data, loading, error, refetch } = useSchedule();
   const [refreshing, setRefreshing] = useState(false);
-
+  const teams = data && [...new Set(data.map((g) => g.team).sort())];
   const [season, setSeason] = useState("Fall 2025");
   const [week, setWeek] = useState<string | null>(null);
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("All Teams");
@@ -95,6 +95,7 @@ export default function MatchduleWeekPage() {
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="mx-auto max-w-xl -mt-8 px-4 py-5 md:py-6 space-y-4">
         <Header
+          teams={teams || []}
           season={season}
           setSeason={setSeason}
           week={week}
