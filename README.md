@@ -5,7 +5,7 @@
 > See all your kids’ games in one place: conflict alerts, map/ETA, quick results, and clean weekly views.
 
 - **Live:** coming soon
-- **Stack:** Next.js (App Router) · React · TypeScript · Tailwind CSS · shadcn/ui · Radix · Lucide
+- **Stack:** Next.js · React · TypeScript · Tailwind CSS · shadcn/ui · Radix · Lucide
 
 ---
 
