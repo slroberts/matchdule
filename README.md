@@ -1,4 +1,4 @@
-# Matchdule — Family Soccer Schedules, Zero-Stress ⚽️
+# Matchdule — Know who plays when—always ⚽️
 
 ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue) ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC) ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-New%20York-000) ![Lucide](https://img.shields.io/badge/Lucide-Icons-111)
 
