@@ -1,26 +1,25 @@
-import { useMemo } from 'react';
-import type { TeamFilter } from '@/types/schedule';
+import { useMemo, useCallback } from "react";
+import type { TeamFilter } from "@/types/schedule";
 
-const TEAM_FILTERS: TeamFilter[] = ['All Teams', 'B&G 2017', 'Soricha 2014'];
+type WithTeam = { team?: string | null };
 
-export function useTeamMatcher() {
-  return useMemo(() => {
-    const rx = {
-      'B&G 2017': /\bB&G\s*2017\b/i,
-      'Soricha 2014': /\bSoricha\s*2014\b/i,
-    } as const;
+export function useTeamMatcher(games?: WithTeam[]) {
+  // Build options from data (optional)
+  const TEAM_FILTERS: TeamFilter[] = useMemo(() => {
+    if (!games) return ["All Teams"];
+    const uniq = new Set<string>();
+    for (const g of games) if (g?.team) uniq.add(g.team);
+    return ["All Teams", ...[...uniq].sort()];
+  }, [games]);
 
-    const map: Record<TeamFilter, (name: string) => boolean> = {
-      'All Teams': () => true,
-      'B&G 2017': (s) => rx['B&G 2017'].test(s),
-      'Soricha 2014': (s) => rx['Soricha 2014'].test(s),
-    };
+  // Case-insensitive exact match
+  const matchTeam = useCallback(
+    (filter: TeamFilter, name?: string | null) =>
+      filter === "All Teams"
+        ? true
+        : (name ?? "").toLowerCase() === filter.toLowerCase(),
+    [],
+  );
 
-    const matchTeam = (filter: TeamFilter, teamName: string) =>
-      map[filter](teamName ?? '');
-
-    return { map, matchTeam, TEAM_FILTERS };
-  }, []);
+  return { TEAM_FILTERS, matchTeam };
 }
-
-export { TEAM_FILTERS };
