@@ -1,10 +1,11 @@
-import { useDefaultWeek } from "./useDefaultWeek";
-import { useSchedule } from "./useSchedule";
-import { useTeamMatcher } from "./useTeamMatcher";
-import { useWeekGames } from "./useWeekGames";
-import { useWeekOptions } from "./useWeekOptions";
-import { useDaysGrouping } from "./useDaysGrouping";
-import { useTightGap } from "./useTightGap";
+import { useDefaultWeek } from './useDefaultWeek';
+import { useSchedule } from './useSchedule';
+import { useTeamMatcher } from './useTeamMatcher';
+import { useWeekGames } from './useWeekGames';
+import { useWeekOptions } from './useWeekOptions';
+import { useDaysGrouping } from './useDaysGrouping';
+import { useGameTiming } from './useGameTiming';
+
 export {
   useDefaultWeek,
   useSchedule,
@@ -12,5 +13,5 @@ export {
   useWeekGames,
   useWeekOptions,
   useDaysGrouping,
-  useTightGap,
+  useGameTiming,
 };

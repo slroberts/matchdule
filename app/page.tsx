@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import { Info, AlertTriangle } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { AlertTriangle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 import {
   Header,
@@ -10,8 +10,8 @@ import {
   EmptyState,
   LoadingList,
   PullToRefresh,
-} from "@/components/schedule";
-import type { Filters, TeamFilter, FilterScope } from "@/types/schedule";
+} from '@/components/schedule';
+import type { Filters, TeamFilter, FilterScope } from '@/types/schedule';
 import {
   useSchedule,
   useDefaultWeek,
@@ -19,18 +19,18 @@ import {
   useTeamMatcher,
   useWeekGames,
   useDaysGrouping,
-  useTightGap,
-} from "@/hooks";
+  useGameTiming,
+} from '@/hooks';
+import { formatGamesRange } from '@/lib/utils';
 
-const TZ = "America/New_York";
+const TZ = 'America/New_York';
 
 export default function MatchduleWeekPage() {
   const { data, loading, error, refetch } = useSchedule();
   const [refreshing, setRefreshing] = useState(false);
-  const teams = data && [...new Set(data.map((g) => g.team).sort())];
-  const [season, setSeason] = useState("Fall 2025");
+
   const [week, setWeek] = useState<string | null>(null);
-  const [teamFilter, setTeamFilter] = useState<TeamFilter>("All Teams");
+  const [teamFilter, setTeamFilter] = useState<TeamFilter>('All Teams');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     homeAway: [],
@@ -40,15 +40,16 @@ export default function MatchduleWeekPage() {
 
   // scope from localStorage (lazy init) + single writer effect
   const [scope, setScope] = useState<FilterScope>(() => {
-    if (typeof window === "undefined") return "week";
-    const saved = localStorage.getItem("matchdule:scope") as FilterScope | null;
-    return saved === "week" || saved === "all" ? saved : "week";
+    if (typeof window === 'undefined') return 'week';
+    const stored = localStorage.getItem('matchdule:scope');
+    return stored === 'week' || stored === 'all' ? stored : 'week';
   });
+
   useEffect(() => {
-    localStorage.setItem("matchdule:scope", scope);
+    localStorage.setItem('matchdule:scope', scope);
   }, [scope]);
 
-  const pickDefaultWeek = useDefaultWeek();
+  const getDefaultWeek = useDefaultWeek();
   const weekOptions = useWeekOptions(data);
   const { matchTeam } = useTeamMatcher();
 
@@ -59,10 +60,26 @@ export default function MatchduleWeekPage() {
     matchTeam,
     filters,
     TZ,
-    scope,
+    scope
   );
   const byDay = useDaysGrouping(weekGames, TZ);
-  const tightGapMessage = useTightGap(weekGames, 75);
+  const rangeLabel = useMemo(
+    () => formatGamesRange(weekGames, TZ, 'en-US'),
+    [weekGames]
+  );
+  const { conflicts, tightGaps, firstTightGapLabel } = useGameTiming(
+    weekGames,
+    {
+      tz: TZ,
+      durationMinutes: 90,
+      tightGapThresholdMin: 75,
+    }
+  );
+
+  const defaultWeek = useMemo(() => {
+    if (!data?.length) return '';
+    return getDefaultWeek(data) ?? '';
+  }, [data, getDefaultWeek]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -75,11 +92,10 @@ export default function MatchduleWeekPage() {
 
   // Auto-pick first/Default week once data arrives
   useEffect(() => {
-    if (week === null && data?.length) {
-      const chosen = pickDefaultWeek(data);
-      setWeek(chosen ?? weekOptions[0] ?? null);
+    if (week === null && defaultWeek) {
+      setWeek(defaultWeek);
     }
-  }, [data, week, weekOptions, pickDefaultWeek]);
+  }, [week, defaultWeek]);
 
   // Close open menus when refreshing starts
   useEffect(() => {
@@ -88,47 +104,61 @@ export default function MatchduleWeekPage() {
 
   const clearFilters = useCallback(
     () => setFilters({ homeAway: [], result: [], dayparts: [] }),
-    [],
+    []
   );
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="mx-auto max-w-xl -mt-8 px-4 py-5 md:py-6 space-y-4">
+      <div className='max-w-screen-sm mx-auto -mt-8 px-4 py-5 md:py-6 space-y-4'>
         <Header
-          teams={teams || []}
-          season={season}
-          setSeason={setSeason}
+          conflicts={conflicts}
+          tightGaps={tightGaps}
+          rangeLabel={rangeLabel}
+          defaultWeek={defaultWeek}
           week={week}
           setWeek={setWeek}
-          teamFilter={teamFilter}
-          setTeamFilter={setTeamFilter}
           weekOptions={weekOptions}
           filtersOpen={filtersOpen}
           setFiltersOpen={setFiltersOpen}
           onApplyFilters={setFilters}
           onClearFilters={clearFilters}
-          scope={scope}
-          setScope={setScope}
           refreshing={refreshing}
         />
 
-        {loading || (scope === "week" && week === null) ? (
-          <div className="mx-auto max-w-2xl px-4 py-6 text-sm text-muted-foreground">
+        {loading || (scope === 'week' && week === null) ? (
+          <div className='mx-auto max-w-2xl px-4 py-6 text-sm text-muted-foreground'>
             <LoadingList />
           </div>
         ) : error ? (
-          <div className="text-sm text-red-600">Error: {error}</div>
+          <div className='text-sm text-red-600'>
+            Error: {typeof error === 'string' ? error : 'Something went wrong'}
+          </div>
         ) : byDay.length === 0 ? (
           <EmptyState />
         ) : (
           <div>
-            {!!tightGapMessage && (
-              <Alert variant="destructive" className="rounded-2xl">
-                <AlertTriangle className="h-4 w-4" />
+            {(conflicts.length > 0 || tightGaps.length > 0) && (
+              <Alert
+                variant='destructive'
+                className='rounded-2xl'
+                aria-live='polite'
+              >
+                <AlertTriangle className='h-4 w-4' />
                 <AlertTitle>Heads up</AlertTitle>
-                <AlertDescription>
-                  Tight gap this week:{" "}
-                  <span className="font-medium">{tightGapMessage}</span>
+                <AlertDescription className='space-y-1'>
+                  {conflicts.length > 0 && (
+                    <div>
+                      <span className='font-medium'>{conflicts.length}</span>{' '}
+                      conflict{conflicts.length > 1 ? 's' : ''}
+                    </div>
+                  )}
+                  {tightGaps.length > 0 && (
+                    <div>
+                      <span className='font-medium'>{tightGaps.length}</span>{' '}
+                      tight gap{tightGaps.length > 1 ? 's' : ''}
+                      {firstTightGapLabel ? ` — ${firstTightGapLabel}` : null}
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
@@ -136,17 +166,12 @@ export default function MatchduleWeekPage() {
             {byDay.map(([label, games]) => (
               <DaySection key={label} dateLabel={label} games={games} />
             ))}
-
-            <div className="mt-4 text-xs text-muted-foreground flex items-center gap-2">
-              <Info className="h-4 w-4" /> Tap a card for details, maps, and
-              sharing.
-            </div>
           </div>
         )}
       </div>
 
       {refreshing && (
-        <div className="fixed inset-0 z-40 bg-transparent pointer-events-none" />
+        <div className='fixed inset-0 z-40 bg-transparent pointer-events-none' />
       )}
     </PullToRefresh>
   );

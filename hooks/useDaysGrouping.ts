@@ -1,13 +1,12 @@
-// hooks/useDaysGrouping.ts
-import { useMemo } from "react";
-import type { Game } from "@/types/schedule";
+import { useMemo } from 'react';
+import type { Game } from '@/types/schedule';
 
 type GroupedDays = Array<[label: string, games: Game[]]>;
 
 export function useDaysGrouping(
   weekGames: Game[] | null | undefined,
   tz: string,
-  locale = "en-US",
+  locale = 'en-US'
 ): GroupedDays {
   return useMemo(() => {
     if (!weekGames?.length) return [];
@@ -18,12 +17,12 @@ export function useDaysGrouping(
       const d = new Date(g.dateISO);
       const label =
         `${d.toLocaleDateString(locale, {
-          weekday: "short",
+          weekday: 'short',
           timeZone: tz,
         })} • ` +
         `${d.toLocaleDateString(locale, {
-          month: "short",
-          day: "numeric",
+          month: 'short',
+          day: 'numeric',
           timeZone: tz,
         })}`;
 
