@@ -1,5 +1,5 @@
-import { hourInTZ, fmtTime, fmtFull, parseISOZoned } from "@/lib/date";
-import { Clock, Sun, Sunset, Moon } from "lucide-react";
+import { hourInTZ, fmtTime, fmtFull, parseISOZoned } from '@/lib/date';
+import { Clock, Sun, Sunset, Moon } from 'lucide-react';
 
 type TimeBadgeProps = {
   startISO?: string | null;
@@ -10,17 +10,17 @@ type TimeBadgeProps = {
 
 export default function TimeBadge({
   startISO,
-  tz = "America/New_York",
-  fallback = "TBD",
+  tz = 'America/New_York',
+  fallback = 'TBD',
   soonMin = 90,
 }: TimeBadgeProps) {
   const d = parseISOZoned(startISO, tz);
 
   if (!d) {
     return (
-      <div className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ring-1 ring-border/60">
-        <Clock className="h-3.5 w-3.5" aria-hidden />
-        <span className="text-sm font-semibold tracking-tight">{fallback}</span>
+      <div className='inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ring-1 ring-border/60'>
+        <Clock className='h-3.5 w-3.5' aria-hidden />
+        <span className='text-sm font-semibold tracking-tight'>{fallback}</span>
       </div>
     );
   }
@@ -29,12 +29,12 @@ export default function TimeBadge({
   const h = hourInTZ(d, tz);
   const { label: daypart, Icon } =
     h >= 5 && h <= 11
-      ? { label: "Morning", Icon: Sun }
+      ? { label: 'Morning', Icon: Sun }
       : h >= 12 && h <= 16
-      ? { label: "Afternoon", Icon: Sunset }
+      ? { label: 'Afternoon', Icon: Sunset }
       : h >= 17 && h <= 22
-      ? { label: "Evening", Icon: Moon }
-      : { label: "—", Icon: Clock };
+      ? { label: 'Evening', Icon: Moon }
+      : { label: '—', Icon: Clock };
 
   // Relative timing is TZ-agnostic (epoch math)
   const minsAway = Math.round((d.getTime() - Date.now()) / 60000);
@@ -43,19 +43,19 @@ export default function TimeBadge({
   const live = minsAway <= 0 && minsAway > -120;
 
   const tone = live
-    ? "bg-emerald-500/10 ring-emerald-500/50 text-emerald-700 dark:text-emerald-300"
+    ? 'bg-emerald-500/10 ring-emerald-500/50 text-emerald-700 dark:text-emerald-300'
     : soon
-    ? "bg-amber-500/10 ring-amber-500/50 text-amber-700 dark:text-amber-300"
+    ? 'bg-amber-500/10 ring-amber-500/50 text-amber-700 dark:text-amber-300'
     : past
-    ? "opacity-70"
-    : "";
+    ? 'opacity-70'
+    : '';
 
   const label = live
-    ? "Live"
+    ? 'Live'
     : soon
     ? `Starts in ${Math.floor(minsAway / 60)}h ${Math.abs(
-        minsAway % 60,
-      )}m`.replace(/^0h /, "")
+        minsAway % 60
+      )}m`.replace(/^0h /, '')
     : daypart;
 
   const human = fmtTime(d, tz);
@@ -63,20 +63,18 @@ export default function TimeBadge({
 
   return (
     <div
-      className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ring-1 ring-border/60 ${tone}`}
+      className={`inline-flex items-center gap-1.5 rounded-md ${tone}`}
       title={full}
       aria-label={`${label}: ${full}`}
     >
-      <Icon className="h-3.5 w-3.5" aria-hidden />
+      <Icon className='h-3.5 w-3.5' aria-hidden />
       <time
         dateTime={startISO ?? undefined}
-        className="text-sm font-semibold tabular-nums tracking-tight"
+        className='text-sm font-semibold tabular-nums tracking-tight'
       >
         {human}
       </time>
-      <span className="inline text-xs font-medium text-foreground/60">
-        • {label}
-      </span>
+      <span className='inline text-xs font-medium text-[#64748B]'>{label}</span>
     </div>
   );
 }

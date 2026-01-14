@@ -1,4 +1,3 @@
-import DaySection from './DaySection';
 import LoadingList from './LoadingList';
 import EmptyState from './EmptyState';
 import Header from './Header';
@@ -11,7 +10,6 @@ export {
   StatusRibbon,
   TeamLine,
   GameCard,
-  DaySection,
   LoadingList,
   EmptyState,
   Header,

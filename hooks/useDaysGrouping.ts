@@ -19,7 +19,7 @@ export function useDaysGrouping(
         `${d.toLocaleDateString(locale, {
           weekday: 'short',
           timeZone: tz,
-        })} • ` +
+        })}, ` +
         `${d.toLocaleDateString(locale, {
           month: 'short',
           day: 'numeric',

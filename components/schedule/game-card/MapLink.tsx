@@ -4,18 +4,21 @@ import {
   mapAndroidIntent,
   mapIosDeepLink,
   mapAppleUrl,
-} from "@/lib/maps";
+} from '@/lib/maps';
+import { cn } from '@/lib/utils';
 
 export default function MapLink({
   address,
   lat,
   lng,
   children,
+  className,
 }: {
   address?: string;
   lat?: number;
   lng?: number;
   children?: React.ReactNode;
+  className?: string;
 }) {
   const { isAndroid, isIOS } = getPlatform();
   const web = mapWebUrl({ address, lat, lng });
@@ -32,13 +35,19 @@ export default function MapLink({
     const deep = mapIosDeepLink({ address, lat, lng });
     if (!deep) return;
     e.preventDefault();
-    const t = setTimeout(() => window.open(web, "_blank", "noopener"), 350);
+    const t = setTimeout(() => window.open(web, '_blank', 'noopener'), 350);
     window.location.href = deep;
     setTimeout(() => clearTimeout(t), 1500);
   };
 
   return (
-    <a href={href} onClick={onClick} target="_blank" rel="noopener noreferrer">
+    <a
+      href={href}
+      onClick={onClick}
+      target='_blank'
+      rel='noopener noreferrer'
+      className={cn('flex items-center gap-2', className)}
+    >
       {children}
     </a>
   );

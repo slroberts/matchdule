@@ -1,121 +1,106 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
-import { MapPin } from "lucide-react";
-import { Button } from "../../ui/button";
-import { Card, CardHeader, CardContent } from "../../ui/card";
-import { Game } from "@/types/schedule";
-import {
-  HAChip,
-  MapLink,
-  ShareMenu,
-  StatusRibbon,
-  TeamLine,
-  TimeBadge,
-} from ".";
+import { cn } from '@/lib/utils';
+import { Calendar, Equal, MapPin, Trophy } from 'lucide-react';
+import { Button } from '../../ui/button';
+import { Card, CardHeader, CardContent, CardFooter } from '../../ui/card';
+import { Game } from '@/types/schedule';
+import { MapLink, ShareMenu, TeamLine, TimeBadge } from '.';
 
-export default function GameCard({ game }: { game: Game }) {
-  const leftAccent =
-    game.result === "W"
-      ? "before:bg-emerald-500"
-      : game.result === "L"
-      ? "before:bg-rose-500"
-      : game.result === "D"
-      ? "before:bg-zinc-400"
-      : null;
-
+export default function GameCard({
+  game,
+  label,
+}: {
+  game: Game;
+  label: string;
+}) {
   const norm = (s: string) =>
-    s.replace(/&amp;/gi, "&").normalize("NFKC").replace(/\s+/g, " ").trim();
+    s.replace(/&amp;/gi, '&').normalize('NFKC').replace(/\s+/g, ' ').trim();
 
   const name = norm(game.team);
 
   const teamAvatarClass = /\bB\s*&\s*G\b/i.test(name)
-    ? "avatar--bandg"
-    : "avatar--soricha";
+    ? 'avatar--bandg'
+    : 'avatar--soricha';
 
   const bothScored =
-    typeof game.scoreFor === "number" && typeof game.scoreAgainst === "number";
+    typeof game.scoreFor === 'number' && typeof game.scoreAgainst === 'number';
 
   const dimFor = bothScored ? game.scoreFor! < game.scoreAgainst! : false;
   const dimAgainst = bothScored ? game.scoreAgainst! < game.scoreFor! : false;
-
   return (
-    <Card
-      className={cn(
-        "relative overflow-hidden rounded-xl border border-muted/40 transition-all",
-        "hover:shadow-md focus-within:shadow-md",
-        'before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-[""]',
-        leftAccent,
-      )}
-    >
-      <div className="absolute right-0 top-0">
-        <StatusRibbon game={game} />
-      </div>
+    <Card>
+      <CardHeader>
+        <div className='flex flex-nowrap max-[596px]:flex-wrap items-center gap-x-3 gap-y-2'>
+          <div className='flex items-center gap-2 font-medium tracking-tight'>
+            <Calendar className='h-4 w-4' aria-hidden />
+            {label}
+          </div>
 
-      <CardHeader className="pt-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <TimeBadge startISO={game.startISO} tz="America/New_York" />
+          <span className='text-[#E2E8F0]'>|</span>
 
-          <MapLink address={game.location || undefined}>
-            <div className="inline-flex min-w-0 max-w-[80vw] items-center gap-1.5 rounded-full bg-background/70 px-3 py-1.5 ring-1 ring-border/60 sm:max-w-[46ch]">
-              <MapPin className="h-4 w-4 shrink-0" aria-hidden />
-              <span
-                className="truncate text-sm font-medium"
-                title={game.location || undefined}
-              >
-                {game.location || "Location TBD"}
-              </span>
-              <span className="mx-1 h-4 w-px bg-border/60" aria-hidden />
-              <HAChip value={game.homeAway} />
-            </div>
-          </MapLink>
+          <TimeBadge startISO={game.startISO} tz='America/New_York' />
+
+          {/* hide this one on small screens */}
+          <span className='text-[#E2E8F0] max-[596px]:hidden'>|</span>
+
+          {/* force this block onto the next line under 540px */}
+          <div className='flex items-center gap-2 min-w-0 max-[596px]:basis-full'>
+            <MapPin className='h-4 w-4 shrink-0' aria-hidden />
+            <span className='min-w-0 break-words'>
+              {game.location || 'Location TBD'}
+            </span>
+          </div>
         </div>
+
+        {game.result === 'W' ? (
+          <div className='bg-[#00BC7D] rounded-full w-10 h-10 shrink-0 flex items-center justify-center'>
+            <Trophy className='h-5 w-5 text-white' aria-hidden />
+          </div>
+        ) : game.result === 'L' ? (
+          <div className='bg-[#E92C2C] rounded-full w-10 h-10 shrink-0 flex items-center justify-center'>
+            <Trophy className='h-5 w-5 rotate-[30deg] text-white' aria-hidden />
+          </div>
+        ) : game.result === 'D' ? (
+          <div className='bg-[#808080] rounded-full w-10 h-10 shrink-0 flex items-center justify-center'>
+            <Equal className='h-5 w-5 text-white' aria-hidden />
+          </div>
+        ) : null}
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <div className="rounded-lg border border-border/60 bg-card/40">
-          <TeamLine
-            name={game.team}
-            score={bothScored ? game.scoreFor : null}
-            dimScore={dimFor}
-            avatarClassName={teamAvatarClass}
-          />
-          <div className="h-px w-full bg-border/70" />
-          <TeamLine
-            name={game.opponent}
-            score={bothScored ? game.scoreAgainst : null}
-            dimScore={dimAgainst}
-          />
+      <CardContent>
+        <TeamLine
+          name={game.team}
+          score={bothScored ? game.scoreFor : null}
+          dimScore={dimFor}
+          avatarClassName={teamAvatarClass}
+        />
+        <div className={cn('flex items-center gap-2')}>
+          <div className='h-px w-1/2 bg-[#E2E8F0]' />
+          <span className='text-[10px] font-black tracking-widest text-[#64748B]/50'>
+            VS
+          </span>
+          <div className='h-px w-1/2 bg-[#E2E8F0]' />
         </div>
-
-        <div className="mt-4 pt-3 grid grid-cols-3 gap-2 sm:flex sm:items-center">
+        <TeamLine
+          name={game.opponent}
+          score={bothScored ? game.scoreAgainst : null}
+          dimScore={dimAgainst}
+        />
+      </CardContent>
+      <CardFooter>
+        <div className='w-1/2'>
+          <ShareMenu game={game} />
+        </div>
+        <div className='w-1/2'>
           <MapLink address={game.location || undefined}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full w-full sm:w-auto cursor-pointer"
-            >
-              <MapPin className="h-4 w-4 mr-1" aria-hidden />
-              <span className="hidden xs:inline">Map</span>
+            <Button variant='outline' size='lg'>
+              <MapPin className='h-4 w-4' aria-hidden />
+              <span>Directions</span>
             </Button>
           </MapLink>
-
-          <ShareMenu
-            game={game}
-            className="rounded-full w-full sm:w-auto cursor-pointer"
-          />
-
-          <Button
-            variant="default"
-            size="sm"
-            className="rounded-full w-full sm:w-auto sm:ml-auto focus-visible:ring-2 bg-zinc-500 cursor-pointer"
-            disabled
-          >
-            Details
-          </Button>
         </div>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 }
