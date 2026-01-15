@@ -23,9 +23,11 @@ import {
 } from '@/hooks';
 
 import { cn, formatGamesRange } from '@/lib/utils';
+import TimingAlert from '@/components/schedule/TimingAlert';
 
 const TZ = 'America/New_York';
 
+/** (keep here for now — easy to move to /hooks/useLocalStorageState.ts) */
 function useLocalStorageState<T>(key: string, fallback: T) {
   const [value, setValue] = useState<T>(() => {
     if (typeof window === 'undefined') return fallback;
@@ -48,106 +50,52 @@ function useLocalStorageState<T>(key: string, fallback: T) {
   return [value, setValue] as const;
 }
 
-type TimingTone = 'conflict' | 'tightgap';
+function useWeekNav({
+  week,
+  setWeek,
+  weekOptions,
+  defaultWeek,
+  refreshing,
+}: {
+  week: string | null;
+  setWeek: React.Dispatch<React.SetStateAction<string | null>>;
+  weekOptions: string[];
+  defaultWeek: string | null;
+  refreshing: boolean;
+}) {
+  const currentWeek = week ?? defaultWeek ?? weekOptions[0] ?? '';
+  const currentIndex = weekOptions.indexOf(currentWeek);
 
-function BoldLabel({ label, tone }: { label: string; tone: TimingTone }) {
-  const sep = tone === 'conflict' ? '↔' : '→';
+  const canPrev = !refreshing && currentIndex > 0;
+  const canNext =
+    !refreshing && currentIndex >= 0 && currentIndex < weekOptions.length - 1;
 
-  // pull trailing meta "(...)" if present
-  const metaStart = label.lastIndexOf('(');
-  const hasMeta = metaStart !== -1 && label.endsWith(')');
-  const meta = hasMeta ? label.slice(metaStart).trim() : '';
-  const main = hasMeta ? label.slice(0, metaStart).trim() : label.trim();
+  const isCurrentWeek = !!defaultWeek && currentWeek === defaultWeek;
 
-  // split around arrow
-  const parts = main.split(sep).map((s) => s.trim());
-  if (parts.length !== 2) return <>{label}</>;
-
-  const parseSide = (s: string) => {
-    const tokens = s.split(/\s+/).filter(Boolean);
-    if (tokens.length < 2) return { team: s, time: '' };
-    return { team: tokens.slice(0, -1).join(' '), time: tokens.at(-1) ?? '' };
+  const onPrev = () => {
+    if (!canPrev) return;
+    setWeek(weekOptions[currentIndex - 1] ?? null);
   };
 
-  const a = parseSide(parts[0]);
-  const b = parseSide(parts[1]);
+  const onNext = () => {
+    if (!canNext) return;
+    setWeek(weekOptions[currentIndex + 1] ?? null);
+  };
 
-  return (
-    <>
-      <span className='font-bold'>{a.team}</span>{' '}
-      <span className='font-bold'>{a.time}</span> {sep}{' '}
-      <span className='font-bold'>{b.team}</span>{' '}
-      <span className='font-bold'>{b.time}</span>{' '}
-      {meta ? <span className='text-white/80'>{meta}</span> : null}
-    </>
-  );
-}
+  const onJumpToCurrent = () => {
+    if (!defaultWeek || refreshing) return;
+    setWeek(defaultWeek);
+  };
 
-function TimingAlert({
-  show,
-  title,
-  tone,
-  countLabel,
-  firstLabel,
-  icon,
-}: {
-  show: boolean;
-  title: string;
-  tone: TimingTone;
-  countLabel: string;
-  firstLabel: string | null;
-  icon: React.ReactNode;
-}) {
-  const [dismissed, setDismissed] = useState(false);
-
-  // reset dismissal when the message changes (week changes, counts change, label changes, etc.)
-  const resetKey = `${tone}:${countLabel}:${firstLabel ?? ''}`;
-
-  useEffect(() => setDismissed(false), [resetKey]);
-
-  if (!show || dismissed) return null;
-
-  const gradient =
-    tone === 'conflict'
-      ? 'bg-gradient-to-b from-[#FB2C36] to-[#E7000B]'
-      : 'bg-gradient-to-b from-[#FBB000] to-[#F0A30A]';
-
-  return (
-    <div
-      className={cn(
-        'flex items-start gap-2 p-4 mt-6 mb-4 rounded-2xl text-white',
-        gradient
-      )}
-      aria-live='polite'
-    >
-      <div className='mt-1'>{icon}</div>
-
-      <div className='flex-1'>
-        <div className='font-bold text-sm'>{title}</div>
-
-        <div className='text-sm mt-1'>
-          {countLabel}
-          {firstLabel ? (
-            <>
-              {' — '}
-              <BoldLabel label={firstLabel} tone={tone} />
-            </>
-          ) : null}
-        </div>
-
-        <button
-          type='button'
-          onClick={() => setDismissed(true)}
-          className={cn(
-            'mt-4 ml-auto block text-xs underline underline-offset-2',
-            'opacity-90 hover:opacity-100'
-          )}
-        >
-          Dismiss
-        </button>
-      </div>
-    </div>
-  );
+  return {
+    currentWeek,
+    isCurrentWeek,
+    canPrev,
+    canNext,
+    onPrev,
+    onNext,
+    onJumpToCurrent,
+  };
 }
 
 export default function MatchduleWeekPage() {
@@ -169,17 +117,27 @@ export default function MatchduleWeekPage() {
   const [scope] = useLocalStorageState<FilterScope>('matchdule:scope', 'week');
 
   const defaultWeek = useMemo(() => {
-    if (!data?.length) return '';
-    return getDefaultWeek(data) ?? '';
+    if (!data?.length) return null;
+    return getDefaultWeek(data) ?? null;
   }, [data, getDefaultWeek]);
 
+  // Auto-pick default week once data arrives
   useEffect(() => {
     if (week === null && defaultWeek) setWeek(defaultWeek);
   }, [week, defaultWeek]);
 
+  // Close open menus when refreshing starts
   useEffect(() => {
     if (refreshing) setFiltersOpen(false);
   }, [refreshing]);
+
+  const weekNav = useWeekNav({
+    week,
+    setWeek,
+    weekOptions,
+    defaultWeek,
+    refreshing,
+  });
 
   const weekGames = useWeekGames(
     data,
@@ -221,20 +179,85 @@ export default function MatchduleWeekPage() {
 
   const isInitialWeekLoading = scope === 'week' && week === null;
 
-  const conflictsCountLabel = `Conflict${conflicts.length === 1 ? '' : 's'}`;
-  const tightGapsCountLabel = `Tight gap${tightGaps.length === 1 ? '' : 's'}`;
+  const hasConflicts = conflicts.length > 0;
+  const hasTightGaps = tightGaps.length > 0;
+
+  const content = (() => {
+    if (loading || isInitialWeekLoading) {
+      return (
+        <div className='mx-auto max-w-2xl px-4 py-6 text-sm text-muted-foreground'>
+          <LoadingList />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className='text-sm text-red-600'>
+          Error: {typeof error === 'string' ? error : 'Something went wrong'}
+        </div>
+      );
+    }
+
+    if (byDay.length === 0) return <EmptyState />;
+
+    return (
+      <div className='space-y-3'>
+        <TimingAlert
+          tone='conflict'
+          show={hasConflicts}
+          title='Game Conflict'
+          countLabel={`${conflicts.length} Conflict${
+            conflicts.length === 1 ? '' : 's'
+          }`}
+          firstLabel={firstConflictLabel}
+          resetKey={`conflict:${weekNav.currentWeek}:${conflicts.length}:${
+            firstConflictLabel ?? ''
+          }`}
+          icon={<Flag className='aspect-square w-5 h-5' aria-hidden />}
+        />
+
+        <TimingAlert
+          tone='tightgap'
+          show={hasTightGaps}
+          title='Game Tight Gap'
+          countLabel={`${tightGaps.length} Tight gap${
+            tightGaps.length === 1 ? '' : 's'
+          }`}
+          firstLabel={firstTightGapLabel}
+          resetKey={`tightgap:${weekNav.currentWeek}:${tightGaps.length}:${
+            firstTightGapLabel ?? ''
+          }`}
+          icon={
+            <FoldHorizontal className='aspect-square w-5 h-5' aria-hidden />
+          }
+        />
+
+        {byDay.map(([label, games]) => (
+          <div key={label}>
+            {games.map((game) => (
+              <GameCard key={game.id} game={game} label={label} />
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  })();
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className='max-w-screen-sm mx-auto -mt-8 px-4 py-5 md:py-6 space-y-4'>
         <Header
-          conflicts={conflicts}
-          tightGaps={tightGaps}
           rangeLabel={rangeLabel}
-          defaultWeek={defaultWeek}
-          week={week}
-          setWeek={setWeek}
-          weekOptions={weekOptions}
+          currentWeek={weekNav.currentWeek}
+          isCurrentWeek={weekNav.isCurrentWeek}
+          onJumpToCurrent={weekNav.onJumpToCurrent}
+          canPrev={weekNav.canPrev}
+          canNext={weekNav.canNext}
+          onPrev={weekNav.onPrev}
+          onNext={weekNav.onNext}
+          hasConflicts={hasConflicts}
+          hasTightGaps={hasTightGaps}
           filtersOpen={filtersOpen}
           setFiltersOpen={setFiltersOpen}
           onApplyFilters={setFilters}
@@ -242,47 +265,7 @@ export default function MatchduleWeekPage() {
           refreshing={refreshing}
         />
 
-        {loading || isInitialWeekLoading ? (
-          <div className='mx-auto max-w-2xl px-4 py-6 text-sm text-muted-foreground'>
-            <LoadingList />
-          </div>
-        ) : error ? (
-          <div className='text-sm text-red-600'>
-            Error: {typeof error === 'string' ? error : 'Something went wrong'}
-          </div>
-        ) : byDay.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className='space-y-3'>
-            <TimingAlert
-              tone='conflict'
-              show={conflicts.length > 0}
-              title='Game Conflict'
-              countLabel={conflictsCountLabel}
-              firstLabel={firstConflictLabel}
-              icon={<Flag className='aspect-square w-5 h-5' aria-hidden />}
-            />
-
-            <TimingAlert
-              tone='tightgap'
-              show={tightGaps.length > 0}
-              title='Game Tight Gap'
-              countLabel={tightGapsCountLabel}
-              firstLabel={firstTightGapLabel}
-              icon={
-                <FoldHorizontal className='aspect-square w-5 h-5' aria-hidden />
-              }
-            />
-
-            {byDay.map(([label, games]) => (
-              <div key={label}>
-                {games.map((game) => (
-                  <GameCard key={game.id} game={game} label={label} />
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
+        {content}
       </div>
 
       {refreshing && (

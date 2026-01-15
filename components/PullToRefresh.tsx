@@ -1,6 +1,6 @@
-"use client";
-import { Loader } from "lucide-react";
-import * as React from "react";
+'use client';
+import { Loader } from 'lucide-react';
+import * as React from 'react';
 
 type Props = {
   onRefresh: () => Promise<void> | void;
@@ -64,34 +64,34 @@ export default function PullToRefresh({
       startY.current = null;
     };
 
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
 
     return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
     };
   }, [y, threshold, onRefresh]);
 
   return (
     <div
       ref={ref}
-      className="h-[100dvh] overflow-y-auto touch-pan-y overscroll-contain"
-      style={{ WebkitOverflowScrolling: "touch" }}
+      className='h-[100dvh] overflow-y-auto touch-pan-y overscroll-contain'
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
       {/* pull indicator */}
       <div
-        className="pointer-events-none sticky top-0 z-10 flex h-10 items-center justify-center text-xs text-muted-foreground"
-        style={{ transform: `translateY(${y ? y - 40 : -40}px)` }}
+        className='pointer-events-none sticky top-0 z-10 flex h-10 items-center justify-center text-xs text-muted-foreground'
+        style={{ transform: `translateY(${y ? y - 50 : -40}px)` }}
       >
         {y >= threshold ? (
-          <span className="animate-spin">
-            <Loader className="w-8 h-8 opacity-30" />
+          <span className='animate-spin'>
+            <Loader className='w-8 h-8 opacity-30' />
           </span>
         ) : (
-          "Pull to refresh "
+          'Pull to refresh '
         )}
       </div>
 
@@ -99,7 +99,7 @@ export default function PullToRefresh({
       <div
         style={{
           transform: `translateY(${y}px)`,
-          transition: y ? "none" : "transform 180ms ease-out",
+          transition: y ? 'none' : 'transform 180ms ease-out',
         }}
       >
         {children}

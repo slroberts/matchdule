@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import type { Dispatch, ReactNode, SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { Filters } from '@/types/schedule';
@@ -15,26 +14,6 @@ import {
   Radio,
   SlidersHorizontal,
 } from 'lucide-react';
-import type { ConflictPair, TightGapInfo } from '@/hooks/useGameTiming';
-
-interface HeaderProps {
-  conflicts?: ConflictPair[];
-  tightGaps?: TightGapInfo[];
-  rangeLabel?: string;
-  defaultWeek?: string | null;
-
-  week: string | null;
-  setWeek: Dispatch<SetStateAction<string | null>>;
-  weekOptions: string[];
-
-  filtersOpen: boolean;
-  setFiltersOpen: Dispatch<SetStateAction<boolean>>;
-
-  onApplyFilters?: (f: Filters) => void;
-  onClearFilters?: () => void;
-
-  refreshing: boolean;
-}
 
 type PillVariant = 'neutral' | 'current' | 'conflict' | 'tight';
 
@@ -47,21 +26,18 @@ const pillVariants: Record<PillVariant, string> = {
 
 function Pill({
   variant = 'neutral',
-  className,
   icon,
   children,
 }: {
   variant?: PillVariant;
-  className?: string;
-  icon?: ReactNode;
-  children?: ReactNode;
+  icon?: React.ReactNode;
+  children?: React.ReactNode;
 }) {
   return (
     <div
       className={cn(
         'flex items-center justify-center gap-1 px-2 py-0.5 rounded-full',
-        pillVariants[variant],
-        className
+        pillVariants[variant]
       )}
     >
       {icon}
@@ -78,87 +54,30 @@ function Dot() {
   return <span className='text-white/40'>•</span>;
 }
 
-function HeaderStatus({
-  currentWeek,
-  defaultWeek,
-  refreshing,
-  hasConflicts,
-  hasTightGaps,
-  onJumpToCurrent,
-}: {
+type HeaderProps = {
+  rangeLabel?: string;
+
   currentWeek: string;
-  defaultWeek?: string | null;
-  refreshing: boolean;
+  isCurrentWeek: boolean;
+  onJumpToCurrent: () => void;
+
+  canPrev: boolean;
+  canNext: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+
   hasConflicts: boolean;
   hasTightGaps: boolean;
-  onJumpToCurrent: () => void;
-}) {
-  const isCurrentWeek = !!defaultWeek && currentWeek === defaultWeek;
 
-  return (
-    <div className='flex justify-center items-center gap-2'>
-      <p className='font-semibold text-xs text-white/70 uppercase'>
-        {currentWeek}
-      </p>
+  filtersOpen: boolean;
+  setFiltersOpen: Dispatch<SetStateAction<boolean>>;
+  onApplyFilters?: (f: Filters) => void;
+  onClearFilters?: () => void;
 
-      <Dot />
+  refreshing: boolean;
+};
 
-      {isCurrentWeek ? (
-        <Pill
-          variant='current'
-          icon={
-            <Radio
-              className='aspect-square w-3.5 h-3.5 animate-pulse'
-              aria-hidden
-            />
-          }
-        >
-          This Week
-        </Pill>
-      ) : (
-        <button
-          type='button'
-          className={cn(
-            'flex items-center gap-1 uppercase font-bold text-xs',
-            'text-[#00C27A] hover:text-[#00C27A]/80 cursor-pointer disabled:opacity-60'
-          )}
-          onClick={onJumpToCurrent}
-          disabled={!defaultWeek || refreshing}
-          aria-label='Jump to current week'
-        >
-          Jump to Current
-        </button>
-      )}
-
-      {hasConflicts && (
-        <>
-          <Dot />
-          <Pill
-            variant='conflict'
-            icon={<Flag className='aspect-square w-3.5 h-3.5' aria-hidden />}
-          />
-        </>
-      )}
-
-      {hasTightGaps && (
-        <>
-          <Dot />
-          <Pill
-            variant='tight'
-            icon={
-              <FoldHorizontal
-                className='aspect-square w-3.5 h-3.5'
-                aria-hidden
-              />
-            }
-          />
-        </>
-      )}
-    </div>
-  );
-}
-
-const styles = {
+const cx = {
   header: cn(
     'sticky top-0 -mt-8 z-40 -mx-4',
     'bg-gradient-to-b from-[#0A0E27] to-[#1A1F3A]',
@@ -182,60 +101,45 @@ const styles = {
 };
 
 export default function Header({
-  conflicts,
-  tightGaps,
   rangeLabel,
-  defaultWeek,
-  week,
-  setWeek,
-  weekOptions,
+  currentWeek,
+  isCurrentWeek,
+  onJumpToCurrent,
+  canPrev,
+  canNext,
+  onPrev,
+  onNext,
+  hasConflicts,
+  hasTightGaps,
   filtersOpen,
   setFiltersOpen,
   onApplyFilters,
   onClearFilters,
   refreshing,
 }: HeaderProps) {
-  const hasWeeks = weekOptions.length > 0;
-
-  const currentWeek = useMemo(() => {
-    if (week) return week;
-    if (defaultWeek) return defaultWeek;
-    return hasWeeks ? weekOptions[0] : '';
-  }, [week, defaultWeek, hasWeeks, weekOptions]);
-
-  const currentIndex = useMemo(() => {
-    if (!hasWeeks || !currentWeek) return -1;
-    return weekOptions.findIndex((w) => w === currentWeek);
-  }, [hasWeeks, currentWeek, weekOptions]);
-
-  const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex >= 0 && currentIndex < weekOptions.length - 1;
-
-  const prevDisabled = refreshing || !hasPrev;
-  const nextDisabled = refreshing || !hasNext;
-
-  const hasConflicts = (conflicts?.length ?? 0) > 0;
-  const hasTightGaps = (tightGaps?.length ?? 0) > 0;
-
-  const goPrev = useCallback(() => {
-    if (prevDisabled) return;
-    setWeek(weekOptions[currentIndex - 1] ?? null);
-  }, [prevDisabled, setWeek, weekOptions, currentIndex]);
-
-  const goNext = useCallback(() => {
-    if (nextDisabled) return;
-    setWeek(weekOptions[currentIndex + 1] ?? null);
-  }, [nextDisabled, setWeek, weekOptions, currentIndex]);
-
-  const jumpToCurrent = useCallback(() => {
-    if (!defaultWeek) return;
-    setWeek(defaultWeek);
-  }, [defaultWeek, setWeek]);
+  const statusBadges = [
+    hasConflicts && (
+      <Pill
+        key='conflict'
+        variant='conflict'
+        icon={<Flag className='aspect-square w-3.5 h-3.5' aria-hidden />}
+      />
+    ),
+    hasTightGaps && (
+      <Pill
+        key='tight'
+        variant='tight'
+        icon={
+          <FoldHorizontal className='aspect-square w-3.5 h-3.5' aria-hidden />
+        }
+      />
+    ),
+  ].filter(Boolean);
 
   return (
-    <header role='banner' className={styles.header}>
+    <header role='banner' className={cx.header}>
       {/* Top bar */}
-      <div className={styles.topBar}>
+      <div className={cx.topBar}>
         <Image
           src={MatchduleLogo}
           height={20}
@@ -246,7 +150,7 @@ export default function Header({
 
         <button
           type='button'
-          className={styles.filtersBtn}
+          className={cx.filtersBtn}
           onClick={() => setFiltersOpen(true)}
           aria-label='Open filters'
           disabled={refreshing}
@@ -259,39 +163,69 @@ export default function Header({
       </div>
 
       {/* Week controls */}
-      <div className={styles.weekBar}>
-        {/* Prev */}
+      <div className={cx.weekBar}>
         <button
           type='button'
-          className={styles.navBtn}
-          onClick={goPrev}
+          className={cx.navBtn}
+          onClick={onPrev}
           aria-label='Previous week'
-          disabled={prevDisabled}
+          disabled={!canPrev}
         >
           <ChevronLeft className='h-4.5 w-4.5' aria-hidden />
         </button>
 
-        {/* Center info */}
         <div className='text-center'>
           <p className='font-bold text-white pb-1'>{rangeLabel ?? ''}</p>
 
-          <HeaderStatus
-            currentWeek={currentWeek}
-            defaultWeek={defaultWeek}
-            refreshing={refreshing}
-            hasConflicts={hasConflicts}
-            hasTightGaps={hasTightGaps}
-            onJumpToCurrent={jumpToCurrent}
-          />
+          <div className='flex justify-center items-center gap-2'>
+            <p className='font-semibold text-xs text-white/70 uppercase'>
+              {currentWeek}
+            </p>
+
+            <Dot />
+
+            {isCurrentWeek ? (
+              <Pill
+                variant='current'
+                icon={
+                  <Radio
+                    className='aspect-square w-3.5 h-3.5 animate-pulse'
+                    aria-hidden
+                  />
+                }
+              >
+                This Week
+              </Pill>
+            ) : (
+              <button
+                type='button'
+                className={cn(
+                  'flex items-center gap-1 uppercase font-bold text-xs',
+                  'text-[#00C27A] hover:text-[#00C27A]/80 cursor-pointer disabled:opacity-60'
+                )}
+                onClick={onJumpToCurrent}
+                disabled={refreshing}
+                aria-label='Jump to current week'
+              >
+                Jump to Current
+              </button>
+            )}
+
+            {statusBadges.length ? (
+              <>
+                <Dot />
+                <div className='flex items-center gap-2'>{statusBadges}</div>
+              </>
+            ) : null}
+          </div>
         </div>
 
-        {/* Next */}
         <button
           type='button'
-          className={styles.navBtn}
-          onClick={goNext}
+          className={cx.navBtn}
+          onClick={onNext}
           aria-label='Next week'
-          disabled={nextDisabled}
+          disabled={!canNext}
         >
           <ChevronRight className='h-4.5 w-4.5' aria-hidden />
         </button>
