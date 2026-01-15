@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Game } from '@/types/schedule';
+import { parseISOZoned } from '@/lib/date';
 
 type GroupedDays = Array<[label: string, games: Game[]]>;
 
@@ -11,26 +12,30 @@ export function useDaysGrouping(
   return useMemo(() => {
     if (!weekGames?.length) return [];
 
-    const map: Record<string, Game[]> = {};
+    // Cache formatters (big win vs calling toLocaleDateString repeatedly)
+    const weekdayFmt = new Intl.DateTimeFormat(locale, {
+      weekday: 'short',
+      timeZone: tz,
+    });
+
+    const monthDayFmt = new Intl.DateTimeFormat(locale, {
+      month: 'short',
+      day: 'numeric',
+      timeZone: tz,
+    });
+
+    // Group by dateISO (avoid JS Date("YYYY-MM-DD") UTC pitfall)
+    const map = new Map<string, Game[]>();
 
     for (const g of weekGames) {
-      const d = new Date(g.dateISO);
-      const label =
-        `${d.toLocaleDateString(locale, {
-          weekday: 'short',
-          timeZone: tz,
-        })}, ` +
-        `${d.toLocaleDateString(locale, {
-          month: 'short',
-          day: 'numeric',
-          timeZone: tz,
-        })}`;
-
-      (map[label] ||= []).push(g);
+      const key = g.dateISO; // expected YYYY-MM-DD
+      const bucket = map.get(key);
+      if (bucket) bucket.push(g);
+      else map.set(key, [g]);
     }
 
-    // sort within each day by start time (fallback: team)
-    for (const arr of Object.values(map)) {
+    // Sort games within each day
+    for (const arr of map.values()) {
       arr.sort((a, b) => {
         if (a.startISO && b.startISO)
           return a.startISO.localeCompare(b.startISO);
@@ -40,11 +45,15 @@ export function useDaysGrouping(
       });
     }
 
-    // sort day buckets chronologically
-    return Object.entries(map).sort((a, b) => {
-      const da = new Date(a[1][0].dateISO).getTime();
-      const db = new Date(b[1][0].dateISO).getTime();
-      return da - db;
+    // Sort day buckets by dateISO (lexicographic works for YYYY-MM-DD)
+    const sortedKeys = Array.from(map.keys()).sort((a, b) =>
+      a.localeCompare(b)
+    );
+
+    return sortedKeys.map((dateISO) => {
+      const d = parseISOZoned(dateISO, tz) ?? new Date(`${dateISO}T00:00:00`);
+      const label = `${weekdayFmt.format(d)}, ${monthDayFmt.format(d)}`;
+      return [label, map.get(dateISO)!] as const;
     });
   }, [weekGames, tz, locale]);
 }

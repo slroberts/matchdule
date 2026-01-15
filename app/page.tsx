@@ -11,7 +11,7 @@ import {
   GameCard,
 } from '@/components/schedule';
 
-import type { Filters, FilterScope } from '@/types/schedule';
+import type { FilterState } from '@/types/schedule';
 import {
   useSchedule,
   useDefaultWeek,
@@ -20,83 +20,22 @@ import {
   useWeekGames,
   useDaysGrouping,
   useGameTiming,
+  useLocalStorageState,
+  useWeekNav,
 } from '@/hooks';
 
-import { cn, formatGamesRange } from '@/lib/utils';
+import { formatGamesRange } from '@/lib/utils';
 import TimingAlert from '@/components/schedule/TimingAlert';
 
 const TZ = 'America/New_York';
 
-/** (keep here for now — easy to move to /hooks/useLocalStorageState.ts) */
-function useLocalStorageState<T>(key: string, fallback: T) {
-  const [value, setValue] = useState<T>(() => {
-    if (typeof window === 'undefined') return fallback;
-    try {
-      const raw = localStorage.getItem(key);
-      return raw ? (JSON.parse(raw) as T) : fallback;
-    } catch {
-      return fallback;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // ignore write errors
-    }
-  }, [key, value]);
-
-  return [value, setValue] as const;
-}
-
-function useWeekNav({
-  week,
-  setWeek,
-  weekOptions,
-  defaultWeek,
-  refreshing,
-}: {
-  week: string | null;
-  setWeek: React.Dispatch<React.SetStateAction<string | null>>;
-  weekOptions: string[];
-  defaultWeek: string | null;
-  refreshing: boolean;
-}) {
-  const currentWeek = week ?? defaultWeek ?? weekOptions[0] ?? '';
-  const currentIndex = weekOptions.indexOf(currentWeek);
-
-  const canPrev = !refreshing && currentIndex > 0;
-  const canNext =
-    !refreshing && currentIndex >= 0 && currentIndex < weekOptions.length - 1;
-
-  const isCurrentWeek = !!defaultWeek && currentWeek === defaultWeek;
-
-  const onPrev = () => {
-    if (!canPrev) return;
-    setWeek(weekOptions[currentIndex - 1] ?? null);
-  };
-
-  const onNext = () => {
-    if (!canNext) return;
-    setWeek(weekOptions[currentIndex + 1] ?? null);
-  };
-
-  const onJumpToCurrent = () => {
-    if (!defaultWeek || refreshing) return;
-    setWeek(defaultWeek);
-  };
-
-  return {
-    currentWeek,
-    isCurrentWeek,
-    canPrev,
-    canNext,
-    onPrev,
-    onNext,
-    onJumpToCurrent,
-  };
-}
+const DEFAULT_FILTERS: FilterState = {
+  team: 'All Teams',
+  scope: 'week',
+  homeAway: [],
+  result: [],
+  dayparts: [],
+};
 
 export default function MatchduleWeekPage() {
   const { data, loading, error, refetch } = useSchedule();
@@ -108,13 +47,21 @@ export default function MatchduleWeekPage() {
   const [week, setWeek] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const [filters, setFilters] = useState<Filters>({
-    homeAway: [],
-    result: [],
-    dayparts: [],
-  });
+  // Persist scope (optional, but nice)
+  const [storedScope, setStoredScope] = useLocalStorageState<'week' | 'all'>(
+    'matchdule:scope',
+    'week'
+  );
 
-  const [scope] = useLocalStorageState<FilterScope>('matchdule:scope', 'week');
+  const [filterState, setFilterState] = useState<FilterState>(() => ({
+    ...DEFAULT_FILTERS,
+    scope: storedScope,
+  }));
+
+  // keep localStorage scope in sync
+  useEffect(() => {
+    setStoredScope(filterState.scope);
+  }, [filterState.scope, setStoredScope]);
 
   const defaultWeek = useMemo(() => {
     if (!data?.length) return null;
@@ -142,11 +89,15 @@ export default function MatchduleWeekPage() {
   const weekGames = useWeekGames(
     data,
     week,
-    'All Teams',
+    filterState.team,
     matchTeam,
-    filters,
+    {
+      homeAway: filterState.homeAway,
+      result: filterState.result,
+      dayparts: filterState.dayparts,
+    },
     TZ,
-    scope
+    filterState.scope
   );
 
   const byDay = useDaysGrouping(weekGames, TZ);
@@ -172,15 +123,24 @@ export default function MatchduleWeekPage() {
     }
   }, [refetch]);
 
-  const clearFilters = useCallback(
-    () => setFilters({ homeAway: [], result: [], dayparts: [] }),
-    []
-  );
+  const onApplyFilters = (next: FilterState) => {
+    setFilterState(next);
+  };
 
-  const isInitialWeekLoading = scope === 'week' && week === null;
+  const onClearFilters = () => {
+    setFilterState((p) => ({ ...DEFAULT_FILTERS, scope: p.scope }));
+  };
+
+  const isInitialWeekLoading = filterState.scope === 'week' && week === null;
 
   const hasConflicts = conflicts.length > 0;
   const hasTightGaps = tightGaps.length > 0;
+
+  // For Team options in FilterSheet
+  const teamOptions = useMemo(() => {
+    const teams = (data ?? []).map((g) => g.team).filter(Boolean);
+    return Array.from(new Set(teams));
+  }, [data]);
 
   const content = (() => {
     if (loading || isInitialWeekLoading) {
@@ -260,8 +220,10 @@ export default function MatchduleWeekPage() {
           hasTightGaps={hasTightGaps}
           filtersOpen={filtersOpen}
           setFiltersOpen={setFiltersOpen}
-          onApplyFilters={setFilters}
-          onClearFilters={clearFilters}
+          filterState={filterState}
+          teamOptions={teamOptions}
+          onApplyFilters={onApplyFilters}
+          onClearFilters={onClearFilters}
           refreshing={refreshing}
         />
 

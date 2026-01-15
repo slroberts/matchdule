@@ -5,6 +5,8 @@ import { useWeekGames } from './useWeekGames';
 import { useWeekOptions } from './useWeekOptions';
 import { useDaysGrouping } from './useDaysGrouping';
 import { useGameTiming } from './useGameTiming';
+import { useLocalStorageState } from './useLocalStorageState';
+import { useWeekNav } from './useWeekNav';
 
 export {
   useDefaultWeek,
@@ -14,4 +16,6 @@ export {
   useWeekOptions,
   useDaysGrouping,
   useGameTiming,
+  useLocalStorageState,
+  useWeekNav,
 };

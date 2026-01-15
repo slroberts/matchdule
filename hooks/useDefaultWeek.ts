@@ -1,6 +1,6 @@
-import { useCallback } from "react";
-import { atLocalMidnight } from "@/lib/date";
-import type { Game } from "@/types/schedule";
+import { useCallback } from 'react';
+import { atLocalMidnight } from '@/lib/date';
+import type { Game } from '@/types/schedule';
 
 export function useDefaultWeek() {
   return useCallback((games: Game[], today = new Date()): string | null => {
@@ -29,7 +29,7 @@ export function useDefaultWeek() {
       ranges = [...explicit.entries()].map(([label, r]) => ({ label, ...r }));
     } else if (inferred.size) {
       const sorted = [...inferred.values()].sort(
-        (a, b) => a.getTime() - b.getTime(),
+        (a, b) => a.getTime() - b.getTime()
       );
       ranges = sorted.map((d, i) => ({
         label: `Week ${i + 1}`,
@@ -43,7 +43,7 @@ export function useDefaultWeek() {
     const todayMid = atLocalMidnight(today);
 
     const containing = ranges.find(
-      (r) => todayMid >= r.min && todayMid <= r.max,
+      (r) => todayMid >= r.min && todayMid <= r.max
     );
     if (containing) return containing.label;
 

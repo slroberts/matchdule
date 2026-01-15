@@ -3,7 +3,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import type { Filters } from '@/types/schedule';
+import type { FilterState } from '@/types/schedule';
 import { FilterSheet } from '.';
 import MatchduleLogo from '@/public/matchdule-logo.svg';
 import {
@@ -71,8 +71,11 @@ type HeaderProps = {
 
   filtersOpen: boolean;
   setFiltersOpen: Dispatch<SetStateAction<boolean>>;
-  onApplyFilters?: (f: Filters) => void;
-  onClearFilters?: () => void;
+
+  filterState: FilterState;
+  teamOptions: string[];
+  onApplyFilters: (next: FilterState) => void;
+  onClearFilters: () => void;
 
   refreshing: boolean;
 };
@@ -113,6 +116,8 @@ export default function Header({
   hasTightGaps,
   filtersOpen,
   setFiltersOpen,
+  filterState,
+  teamOptions,
   onApplyFilters,
   onClearFilters,
   refreshing,
@@ -138,7 +143,6 @@ export default function Header({
 
   return (
     <header role='banner' className={cx.header}>
-      {/* Top bar */}
       <div className={cx.topBar}>
         <Image
           src={MatchduleLogo}
@@ -162,7 +166,6 @@ export default function Header({
         </button>
       </div>
 
-      {/* Week controls */}
       <div className={cx.weekBar}>
         <button
           type='button'
@@ -234,6 +237,8 @@ export default function Header({
       <FilterSheet
         open={filtersOpen}
         onOpenChange={setFiltersOpen}
+        value={filterState}
+        teamOptions={teamOptions}
         onApply={onApplyFilters}
         onClear={onClearFilters}
       />

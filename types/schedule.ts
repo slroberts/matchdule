@@ -1,4 +1,10 @@
-export type TeamFilter = "All Teams" | string;
+export type TeamFilter = 'All Teams' | string;
+
+export type HomeAway = 'HOME' | 'AWAY' | 'TBD';
+export type Result = 'W' | 'L' | 'D' | null;
+export type Daypart = 'morning' | 'afternoon' | 'evening';
+export type FilterScope = 'week' | 'all';
+
 export type Game = {
   id: string;
   week: string | null;
@@ -16,14 +22,13 @@ export type Game = {
   scoreAgainst: number | null;
 };
 
-export type HomeAway = "HOME" | "AWAY" | "TBD";
-export type Result = "W" | "L" | "D" | null;
-export type Daypart = "morning" | "afternoon" | "evening";
-
 export type Filters = {
   homeAway: HomeAway[];
   result: Result[];
   dayparts: Daypart[];
 };
 
-export type FilterScope = "week" | "all";
+export type FilterState = Filters & {
+  team: TeamFilter;
+  scope: FilterScope;
+};

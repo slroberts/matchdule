@@ -1,6 +1,8 @@
+'use client';
+
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
-import BoldLabel, { TimingTone } from './BoldLabel';
+import { useEffect, useState } from 'react';
+import BoldLabel, { type TimingTone } from './BoldLabel';
 
 export default function TimingAlert({
   show,
