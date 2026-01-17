@@ -6,7 +6,7 @@ A fast, family-friendly schedule app that keeps multiple kids’ soccer weeks in
 ---
 
 ## What it does
-Matchdule is built for families (and coaches) juggling multiple teams. It auto-focuses the **current week**, makes conflicts obvious, and keeps match-day info one tap away. :contentReference[oaicite:2]{index=2}
+Matchdule is built for families (and coaches) juggling multiple teams. It auto-focuses the **current week**, makes conflicts obvious, and keeps match-day info one tap away.
 
 ---
 
@@ -18,11 +18,11 @@ Matchdule is built for families (and coaches) juggling multiple teams. It auto-f
 - Quick actions like **Map / Share **
 - **Filters** (team, home/away, result, time of day)
 - **Results tracking** (W/L/D + score)
-- **Google Sheets → CSV import** for easy updates :contentReference[oaicite:3]{index=3}
+- **Google Sheets → CSV import** for easy updates
 
 UX touches:
 - **Pull to refresh**
-- **Jump to Current** :contentReference[oaicite:4]{index=4}
+- **Jump to Current**
 
 ---
 
@@ -31,7 +31,7 @@ UX touches:
 - TypeScript
 - Tailwind CSS
 - shadcn/ui + Radix UI
-- Lucide icons :contentReference[oaicite:5]{index=5}
+- Lucide icons
 
 ---
 
