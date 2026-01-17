@@ -1,39 +1,43 @@
-# Matchdule — Know who plays when—always ⚽️
+# Matchdule ⚽️
+A fast, family-friendly schedule app that keeps multiple kids’ soccer weeks in sync—clean weekly views, filters, map links, and conflict/tight-gap alerts.
 
-![Next.js](https://img.shields.io/badge/Next.js-15-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue) ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC) ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-New%20York-000) ![Lucide](https://img.shields.io/badge/Lucide-Icons-111)
-
-> See all your kids’ games in one place: conflict alerts, map/ETA, quick results, and clean weekly views.
-
-- **Stack:** Next.js · React · TypeScript · Tailwind CSS · shadcn/ui · Lucide
+**Live:** https://matchdule.vercel.app
 
 ---
 
-## Features 🚀
-
-- **This-week view** across multiple teams, with **tight-gap warnings**
-- **Game cards**: opponent, time range, field, quick actions (Map / Share / Details)
-- **Auto week defaulting** to the closest week to today
-- **Results & stats** (W/L/D, score; per-team rollups coming)
-- **Filters**: team, home/away, result, time of day
-- **Google Sheets → CSV** import for easy updates
+## What it does
+Matchdule is built for families (and coaches) juggling multiple teams. It auto-focuses the **current week**, makes conflicts obvious, and keeps match-day info one tap away. :contentReference[oaicite:2]{index=2}
 
 ---
 
-## Quick start ⚡
+## Key features
+- **Weekly schedule view** across multiple teams
+- **Auto-select current/closest week** (so you’re never hunting)
+- **Tight-gap warnings** for back-to-back games/travel constraints
+- **Game cards** with opponent, time range, and field
+- Quick actions like **Map / Share **
+- **Filters** (team, home/away, result, time of day)
+- **Results tracking** (W/L/D + score)
+- **Google Sheets → CSV import** for easy updates :contentReference[oaicite:3]{index=3}
 
+UX touches:
+- **Pull to refresh**
+- **Jump to Current** :contentReference[oaicite:4]{index=4}
+
+---
+
+## Tech stack
+- Next.js (App Router) + React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui + Radix UI
+- Lucide icons :contentReference[oaicite:5]{index=5}
+
+---
+
+## Local development
 ```bash
-git clone https://github.com/<you>/matchdule.git
+git clone https://github.com/slroberts/matchdule.git
 cd matchdule
-npm i
-cp .env.example .env.local
-# Edit .env.local with your Google Sheet IDs (see below)
+npm install
 npm run dev
-```
-
----
-
-## License
-
-MIT
-
----
