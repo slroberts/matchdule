@@ -11,7 +11,7 @@
 ## Features 🚀
 
 - **This-week view** across multiple teams, with **tight-gap warnings**
-- **Game cards**: opponent, home/away chip, time range, field, quick actions (Map / Share / Details)
+- **Game cards**: opponent, time range, field, quick actions (Map / Share / Details)
 - **Auto week defaulting** to the closest week to today
 - **Results & stats** (W/L/D, score; per-team rollups coming)
 - **Filters**: team, home/away, result, time of day
