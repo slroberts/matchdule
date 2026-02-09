@@ -7,7 +7,7 @@ export function atLocalMidnight(d: Date) {
  * converting to the correct UTC instant (DST-aware). If the string already
  * has Z/offset, it’s parsed as-is.
  */
-export function parseISOZoned(iso?: string | null, tz = "America/New_York") {
+export function parseISOZoned(iso?: string | null, tz = 'America/New_York') {
   if (!iso) return null;
   const hasTZ = /Z|[+-]\d{2}:?\d{2}$/.test(iso);
   if (hasTZ) return new Date(iso);
@@ -19,15 +19,15 @@ export function parseISOZoned(iso?: string | null, tz = "America/New_York") {
   const [, y, mo, d, h, mi, s] = m;
   const utcGuess = Date.UTC(+y, +mo - 1, +d, +h, +mi, +(s ?? 0));
 
-  const fmt = new Intl.DateTimeFormat("en-US", {
+  const fmt = new Intl.DateTimeFormat('en-US', {
     timeZone: tz,
     hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
   });
   const parts = Object.fromEntries(
     fmt.formatToParts(new Date(utcGuess)).map((p) => [p.type, p.value]),
@@ -47,27 +47,45 @@ export function parseISOZoned(iso?: string | null, tz = "America/New_York") {
 
 export const hourInTZ = (d: Date, tz: string) =>
   Number(
-    new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
+    new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
       hour12: false,
       timeZone: tz,
     }).format(d),
   );
 
 export const fmtTime = (d: Date, tz?: string) =>
-  new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+  new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
     timeZone: tz,
   }).format(d);
 
 export const fmtFull = (d: Date, tz?: string) =>
-  new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
+  new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
     timeZone: tz,
   }).format(d);
+
+// YYYY-MM-DD for a UTC instant, rendered as local calendar date in `tz`
+export function dateKeyInTZ(isoOrDate: string | Date, tz = 'America/New_York') {
+  const d = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate;
+
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+      .formatToParts(d)
+      .map((p) => [p.type, p.value]),
+  );
+
+  return `${parts.year}-${parts.month}-${parts.day}`; // ✅ YYYY-MM-DD
+}

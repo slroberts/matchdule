@@ -1,23 +1,30 @@
 import { Game } from '@/types/schedule';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { parseISOZoned } from '@/lib/date'; // ✅ add
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+function gameDayDate(g: Pick<Game, 'startISO' | 'dateISO'>, tz: string) {
+  if (g.startISO) return new Date(g.startISO);
+  return parseISOZoned(`${g.dateISO}T00:00:00`, tz)!;
+}
+
 export function formatGamesRange(
   weekGames: Game[] | null | undefined,
   tz: string,
-  locale = 'en-US'
+  locale = 'en-US',
 ): string {
   if (!weekGames?.length) return '';
 
   const sorted = [...weekGames].sort(
-    (a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime()
+    (a, b) => gameDayDate(a, tz).getTime() - gameDayDate(b, tz).getTime(),
   );
-  const start = new Date(sorted[0].dateISO);
-  const end = new Date(sorted[sorted.length - 1].dateISO);
+
+  const start = gameDayDate(sorted[0], tz);
+  const end = gameDayDate(sorted[sorted.length - 1], tz);
 
   const fmtMonth = new Intl.DateTimeFormat(locale, {
     month: 'short',
@@ -38,12 +45,8 @@ export function formatGamesRange(
     start.getMonth() === end.getMonth() &&
     start.getDate() === end.getDate();
 
-  if (sameDay) {
-    // e.g. "Nov 21"
-    return `${mStart} ${dStart}`;
-  }
+  if (sameDay) return `${mStart} ${dStart}`;
 
-  // Same month => "Nov 21 – 22"; different month => "Nov 30 – Dec 2"
   return mStart === mEnd
     ? `${mStart} ${dStart} – ${dEnd}`
     : `${mStart} ${dStart} – ${mEnd} ${dEnd}`;

@@ -10,13 +10,15 @@ export function useWeekGames(
   matchTeam: (filter: TeamFilter, name: string) => boolean,
   filters: Filters,
   tz = 'America/New_York',
-  scope: FilterScope = 'week'
+  scope: FilterScope = 'week',
 ) {
   return useMemo(() => {
     if (!data) return [] as Game[];
 
     const base =
-      scope === 'week' ? data.filter((g) => !week || g.week === week) : data;
+      scope === 'week'
+        ? data.filter((g) => g.week && g.week.trim() === week)
+        : data;
 
     const homeAwaySet = new Set(filters?.homeAway ?? []);
     const resultSet = new Set(filters?.result ?? []);

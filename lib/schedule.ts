@@ -1,5 +1,8 @@
 import { Game, HomeAway, Result } from '@/types/schedule';
 import { supabasePublic } from '@/lib/supabase/public';
+import { dateKeyInTZ } from '@/lib/date';
+
+const TZ = 'America/New_York';
 
 function normalizeHA(v?: string | null): HomeAway {
   const s = (v || '').trim().toUpperCase();
@@ -11,15 +14,6 @@ function normalizeHA(v?: string | null): HomeAway {
 function normalizeResult(v?: string | null): Result {
   const s = (v || '').trim().toUpperCase();
   return s === 'W' || s === 'L' || s === 'D' ? (s as Result) : null;
-}
-
-// Anchor date to noon UTC to prevent SSR timezone drift (same trick you used)
-function noonUTCFromStart(start_at: string | null): string {
-  if (!start_at) return new Date(Date.UTC(1970, 0, 1, 12, 0, 0)).toISOString();
-  const d = new Date(start_at);
-  return new Date(
-    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0),
-  ).toISOString();
 }
 
 type Rel = { name: string };
@@ -75,10 +69,16 @@ export async function fetchSchedule(): Promise<Game[]> {
     const startISO = e.start_at ? new Date(e.start_at).toISOString() : null;
     const endISO = e.end_at ? new Date(e.end_at).toISOString() : null;
 
+    const dateISO = startISO
+      ? dateKeyInTZ(startISO, TZ)
+      : endISO
+      ? dateKeyInTZ(endISO, TZ)
+      : '1970-01-01';
+
     return {
       id: e.id,
       week: e.week,
-      dateISO: noonUTCFromStart(e.start_at),
+      dateISO, // ✅ YYYY-MM-DD
       startISO,
       endISO,
       timeText: e.time_text ?? 'TBD',
@@ -93,7 +93,6 @@ export async function fetchSchedule(): Promise<Game[]> {
     };
   });
 
-  // Keep your exact sorting rules
   games.sort((a, b) => {
     const da = a.dateISO.localeCompare(b.dateISO);
     if (da !== 0) return da;

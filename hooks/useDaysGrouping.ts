@@ -7,7 +7,7 @@ type GroupedDays = Array<[label: string, games: Game[]]>;
 export function useDaysGrouping(
   weekGames: Game[] | null | undefined,
   tz: string,
-  locale = 'en-US'
+  locale = 'en-US',
 ): GroupedDays {
   return useMemo(() => {
     if (!weekGames?.length) return [];
@@ -47,11 +47,11 @@ export function useDaysGrouping(
 
     // Sort day buckets by dateISO (lexicographic works for YYYY-MM-DD)
     const sortedKeys = Array.from(map.keys()).sort((a, b) =>
-      a.localeCompare(b)
+      a.localeCompare(b),
     );
 
     return sortedKeys.map((dateISO) => {
-      const d = parseISOZoned(dateISO, tz) ?? new Date(`${dateISO}T00:00:00`);
+      const d = parseISOZoned(`${dateISO}T00:00:00`, tz)!;
       const label = `${weekdayFmt.format(d)}, ${monthDayFmt.format(d)}`;
       return [label, map.get(dateISO)!] as const;
     });
