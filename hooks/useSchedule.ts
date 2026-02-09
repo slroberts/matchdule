@@ -1,22 +1,25 @@
-import useSWR, { type KeyedMutator } from "swr";
-import type { Game } from "@/types/schedule";
-import { fetchSchedule } from "@/lib/schedule";
+import useSWR, { type KeyedMutator } from 'swr';
+import type { Game } from '@/types/schedule';
 
 type UseSchedule = {
   data: Game[] | undefined;
   loading: boolean;
   error: string | null;
   isValidating: boolean;
-  /** Revalidate from the network */
   refetch: () => Promise<void>;
-  /** SWR mutate passthrough (optimistic updates etc.) */
   mutate: KeyedMutator<Game[]>;
 };
 
+async function fetchScheduleFromApi(): Promise<Game[]> {
+  const res = await fetch('/api/schedule', { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Failed to fetch schedule: ${res.status}`);
+  return res.json();
+}
+
 export function useSchedule(): UseSchedule {
   const { data, error, isValidating, mutate } = useSWR<Game[]>(
-    "schedule",
-    fetchSchedule,
+    '/api/schedule',
+    fetchScheduleFromApi,
     {
       revalidateOnFocus: false,
       revalidateIfStale: true,
@@ -29,7 +32,6 @@ export function useSchedule(): UseSchedule {
     loading: !data && !error,
     error: error ? (error as Error).message : null,
     isValidating,
-    // swallow the data return so the type is Promise<void>
     refetch: async () => {
       await mutate();
     },
