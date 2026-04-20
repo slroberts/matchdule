@@ -1,0 +1,214 @@
+import { Badge } from './ui/Badge';
+import {
+  Calendar,
+  Flag,
+  FoldHorizontal,
+  MapPin,
+  MapPinned,
+  Share2,
+} from 'lucide-react';
+import { Match, MatchResult, MatchStatus, Team } from '@/types/match';
+import { MetaItem } from './ui/MetaItem';
+import SoccerBallIcon from './ui/icons/SoccerBall';
+import { cn } from '@/lib/utils';
+import { Button } from './ui/Button';
+import { getTimeOfDayAssets } from '@/lib/date-utils';
+import { getStatusConfig } from '@/lib/match-utils';
+
+export const MatchCard = ({ match }: { match: Match }) => {
+  return (
+    <div
+      className={cn(
+        'p-grid-md rounded-card bg-surface-card border-2 transition-all shadow-md flex flex-col gap-grid-md w-full max-w-md',
+        match.isConflict ? 'border-status-conflict' : 'border-transparent',
+        match.isTightGap && !match.isConflict ? 'border-status-warning' : '',
+      )}
+    >
+      {/* Top Row: Meta Info */}
+      <MatchHeader
+        isConflict={match.isConflict}
+        isTightGap={match.isTightGap}
+        date={match.date}
+        time={match.time}
+        location={match.location}
+        status={match.status}
+      />
+
+      {/* Center Row: The Matchup */}
+      <div className='flex flex-col items-start justify-between px-2 py-grid-xs'>
+        {/* Pass actual scores from the team objects */}
+        <MatchTeamRow
+          team={match.homeTeam}
+          score={match.homeTeam.score ?? 0}
+          status={match.status}
+        />
+
+        <div className='flex items-center w-full my-grid-sm'>
+          <Divider />
+          <span className='text-surface-muted text-[10px] font-black italic px-4 uppercase tracking-widest'>
+            VS
+          </span>
+          <Divider />
+        </div>
+
+        <MatchTeamRow
+          team={match.awayTeam}
+          score={match.awayTeam.score ?? 0}
+          status={match.status}
+        />
+      </div>
+
+      {/* Bottom Row: Actions */}
+      <div className='flex items-center justify-between gap-3 mt-2'>
+        <Button variant='outline' className='w-full py-2.5'>
+          <Share2 size={16} className='mr-1' />
+          Share
+        </Button>
+        <Button variant='outline' className='w-full py-2.5'>
+          <MapPinned size={16} className='mr-1' />
+          Directions
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const Divider = () => <div className='flex-1 h-[1px] bg-divider' />;
+
+const Separator = () => (
+  <div className='h-3 w-[1px] bg-divider' aria-hidden='true' />
+);
+
+export const MatchHeader = ({
+  isConflict,
+  isTightGap,
+  date,
+  time,
+  location,
+  status,
+}: {
+  isConflict?: boolean;
+  isTightGap?: boolean;
+  date: string;
+  time: string;
+  location: string;
+  status: MatchStatus;
+}) => {
+  const { TimeIcon } = getTimeOfDayAssets(time);
+  const statusConfig = getStatusConfig(status as MatchStatus);
+
+  return (
+    <div className='flex items-center justify-between w-full text-xs font-semibold tracking-tight'>
+      {/* Match Meta Info */}
+      <div className='flex items-center gap-grid-sm min-w-0 flex-1 text-brand-navy'>
+        <MetaItem icon={Calendar} label={date} className='shrink-0' />
+        <Separator />
+        {!statusConfig ? (
+          <MetaItem icon={TimeIcon} label={time} className={cn('shrink-0')} />
+        ) : (
+          <div
+            className={cn(
+              'flex items-center gap-1 shrink-0',
+              statusConfig.className,
+            )}
+          >
+            <statusConfig.icon size={14} />
+            <span className='uppercase tracking-widest text-[10px]'>
+              {statusConfig.label}
+            </span>
+          </div>
+        )}
+
+        <Separator />
+        <MetaItem icon={MapPin} label={location} />
+
+        {isConflict || isTightGap ? <Separator /> : null}
+        {/* Status Badges */}
+        <div className='flex gap-grid-xs ml-auto'>
+          {isConflict && (
+            <Badge variant='destructive' className='px-1.5'>
+              <Flag size={12} fill='currentColor' />
+            </Badge>
+          )}
+          {isTightGap && (
+            <Badge variant='warning' className='px-1.5'>
+              <FoldHorizontal size={12} fill='currentColor' />
+            </Badge>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MatchTeamRow = ({
+  team,
+  score,
+  status,
+}: {
+  team: Team;
+  score: number;
+  status: MatchStatus;
+}) => {
+  const teamBranding = team.utility ?? 'away';
+
+  return (
+    <div className='flex items-center justify-between w-full'>
+      <div className='flex items-center gap-grid-sm min-w-0 flex-1'>
+        {/* The Icon Container */}
+        <div
+          className={cn(
+            'flex items-center justify-center p-1 rounded-full shadow-md text-white shrink-0',
+            teamBranding,
+          )}
+        >
+          <SoccerBallIcon size={28} />
+        </div>
+
+        {/* Name and Badge Container */}
+        <div className='flex items-center gap-2 min-w-0'>
+          <span className='text-brand-navy font-black text-xl tracking-wide uppercase truncate'>
+            {team.name}
+          </span>
+          <GameBadge result={team.result!} />
+        </div>
+      </div>
+
+      {/* Score Area */}
+      <div className='text-brand-navy font-black text-2xl tabular-nums min-w-[2rem] flex justify-end ml-4'>
+        {status !== 'upcoming' ? (
+          score
+        ) : (
+          <div className='bg-divider w-4 h-1 self-center rounded-full opacity-50' />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export const GameBadge = ({ result }: { result: MatchResult }) => {
+  if (!result) return null;
+
+  const styles = {
+    W: 'bg-status-success/20 text-status-success border-status-success/30',
+    L: 'bg-status-conflict/10 text-status-conflict border-status-conflict/20',
+    D: 'bg-status-warning/20 text-status-warning border-status-warning/30',
+  };
+
+  const labels = {
+    W: 'Win',
+    L: 'Loss',
+    D: 'Draw',
+  };
+
+  return (
+    <div
+      className={cn(
+        'px-2 py-0.5 rounded-sm border text-[10px] font-black uppercase tracking-tighter',
+        styles[result],
+      )}
+    >
+      {labels[result]}
+    </div>
+  );
+};
