@@ -10,38 +10,124 @@ interface RawScrapedMatch {
   venue: string;
 }
 
-export function mapApiToMatch(raw: RawScrapedMatch): Match {
-  // Parsing "Mar 29, 2026 10:30AM"
-  const [datePart, yearPart, timePart] = raw.date_time.split(' ');
-  const formattedDate = `${datePart} ${yearPart.replace(',', '')}`;
-  const formattedTime = timePart;
+// 1. Helper: Safe Score Parsing
+const safeScore = (score: string | null | undefined): number | undefined => {
+  if (!score || score.trim() === '') return undefined;
+  const parsed = parseInt(score.trim(), 10);
+  return isNaN(parsed) ? undefined : parsed;
+};
 
-  // Parsing "2 - 1" or "Upcoming" or "Canceled"
-  const isFinal = raw.score_or_status.includes('-');
+// 2. Helper: Venue Sanitization
+const cleanVenue = (venue: string | null | undefined): string => {
+  if (!venue || venue.trim() === '') return 'TBD';
+  const cleaned = venue
+    .split('-')[0]
+    .trim()
+    .replace('FIELD', '')
+    .replace('  ', ' ')
+    .trim();
+  return cleaned === '' ? 'TBD' : cleaned;
+};
+
+// 3. Helper: Date & Time Parsing
+const parseDateTime = (rawDateTime: string) => {
+  const normalized = rawDateTime
+    .replace(/\u00A0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const timeMatch = normalized.match(/\d{1,2}:\d{2}[AP]M/i);
+
+  let time = 'TBD';
+  let date = normalized;
+
+  if (timeMatch) {
+    time = timeMatch[0].toUpperCase();
+    date = normalized.replace(timeMatch[0], '');
+  }
+
+  date = date
+    .replace(/CDT|EST|EDT|Rescheduled/gi, '')
+    .replace(/,/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Add comma back before the 4-digit year
+  date = date.replace(/ (\d{4})$/, ', $1');
+
+  return { date, time };
+};
+
+// 4. Helper: Smart Team Name Deduplication
+const cleanTeamName = (rawName: string | undefined | null): string => {
+  if (!rawName) return 'Unknown Team';
+
+  const words = rawName.split(' ').filter((w) => w !== '-' && w.trim() !== '');
+  const seenWords = new Set<string>();
+  const cleanedWords: string[] = [];
+
+  for (const word of words) {
+    const lowercaseWord = word.toLowerCase();
+
+    // Skip 1-character suffixes (like 'B') and duplicates
+    if (word.length > 1 && !seenWords.has(lowercaseWord)) {
+      seenWords.add(lowercaseWord);
+      cleanedWords.push(word);
+    }
+  }
+
+  return cleanedWords.length > 0 ? cleanedWords.join(' ') : rawName;
+};
+
+export function mapApiToMatch(raw: RawScrapedMatch): Match {
+  // Extract clean date and time FIRST so we can use them for status checks
+  const { date: formattedDate, time: formattedTime } = parseDateTime(
+    raw.date_time,
+  );
+
   let homeScore: number | undefined;
   let awayScore: number | undefined;
   let status: MatchStatus = 'upcoming';
 
-  if (isFinal) {
-    const scores = raw.score_or_status
-      .split('-')
-      .map((s) => parseInt(s.trim()));
-    homeScore = scores[0];
-    awayScore = scores[1];
-    status = 'final';
-  } else if (raw.score_or_status.toLowerCase().includes('cancel')) {
+  const lowerStatus = (raw.score_or_status || '').toLowerCase();
+
+  // --- Status & Score Parsing ---
+  if (lowerStatus.includes('cancel')) {
     status = 'canceled';
+  } else if (raw.score_or_status && raw.score_or_status.includes('-')) {
+    const [homeRaw, awayRaw] = raw.score_or_status.split('-');
+    homeScore = safeScore(homeRaw);
+    awayScore = safeScore(awayRaw);
+
+    // Explicitly check for numbers, not just truthiness (since score can be 0)
+    if (homeScore !== undefined && awayScore !== undefined) {
+      status = 'final';
+    }
   }
 
-  // Determine Utility
-  const getTeamUtility = (name: string): Team['utility'] => {
+  // --- Time-based fallback for hidden scores ---
+  if (status === 'upcoming' && formattedDate !== 'TBD') {
+    // Inject a space before AM/PM ("1:00PM" -> "1:00 PM") so the server can parse it
+    const safeTime = formattedTime.replace(/([AP]M)/i, ' $1');
+    const timeToParse = formattedTime === 'TBD' ? '11:59 PM' : safeTime;
+    const matchDate = new Date(`${formattedDate} ${timeToParse}`);
+
+    // If the date is valid AND the game is in the past, mark it final
+    if (!isNaN(matchDate.getTime()) && matchDate < new Date()) {
+      status = 'final';
+    }
+  }
+
+  // --- Determine Utility ---
+  const getTeamUtility = (name: string | undefined | null): Team['utility'] => {
+    if (!name) return 'away';
     const n = name.toLowerCase();
     if (n.includes('soricha')) return 'soricha';
-    if (n.includes('bag') || n.includes('b-and-g')) return 'b-and-g';
+    if (n.includes('bag') || n.includes('b-and-g') || n.includes('b&g'))
+      return 'b-and-g';
     return 'away';
   };
 
-  // Result Logic
+  // --- Result Logic ---
   const getResult = (sA?: number, sB?: number): MatchResult => {
     if (sA === undefined || sB === undefined) return null;
     if (sA > sB) return 'W';
@@ -52,24 +138,20 @@ export function mapApiToMatch(raw: RawScrapedMatch): Match {
   return {
     id: raw.game_id,
     homeTeam: {
-      name: raw.home_team,
+      name: cleanTeamName(raw.home_team),
       utility: getTeamUtility(raw.home_team),
       score: homeScore,
       result: getResult(homeScore, awayScore),
     },
     awayTeam: {
-      name: raw.away_team,
+      name: cleanTeamName(raw.away_team),
       utility: getTeamUtility(raw.away_team),
       score: awayScore,
       result: getResult(awayScore, homeScore),
     },
     date: formattedDate,
     time: formattedTime,
-    location: raw.venue
-      .split('-')[0]
-      .trim()
-      .replace('FIELD', '')
-      .replace('  ', ' '),
+    location: cleanVenue(raw.venue),
     status,
   };
 }

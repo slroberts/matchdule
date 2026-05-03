@@ -17,7 +17,7 @@ export const MatchList = ({ matches, className }: MatchListProps) => {
             className,
           )}
         >
-          {matches.map((match) => (
+          {matches.map((match: Match) => (
             <li key={match.id} className='list-none'>
               <MatchCard match={match} />
             </li>

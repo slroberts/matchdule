@@ -39,7 +39,7 @@ export const MatchCard = ({ match }: { match: Match }) => {
         {/* Pass actual scores from the team objects */}
         <MatchTeamRow
           team={match.homeTeam}
-          score={match.homeTeam.score ?? 0}
+          score={match.homeTeam.score}
           status={match.status}
         />
 
@@ -53,7 +53,7 @@ export const MatchCard = ({ match }: { match: Match }) => {
 
         <MatchTeamRow
           team={match.awayTeam}
-          score={match.awayTeam.score ?? 0}
+          score={match.awayTeam.score}
           status={match.status}
         />
       </div>
@@ -96,6 +96,8 @@ export const MatchHeader = ({
 }) => {
   const { TimeIcon } = getTimeOfDayAssets(time);
   const statusConfig = getStatusConfig(status as MatchStatus);
+
+  console.log(status);
 
   return (
     <div className='flex items-center justify-between w-full text-xs font-semibold tracking-tight'>
@@ -147,7 +149,7 @@ const MatchTeamRow = ({
   status,
 }: {
   team: Team;
-  score: number;
+  score?: number;
   status: MatchStatus;
 }) => {
   const teamBranding = team.utility ?? 'away';
@@ -167,7 +169,7 @@ const MatchTeamRow = ({
 
         {/* Name and Badge Container */}
         <div className='flex items-center gap-2 min-w-0'>
-          <span className='text-brand-navy font-black text-xl tracking-wide uppercase truncate'>
+          <span className='text-brand-navy font-black text-xl tracking-normal capitalize truncate'>
             {team.name}
           </span>
           <GameBadge result={team.result!} />
@@ -176,10 +178,12 @@ const MatchTeamRow = ({
 
       {/* Score Area */}
       <div className='text-brand-navy font-black text-2xl tabular-nums min-w-[2rem] flex justify-end ml-4'>
-        {status !== 'upcoming' ? (
+        {status === 'upcoming' ? (
+          <div className='bg-divider w-4 h-1 self-center rounded-full opacity-50' />
+        ) : score !== undefined ? (
           score
         ) : (
-          <div className='bg-divider w-4 h-1 self-center rounded-full opacity-50' />
+          <span className='text-surface-muted text-xl opacity-50'>-</span>
         )}
       </div>
     </div>

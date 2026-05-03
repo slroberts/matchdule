@@ -27,7 +27,7 @@ def clean_team_name(name):
 def clean_venue(venue_text):
     if not venue_text or venue_text in ["-", "Hidden"]:
         return "TBD"
-    return venue_text.split(" - ")[0].replace("TURF FIELD ", "").strip().title()
+    return venue_text.split(" - ")[0].strip().title()
 
 
 def scrape_teams(team_ids):
