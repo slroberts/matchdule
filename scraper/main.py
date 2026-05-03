@@ -1,12 +1,17 @@
 import os
 import re
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
-load_dotenv()
+script_dir = Path(__file__).resolve().parent
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
+env_path = script_dir.parent / '.env'
+
+load_dotenv(dotenv_path=env_path)
+
+SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 
