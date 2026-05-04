@@ -97,8 +97,6 @@ export const MatchHeader = ({
   const { TimeIcon } = getTimeOfDayAssets(time);
   const statusConfig = getStatusConfig(status as MatchStatus);
 
-  console.log(status);
-
   return (
     <div className='flex items-center justify-between w-full text-xs font-semibold tracking-tight'>
       {/* Match Meta Info */}

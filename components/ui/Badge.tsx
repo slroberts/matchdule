@@ -21,7 +21,7 @@ export const Badge = ({
   return (
     <span
       className={cn(
-        'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center justify-center gp-1',
+        'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gp-1',
         variants[variant],
         className,
       )}

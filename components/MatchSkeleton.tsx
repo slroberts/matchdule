@@ -4,7 +4,7 @@ export function MatchSkeleton() {
       {[...Array(2)].map((_, i) => (
         <div
           key={i}
-          className='h-56 w-full rounded-2xl bg-slate-200 animate-pulse'
+          className='h-56 w-full rounded-2xl bg-gradient-to-tr from-slate-200 to-slate-300 animate-pulse'
         />
       ))}
     </div>

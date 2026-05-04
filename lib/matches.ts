@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { mapApiToMatch } from './match-mapper';
 import { Match } from '@/types/match';
+import { unstable_cache } from 'next/cache';
 
-export async function getMatches(): Promise<Match[]> {
+export const getMatches = unstable_cache(async (): Promise<Match[]> => {
   // This client only exists on the server
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -61,4 +62,4 @@ export async function getMatches(): Promise<Match[]> {
 
     return getSortMetrics(a) - getSortMetrics(b);
   });
-}
+});

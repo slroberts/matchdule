@@ -12,23 +12,24 @@ export default function ErrorState({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Optional: Log to an external service like Sentry here
     console.error(error);
   }, [error]);
 
   return (
-    <div className='flex flex-col items-center justify-center min-h-[400px] p-6 text-center animate-in fade-in zoom-in duration-500'>
-      <div className='bg-blue-50 text-blue-500 rounded-full p-4 mb-4 transform-view'>
-        <GlassWater size={48} />
+    <div className='flex flex-col items-center justify-center min-h-[60vh] p-6 text-center animate-stagger-fade'>
+      <div className='bg-surface-card border-2 border-divider shadow-sm rounded-full p-6 mb-6 text-brand-navy/60'>
+        <GlassWater size={48} strokeWidth={1.5} />
       </div>
-      <h2 className='text-xl font-bold text-slate-900 mb-2'>
+
+      <h2 className='text-2xl font-black text-brand-navy tracking-tight mb-2 uppercase'>
         Connection Interrupted
       </h2>
-      <p className='text-slate-500 max-w-sm mb-8'>
+
+      <p className='text-surface-muted max-w-sm mb-8 text-sm font-medium'>
         We couldn&lsquo;t load the schedule from the locker room. The GotSport
         servers might be taking a water break.
       </p>
-      {/* Relying on the base Button component for styles */}
+
       <Button onClick={() => reset()}>Try Again</Button>
     </div>
   );
