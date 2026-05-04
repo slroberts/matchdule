@@ -70,6 +70,7 @@ body {
   color: var(--color-brand-navy);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
 }
 
 @layer utilities {
