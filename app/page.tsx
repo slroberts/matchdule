@@ -17,6 +17,22 @@ export default async function HomePage(props: {
   const weekInfo = getWeekData(selectedDate);
   const allMatches = await getMatches();
 
+  // Calculate "Game Week" Number
+  let gameWeekNumber = 1;
+  if (allMatches.length > 0) {
+    const firstMatchDate = new Date(allMatches[0].date);
+    const firstMatchWeek = getWeekData(firstMatchDate);
+
+    // Find the difference in milliseconds between the current week start and season week start
+    const msPerWeek = 1000 * 60 * 60 * 24 * 7;
+    const diffMs =
+      weekInfo.weekStart.getTime() - firstMatchWeek.weekStart.getTime();
+
+    // Divide by msPerWeek, round down, and add 1 (so the first week is Week 1)
+    // Math.max guarantees we never show a negative week or Week 0 if they scroll back before the season starts
+    gameWeekNumber = Math.max(1, Math.floor(diffMs / msPerWeek) + 1);
+  }
+
   // Calculate State (Delegated to helpers)
   const { hasPrev, hasNext } = getPaginationBounds(
     allMatches,
@@ -48,7 +64,7 @@ export default async function HomePage(props: {
     <>
       <Header
         dateRange={weekInfo.dateRange}
-        weekNumber={weekInfo.weekNumber}
+        weekNumber={gameWeekNumber}
         isCurrentWeek={weekInfo.isCurrentWeek}
         prevWeekDate={weekInfo.prevWeekDate}
         nextWeekDate={weekInfo.nextWeekDate}
