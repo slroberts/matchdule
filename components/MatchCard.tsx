@@ -16,6 +16,7 @@ import { Button } from './ui/Button';
 import { getTimeOfDayAssets } from '@/lib/date-utils';
 import { getStatusConfig } from '@/lib/match-utils';
 import { ShareButton } from './ShareButton';
+import { DirectionsButton } from './DirectionsButton';
 
 export const MatchCard = ({ match }: { match: Match }) => {
   const isTBD = match.time === 'TBD';
@@ -64,10 +65,7 @@ export const MatchCard = ({ match }: { match: Match }) => {
       {/* Bottom Row: Actions */}
       <div className='flex items-center justify-between gap-3 mt-2'>
         <ShareButton match={match} />
-        <Button variant='outline' className='w-full py-2.5'>
-          <MapPinned size={16} className='mr-1' />
-          Directions
-        </Button>
+        <DirectionsButton location={match.location} />
       </div>
     </div>
   );

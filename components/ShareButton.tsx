@@ -45,7 +45,7 @@ export const ShareButton = ({ match }: { match: Match }) => {
   return (
     <Button
       variant='outline'
-      className='w-full py-2.5 transition-all duration-200'
+      className='w-full py-2.5 transition-all duration-200 cursor-pointer'
       onClick={handleShare}
     >
       {copied ? (
