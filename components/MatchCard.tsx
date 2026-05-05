@@ -1,6 +1,7 @@
 import { Badge } from './ui/Badge';
 import {
   Calendar,
+  Clock,
   Flag,
   FoldHorizontal,
   MapPin,
@@ -16,6 +17,8 @@ import { getTimeOfDayAssets } from '@/lib/date-utils';
 import { getStatusConfig } from '@/lib/match-utils';
 
 export const MatchCard = ({ match }: { match: Match }) => {
+  const isTBD = match.time === 'TBD';
+
   return (
     <div
       className={cn(
@@ -26,6 +29,7 @@ export const MatchCard = ({ match }: { match: Match }) => {
       <MatchHeader
         isConflict={match.isConflict}
         isTightGap={match.isTightGap}
+        isTBD={isTBD}
         date={match.date}
         time={match.time}
         location={match.location}
@@ -80,6 +84,7 @@ const Separator = () => (
 export const MatchHeader = ({
   isConflict,
   isTightGap,
+  isTBD,
   date,
   time,
   location,
@@ -87,6 +92,7 @@ export const MatchHeader = ({
 }: {
   isConflict?: boolean;
   isTightGap?: boolean;
+  isTBD?: boolean;
   date: string;
   time: string;
   location: string;
@@ -95,11 +101,17 @@ export const MatchHeader = ({
   const { TimeIcon } = getTimeOfDayAssets(time);
   const statusConfig = getStatusConfig(status as MatchStatus);
 
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: 'short',
+    weekday: 'short',
+  }).format(new Date(date));
+
   return (
     <div className='flex items-center justify-between w-full text-xs font-semibold tracking-tight'>
       {/* Match Meta Info */}
       <div className='flex items-center gap-grid-sm min-w-0 flex-1 text-brand-navy'>
-        <MetaItem icon={Calendar} label={date} className='shrink-0' />
+        <MetaItem icon={Calendar} label={formattedDate} className='shrink-0' />
         <Separator />
         {!statusConfig ? (
           <MetaItem icon={TimeIcon} label={time} className={cn('shrink-0')} />
@@ -130,6 +142,11 @@ export const MatchHeader = ({
           {isTightGap && (
             <Badge variant='warning' className='px-1.5'>
               <FoldHorizontal size={12} fill='currentColor' />
+            </Badge>
+          )}
+          {isTBD && (
+            <Badge variant='warning' className='px-1.5'>
+              <Clock size={12} strokeWidth={2.5} />
             </Badge>
           )}
         </div>
