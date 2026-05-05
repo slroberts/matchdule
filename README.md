@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚽ Matchdule
 
-## Getting Started
+A modern, parent-centric web application designed to solve the logistical headaches of youth sports scheduling. Matchdule features a fully automated data pipeline that scrapes dynamic schedule data, stores it in the cloud, and serves it through an intelligent UI that flags overlaps, tight turnarounds, and pending game times.
 
-First, run the development server:
+## 🏗 Architecture & Data Pipeline
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Matchdule isn't just a frontend—it's a complete automated scheduling system:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Automated Scraping:** A custom Python web scraper utilizing headless browsers navigates the target scheduling sites and extracts the latest team schedules and location assignments.
+2. **CI/CD Automation:** A GitHub Action is configured as a cron job to execute the Python scraper automatically, ensuring the data is always up-to-date without manual intervention.
+3. **Cloud Database:** The extracted and cleaned schedule data is pushed directly to a **Supabase** PostgreSQL database.
+4. **Intelligent Frontend:** The Next.js App Router fetches the live data from Supabase and processes it through a custom scheduling engine to calculate exact minute overlaps and travel gaps.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ✨ Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Intelligent Conflict Detection:** The scheduling engine automatically scans weekend matchups and flags overlapping game times or physically impossible turnarounds.
+- **Smart UI Alerts:** Progressive disclosure alerts (collapsible accordion banners) warn parents of schedule conflicts and "TBD" game times.
+- **Native Web Sharing:** Integrated with the OS-level Web Share API, allowing parents to text beautifully formatted game details directly to family members, with a seamless clipboard fallback for desktop.
+- **One-Tap Directions:** Universal cross-platform Google Maps deep-linking gets parents to the right field immediately, with visual and functional disable-states for unassigned "TBD" locations.
+- **Custom Design System:** The entire UI is built from scratch using Tailwind CSS. It relies on a bespoke component architecture rather than pre-built UI libraries.
 
-## Learn More
+## 🛠 Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+**Frontend**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Framework:** Next.js (App Router)
+- **Styling:** Tailwind CSS
+- **Icons:** Lucide React
+- **Components:** 100% Custom UI Architecture
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Data & Automation**
 
-## Deploy on Vercel
+- **Database:** Supabase (PostgreSQL)
+- **Data Extraction:** Python & Playwright (Dynamic headless web scraping)
+- **Automation:** GitHub Actions (Cron scheduling)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Testing & Documentation**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **UI Sandboxing:** Storybook (Component isolation and visual state testing)
+- **Unit Testing:** Vitest (Core scheduling logic & engine math)
+
+## 🚀 Roadmap
+
+- [x] Python Web Scraper (Playwright) & Supabase Integration
+- [x] GitHub Actions Automation Pipeline
+- [x] Core Scheduling Engine (Overlap & Gap Math)
+- [x] Interactive Match Cards (Share & Directions)
+- [x] Smart Alert System
+- [ ] **Advanced Filtering & Toggles:** _(Currently in development)_
+  - **Squad Isolation:** Filter the timeline by specific child/team.
+  - **Status Toggles:** Switch views between "Upcoming Schedule" and "Past Results".
+  - **Venue Filtering:** Isolate games by field/location.
+  - **Alerts Quick-Filter:** A single toggle to only show matches with schedule conflicts or TBD times.
