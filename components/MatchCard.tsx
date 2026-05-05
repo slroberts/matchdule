@@ -19,9 +19,7 @@ export const MatchCard = ({ match }: { match: Match }) => {
   return (
     <div
       className={cn(
-        'p-grid-md rounded-card bg-surface-card border-2 transition-all shadow-md flex flex-col gap-grid-md w-full max-w-md',
-        match.isConflict ? 'border-status-conflict' : 'border-transparent',
-        match.isTightGap && !match.isConflict ? 'border-status-warning' : '',
+        'p-grid-md rounded-xl bg-surface-card transition-all shadow-lg flex flex-col gap-grid-md w-full max-w-md',
       )}
     >
       {/* Top Row: Meta Info */}
@@ -122,7 +120,6 @@ export const MatchHeader = ({
         <Separator />
         <MetaItem icon={MapPin} label={location} />
 
-        {isConflict || isTightGap ? <Separator /> : null}
         {/* Status Badges */}
         <div className='flex gap-grid-xs ml-auto'>
           {isConflict && (
