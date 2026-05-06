@@ -18,17 +18,17 @@ interface HeaderProps {
 export const Header = ({
   dateRange,
   weekNumber,
-  isCurrentWeek = false, // Defaulting to false for safety
+  isCurrentWeek = false,
   prevWeekDate,
   nextWeekDate,
   hasPrev,
   hasNext,
 }: HeaderProps) => {
   return (
-    <header className='sticky top-0 z-50 text-white shadow-header bg-brand-gradient-navy'>
-      <div className='max-w-md mx-auto'>
-        {/* Top Row: Brand & Actions */}
-        <div className='flex justify-between items-start p-6 border-b border-white/10'>
+    <header className='sticky top-0 z-50 w-full text-white shadow-header bg-brand-gradient-navy'>
+      {/* Top Row: Brand & Actions */}
+      <div className='border-b border-white/10'>
+        <div className='w-full max-w-lg mx-auto flex justify-between items-center px-6 py-4'>
           <Image
             src={MatchduleLogo}
             width={140}
@@ -42,9 +42,11 @@ export const Header = ({
             <span>Filters</span>
           </button>
         </div>
+      </div>
 
-        {/* Bottom Row: Navigation */}
-        <div className='flex items-center justify-between p-6 bg-glass-gradient'>
+      {/* Bottom Row: Navigation */}
+      <div className='bg-glass-gradient'>
+        <div className='w-full max-w-lg mx-auto flex items-center justify-between px-6 py-4'>
           <Link
             href={hasPrev ? `/?date=${prevWeekDate}` : '#'}
             className={cn(
@@ -57,21 +59,25 @@ export const Header = ({
             <ChevronLeft size={20} />
           </Link>
 
-          <div className='text-center'>
+          <div className='text-center flex flex-col items-center justify-center'>
             <h2 className='text-lg font-bold mb-1'>{dateRange}</h2>
-            <div className='flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/50'>
-              <span>Week {weekNumber}</span>
-              {isCurrentWeek ? (
-                <Badge variant='primary'>This Week</Badge>
-              ) : (
-                <Link
-                  href='/'
-                  className='text-white/80 hover:text-white underline underline-offset-[3px] decoration-white/30 hover:decoration-white transition-all cursor-pointer'
-                  aria-label='Return to current week'
-                >
-                  Go to current
-                </Link>
-              )}
+
+            <div className='flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-white/50 h-6'>
+              <span className='mr-2 shrink-0'>Week {weekNumber}</span>
+
+              <div className='w-[100px] flex items-center justify-start shrink-0'>
+                {isCurrentWeek ? (
+                  <Badge variant='primary'>This Week</Badge>
+                ) : (
+                  <Link
+                    href='/'
+                    className='text-white/80 hover:text-white underline underline-offset-[3px] decoration-white/30 hover:decoration-white transition-all cursor-pointer whitespace-nowrap'
+                    aria-label='Return to current week'
+                  >
+                    Jump to current
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
 
