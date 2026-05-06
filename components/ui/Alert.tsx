@@ -19,19 +19,26 @@ export const Alert = ({
   description,
   details,
 }: AlertProps) => {
-  // 1. Change state from 'isVisible' to 'isExpanded'
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   const styles = {
     destructive: 'bg-gradient-to-r from-[#FB2C36] to-[#E7000B]',
     warning: 'bg-gradient-to-r from-[#FBB000] to-[#F0A30A]',
   };
 
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted);
+    if (!isMuted) {
+      setIsExpanded(false);
+    }
+  };
+
   return (
     <div
       className={cn(
         'relative flex flex-col p-4 rounded-xl shadow-md text-white transition-all duration-300',
-        styles[variant],
+        isMuted ? 'bg-slate-400' : styles[variant],
       )}
     >
       <div
@@ -44,6 +51,12 @@ export const Alert = ({
           <div className='shrink-0'>{icon}</div>
           <h4 className='text-sm font-bold uppercase tracking-wide leading-none shadow-black/10 text-shadow-sm mt-0.5'>
             {title}
+
+            {isMuted && (
+              <span className='ml-2 lowercase tracking-normal font-medium opacity-70'>
+                (muted)
+              </span>
+            )}
           </h4>
         </div>
 
@@ -77,6 +90,15 @@ export const Alert = ({
               ))}
             </ul>
           )}
+          <div className='flex justify-end mt-1'>
+            <button
+              className='opacity-70 hover:opacity-100 transition-opacity focus:outline-none mt-1 cursor-pointer text-xs font-bold uppercase tracking-wider'
+              aria-label={isMuted ? 'Alert muted' : 'Alert unmuted'}
+              onClick={handleMuteToggle}
+            >
+              {isMuted ? 'Unmute' : 'Mute Alert'}
+            </button>
+          </div>
         </div>
       )}
     </div>
