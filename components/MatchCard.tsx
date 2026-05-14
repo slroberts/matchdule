@@ -5,14 +5,11 @@ import {
   Flag,
   FoldHorizontal,
   MapPin,
-  MapPinned,
-  Share2,
 } from 'lucide-react';
 import { Match, MatchResult, MatchStatus, Team } from '@/types/match';
 import { MetaItem } from './ui/MetaItem';
 import SoccerBallIcon from './ui/icons/SoccerBall';
 import { cn } from '@/lib/utils';
-import { Button } from './ui/Button';
 import { getTimeOfDayAssets } from '@/lib/date-utils';
 import { getStatusConfig } from '@/lib/match-utils';
 import { ShareButton } from './ShareButton';

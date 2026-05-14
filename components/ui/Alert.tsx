@@ -38,7 +38,7 @@ export const Alert = ({
     <div
       className={cn(
         'relative flex flex-col p-4 rounded-xl shadow-md text-white transition-all duration-300',
-        isMuted ? 'bg-slate-400' : styles[variant],
+        isMuted ? 'bg-zinc-500' : styles[variant],
       )}
     >
       <div
