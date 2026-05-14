@@ -7,6 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Track your soccer schedule with ease.',
     start_url: '/',
     display: 'standalone',
+    orientation: 'portrait',
     background_color: '#0a0e27',
     theme_color: '#0a0e27',
     icons: [

@@ -188,43 +188,54 @@ export function processWeekSpacing(currentWeekMatches: Match[]) {
     let isConflict = false;
     let isTightGap = false;
 
-    const myTeam = formatShortName(getTrackedTeam(match));
+    const isPast = match.status === 'final' || match.status === 'canceled';
 
-    // Check for TBD and build the detail string
-    if (match.time === 'TBD') {
-      const opponent = formatShortName(getOpponentTeam(match));
-      tbdDetails.push(`${myTeam} vs ${opponent}`);
+    // Only run if the match is still active
+    if (!isPast) {
+      const myTeam = formatShortName(getTrackedTeam(match));
+
+      // Check for TBD and build the detail string
+      if (match.time === 'TBD') {
+        const opponent = formatShortName(getOpponentTeam(match));
+        tbdDetails.push(`${myTeam} vs ${opponent}`);
+      }
+
+      currentWeekMatches.forEach((otherMatch) => {
+        if (
+          match.id === otherMatch.id ||
+          otherMatch.status === 'final' ||
+          otherMatch.status === 'canceled'
+        ) {
+          return;
+        }
+
+        const pairKey = [match.id, otherMatch.id].sort().join('-');
+        const spacing = analyzeMatchSpacing(match, otherMatch, 60);
+
+        const teamA = formatShortName(getTrackedTeam(match));
+        const teamB = formatShortName(getTrackedTeam(otherMatch));
+
+        if (spacing.isConflict) {
+          isConflict = true;
+          if (!processedPairs.has(pairKey)) {
+            conflictDetails.push(
+              `${teamA} ${match.time} ↔ ${teamB} ${otherMatch.time} (overlap ${spacing.overlapMins} min)`,
+            );
+            processedPairs.add(pairKey);
+          }
+        }
+
+        if (spacing.isTightGap) {
+          isTightGap = true;
+          if (!processedPairs.has(pairKey)) {
+            tightGapDetails.push(
+              `${teamA} ${match.time} → ${teamB} ${otherMatch.time} (${spacing.gapMins} min gap)`,
+            );
+            processedPairs.add(pairKey);
+          }
+        }
+      });
     }
-
-    currentWeekMatches.forEach((otherMatch) => {
-      if (match.id === otherMatch.id) return;
-
-      const pairKey = [match.id, otherMatch.id].sort().join('-');
-      const spacing = analyzeMatchSpacing(match, otherMatch, 60);
-
-      const teamA = formatShortName(getTrackedTeam(match));
-      const teamB = formatShortName(getTrackedTeam(otherMatch));
-
-      if (spacing.isConflict) {
-        isConflict = true;
-        if (!processedPairs.has(pairKey)) {
-          conflictDetails.push(
-            `${teamA} ${match.time} ↔ ${teamB} ${otherMatch.time} (overlap ${spacing.overlapMins} min)`,
-          );
-          processedPairs.add(pairKey);
-        }
-      }
-
-      if (spacing.isTightGap) {
-        isTightGap = true;
-        if (!processedPairs.has(pairKey)) {
-          tightGapDetails.push(
-            `${teamA} ${match.time} → ${teamB} ${otherMatch.time} (${spacing.gapMins} min gap)`,
-          );
-          processedPairs.add(pairKey);
-        }
-      }
-    });
 
     return { ...match, isConflict, isTightGap };
   });
