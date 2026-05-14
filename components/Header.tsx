@@ -59,20 +59,20 @@ export const Header = ({
             <ChevronLeft size={20} />
           </Link>
 
-          <div className='text-center flex flex-col items-center justify-center'>
-            <h2 className='text-lg font-bold mb-1'>{dateRange}</h2>
+          <div className='flex flex-col items-center justify-center'>
+            <h2 className='mb-1 text-lg font-bold text-center'>{dateRange}</h2>
 
-            <div className='flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-white/50 h-6'>
-              <span className='mr-2 shrink-0'>Week {weekNumber}</span>
+            <div className='flex items-center justify-center gap-2 h-6 text-[10px] font-bold uppercase tracking-widest text-white/50'>
+              <span className='shrink-0'>Week {weekNumber}</span>
 
-              <div className='w-[100px] flex items-center justify-start shrink-0'>
+              <div className='shrink-0'>
                 {isCurrentWeek ? (
                   <Badge variant='primary'>This Week</Badge>
                 ) : (
                   <Link
                     href='/'
-                    className='text-white/80 hover:text-white underline underline-offset-[3px] decoration-white/30 hover:decoration-white transition-all cursor-pointer whitespace-nowrap'
                     aria-label='Return to current week'
+                    className='whitespace-nowrap underline decoration-white/30 underline-offset-[3px] text-white/80 transition-all hover:text-white hover:decoration-white'
                   >
                     Jump to current
                   </Link>
