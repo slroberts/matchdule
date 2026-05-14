@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
+import { PortraitLock } from '@/components/ProtraitLock';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -27,7 +28,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en' className='bg-surface-base'>
-      <body className='antialiased min-h-screen'>{children}</body>
+      <body className='antialiased min-h-screen'>
+        <PortraitLock />
+        {children}
+      </body>
     </html>
   );
 }
