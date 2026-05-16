@@ -10,14 +10,14 @@ interface RawScrapedMatch {
   venue: string;
 }
 
-// 1. Helper: Safe Score Parsing
+// Helper: Safe Score Parsing
 const safeScore = (score: string | null | undefined): number | undefined => {
   if (!score || score.trim() === '') return undefined;
   const parsed = parseInt(score.trim(), 10);
   return isNaN(parsed) ? undefined : parsed;
 };
 
-// 2. Helper: Venue Sanitization
+// Helper: Venue Sanitization
 const cleanVenue = (venue: string | null | undefined): string => {
   if (!venue || venue.trim() === '') return 'TBD';
   const cleaned = venue
@@ -29,7 +29,7 @@ const cleanVenue = (venue: string | null | undefined): string => {
   return cleaned === '' ? 'TBD' : cleaned;
 };
 
-// 3. Helper: Date & Time Parsing
+// Helper: Date & Time Parsing
 const parseDateTime = (rawDateTime: string) => {
   const normalized = rawDateTime
     .replace(/\u00A0/g, ' ')
@@ -57,7 +57,7 @@ const parseDateTime = (rawDateTime: string) => {
   return { date, time };
 };
 
-// 4. Helper: Smart Team Name Deduplication
+// Helper: Smart Team Name Deduplication
 const cleanTeamName = (rawName: string | undefined | null): string => {
   if (!rawName) return 'Unknown Team';
 
@@ -109,11 +109,24 @@ export function mapApiToMatch(raw: RawScrapedMatch): Match {
     // Inject a space before AM/PM ("1:00PM" -> "1:00 PM") so the server can parse it
     const safeTime = formattedTime.replace(/([AP]M)/i, ' $1');
     const timeToParse = formattedTime === 'TBD' ? '11:59 PM' : safeTime;
-    const matchDate = new Date(`${formattedDate} ${timeToParse}`);
 
-    // If the date is valid AND the game is in the past, mark it final
-    if (!isNaN(matchDate.getTime()) && matchDate < new Date()) {
-      status = 'final';
+    // Append "EST" so the server knows this isn't a UTC time
+    const matchDate = new Date(`${formattedDate} ${timeToParse} EST`);
+
+    if (!isNaN(matchDate.getTime())) {
+      const now = Date.now();
+      const kickoffMs = matchDate.getTime();
+
+      // Add 105 minutes (90 min game + 15 min halftime) to kickoff
+      const gameEndMs = kickoffMs + 105 * 60000;
+
+      if (now > gameEndMs) {
+        // If current time is past the end of the game, it's final
+        status = 'final';
+      } else if (now >= kickoffMs && now <= gameEndMs) {
+        // If current time is between kickoff and end time, it's live!
+        status = 'live';
+      }
     }
   }
 
