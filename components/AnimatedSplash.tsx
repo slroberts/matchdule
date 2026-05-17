@@ -35,10 +35,10 @@ export const AnimatedSplash = () => {
             }}
           >
             <Image
-              src='/matchdule-logo.svg'
+              src='/matchdule-symbol.svg'
               alt='Matchdule Logo'
-              width={210}
-              height={25.5}
+              width={125}
+              height={125}
               priority
               className='h-auto w-auto'
             />
