@@ -16,6 +16,7 @@ export interface Match {
   location: string;
   date: string;
   status: MatchStatus;
+  timestamp: number;
 
   // UI Specific Flags
   isConflict?: boolean;

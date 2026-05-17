@@ -8,8 +8,12 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(),
 }));
 
+// Mock Next.js unstable_cache completely so it simply runs our function directly during tests
+vi.mock('next/cache', () => ({
+  unstable_cache: (fn: any) => fn,
+}));
+
 describe('getMatches', () => {
-  // Updated mock chain: from -> select (order is now handled in JS)
   const mockSelect = vi.fn();
   const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
 
@@ -31,7 +35,7 @@ describe('getMatches', () => {
     process.env = originalEnv;
   });
 
-  it('successfully fetches and sorts matches chronologically', async () => {
+  it('successfully fetches and sorts matches chronologically via calculated primitive timestamps', async () => {
     const mockDbData = [
       {
         game_id: '1',
@@ -55,7 +59,7 @@ describe('getMatches', () => {
     // Act
     const result = await getMatches();
 
-    // Assert: Check Supabase calls
+    // Assert: Check Supabase client initialization constraints
     expect(createClient).toHaveBeenCalledWith(
       'https://mock.supabase.co',
       'mock-key',
@@ -63,14 +67,15 @@ describe('getMatches', () => {
     expect(mockFrom).toHaveBeenCalledWith('matches');
     expect(mockSelect).toHaveBeenCalledWith('*');
 
-    // Assert: Verify Sorting Logic (March must be index 0, May index 1)
+    // Assert: Verify primitive timestamp numerical sorting (March must precede May)
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe('2'); // Mar 29
     expect(result[1].id).toBe('1'); // May 30
     expect(result[0].date).toBe('Mar 29, 2026');
+    expect(result[0].timestamp).toBeGreaterThan(0);
   });
 
-  it('handles same-day matches by sorting by time', async () => {
+  it('handles same-day matches by correctly evaluating chronological time offsets', async () => {
     const mockDbData = [
       {
         date_time: 'Apr 11, 2026 1:00PM',
@@ -93,12 +98,13 @@ describe('getMatches', () => {
 
     const result = await getMatches();
 
-    // Assert: 9:00AM (B) should come before 1:00PM (A)
+    // Assert: 9:00AM (B) must sort natively before 1:00PM (A) based on timestamp integer checks
     expect(result[0].id).toBe('B');
     expect(result[1].id).toBe('A');
+    expect(result[1].timestamp).toBeGreaterThan(result[0].timestamp);
   });
 
-  it('returns an empty array gracefully if data is null', async () => {
+  it('returns an empty array gracefully if data payload returns null', async () => {
     mockSelect.mockResolvedValueOnce({ data: null, error: null });
 
     const result = await getMatches();
@@ -106,7 +112,7 @@ describe('getMatches', () => {
     expect(result).toEqual([]);
   });
 
-  it('throws an error if the database connection fails', async () => {
+  it('throws an unhandled error instance if the database connection fails', async () => {
     mockSelect.mockResolvedValueOnce({
       data: null,
       error: { message: 'relation "matches" does not exist' },

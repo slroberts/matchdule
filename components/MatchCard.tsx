@@ -1,11 +1,8 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Badge } from './ui/Badge';
-import {
-  Calendar,
-  Clock,
-  Flag,
-  FoldHorizontal,
-  MapPin,
-} from 'lucide-react';
+import { Calendar, Clock, Flag, FoldHorizontal, MapPin } from 'lucide-react';
 import { Match, MatchResult, MatchStatus, Team } from '@/types/match';
 import { MetaItem } from './ui/MetaItem';
 import SoccerBallIcon from './ui/icons/SoccerBall';
@@ -16,7 +13,31 @@ import { ShareButton } from './ShareButton';
 import { DirectionsButton } from './DirectionsButton';
 
 export const MatchCard = ({ match }: { match: Match }) => {
+  const [currentStatus, setCurrentStatus] = useState<MatchStatus>(match.status);
   const isTBD = match.time === 'TBD';
+
+  // Active client-side clock to keep status perfectly synchronized in real-time
+  useEffect(() => {
+    if (match.status === 'final' || match.status === 'canceled') return;
+
+    const gameEndMs = match.timestamp + 105 * 60000; // Kickoff + 105 minutes
+
+    const calculateLiveStatus = () => {
+      const now = Date.now();
+
+      if (now > gameEndMs) {
+        setCurrentStatus('final');
+      } else if (now >= match.timestamp && now <= gameEndMs) {
+        setCurrentStatus('live');
+      } else {
+        setCurrentStatus('upcoming');
+      }
+    };
+
+    calculateLiveStatus();
+    const interval = setInterval(calculateLiveStatus, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, [match]);
 
   return (
     <div
@@ -32,16 +53,15 @@ export const MatchCard = ({ match }: { match: Match }) => {
         date={match.date}
         time={match.time}
         location={match.location}
-        status={match.status}
+        status={currentStatus}
       />
 
       {/* Center Row: The Matchup */}
       <div className='flex flex-col items-start justify-between px-2 py-grid-xs'>
-        {/* Pass actual scores from the team objects */}
         <MatchTeamRow
           team={match.homeTeam}
           score={match.homeTeam.score}
-          status={match.status}
+          status={currentStatus}
         />
 
         <div className='flex items-center w-full my-grid-sm'>
@@ -55,7 +75,7 @@ export const MatchCard = ({ match }: { match: Match }) => {
         <MatchTeamRow
           team={match.awayTeam}
           score={match.awayTeam.score}
-          status={match.status}
+          status={currentStatus}
         />
       </div>
 
@@ -92,23 +112,42 @@ export const MatchHeader = ({
   status: MatchStatus;
 }) => {
   const { TimeIcon } = getTimeOfDayAssets(time);
-  const statusConfig = getStatusConfig(status as MatchStatus);
+  const statusConfig = getStatusConfig(status);
 
-  const formattedDate = new Intl.DateTimeFormat('en-US', {
-    day: 'numeric',
-    month: 'short',
-    weekday: 'short',
-  }).format(new Date(date));
+  // Cross-browser safe Date formatting fallback logic
+  const getFormattedDate = () => {
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        day: 'numeric',
+        month: 'short',
+        weekday: 'short',
+      }).format(new Date(date));
+    } catch (e) {
+      return date; // Graceful fallback if original string pattern gets injected directly
+    }
+  };
 
   return (
     <div className='flex items-center justify-between w-full text-xs font-semibold tracking-tight'>
       {/* Match Meta Info */}
       <div className='flex items-center gap-grid-sm min-w-0 flex-1 text-brand-navy'>
-        <MetaItem icon={Calendar} label={formattedDate} className='shrink-0' />
+        <MetaItem
+          icon={Calendar}
+          label={getFormattedDate()}
+          className='shrink-0'
+        />
         <Separator />
-        {!statusConfig ? (
-          <MetaItem icon={TimeIcon} label={time} className={cn('shrink-0')} />
-        ) : (
+
+        {/* Dynamic Live Status Badge Swapping Layer */}
+        {status === 'live' ? (
+          <div className='flex items-center gap-1.5 text-status-conflict font-black shrink-0 animate-pulse'>
+            <span className='relative flex h-2 w-2'>
+              <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-status-conflict opacity-75' />
+              <span className='relative inline-flex rounded-full h-2 w-2 bg-status-conflict' />
+            </span>
+            <span className='uppercase tracking-widest text-[10px]'>Live</span>
+          </div>
+        ) : statusConfig ? (
           <div
             className={cn(
               'flex items-center gap-1 shrink-0',
@@ -120,6 +159,8 @@ export const MatchHeader = ({
               {statusConfig.label}
             </span>
           </div>
+        ) : (
+          <MetaItem icon={TimeIcon} label={time} className={cn('shrink-0')} />
         )}
 
         <Separator />
@@ -177,7 +218,8 @@ const MatchTeamRow = ({
           <span className='text-brand-navy font-black text-xl tracking-normal capitalize truncate'>
             {team.name}
           </span>
-          <GameBadge result={team.result!} />
+          {/* Hide outcome result badges during live play windows */}
+          {status !== 'live' && <GameBadge result={team.result!} />}
         </div>
       </div>
 

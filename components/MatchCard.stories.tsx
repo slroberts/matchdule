@@ -13,6 +13,10 @@ const meta: Meta<typeof MatchCard> = {
 export default meta;
 type Story = StoryObj<typeof MatchCard>;
 
+// --- HELPER FOR DYNAMIC TIMESTAMPS ---
+const now = Date.now();
+const MINUTE = 60 * 1000;
+
 // --- MOCK TEAMS ---
 const SORICHA: Team = {
   name: 'Soricha',
@@ -28,7 +32,8 @@ const AWAY_TEAM: Team = {
   result: null,
 };
 
-// --- SORICHA STORIES ---
+// --- STORIES ---
+
 export const SorichaUpcoming: Story = {
   name: 'Soricha / Upcoming',
   args: {
@@ -39,7 +44,24 @@ export const SorichaUpcoming: Story = {
       time: '10:00 AM',
       location: 'Randall Island - Field 4',
       status: 'upcoming',
-      date: 'Sunday, Apr 19',
+      date: 'May 17, 2026',
+      timestamp: now + 120 * MINUTE, // 2 hours in the future
+    },
+  },
+};
+
+export const SorichaLive: Story = {
+  name: 'Soricha / Live (Dynamic)',
+  args: {
+    match: {
+      id: 's-live',
+      homeTeam: { ...SORICHA, score: 2 },
+      awayTeam: { ...AWAY_TEAM, score: 1 },
+      time: '10:00 AM',
+      location: 'Randall Island - Field 4',
+      status: 'upcoming', // Mapper might say upcoming, but component will flip to live
+      date: 'May 17, 2026',
+      timestamp: now - 30 * MINUTE, // Started 30 mins ago (inside 105 min window)
     },
   },
 };
@@ -54,20 +76,25 @@ export const SorichaCanceled: Story = {
       time: '10:00 AM',
       location: 'Randall Island - Field 4',
       status: 'canceled',
-      date: 'Sunday, Apr 19',
+      date: 'May 17, 2026',
+      timestamp: now - 500 * MINUTE,
     },
   },
 };
 
-export const SorichaLive: Story = {
-  name: 'Soricha / Live (Winning)',
+export const BandGFinal: Story = {
+  name: 'B&G / Final (Win)',
   args: {
     match: {
-      ...SorichaUpcoming.args?.match,
-      status: 'live',
-      homeTeam: { ...SORICHA, score: 2 },
-      awayTeam: { ...AWAY_TEAM, score: 1 },
-    } as Match,
+      id: 'bg1',
+      homeTeam: { ...BANDG, score: 3, result: 'W' },
+      awayTeam: { ...AWAY_TEAM, name: 'Lions', score: 0, result: 'L' },
+      time: '12:30 PM',
+      location: 'Randall Island - Field 7',
+      status: 'final',
+      date: 'May 17, 2026',
+      timestamp: now - 200 * MINUTE, // Finished 200 mins ago
+    },
   },
 };
 
@@ -81,41 +108,20 @@ export const SorichaConflict: Story = {
   },
 };
 
-// --- B&G STORIES ---
-export const BandGUpcoming: Story = {
-  name: 'B&G / Upcoming',
-  args: {
-    match: {
-      id: 'bg1',
-      homeTeam: BANDG,
-      awayTeam: { ...AWAY_TEAM, name: 'Lions' },
-      time: '12:30 PM',
-      location: 'Randall Island - Field 7',
-      status: 'upcoming',
-      date: 'Sunday, Apr 19',
-    },
-  },
-};
-
-export const BandGFinal: Story = {
-  name: 'B&G / Final (Win)',
-  args: {
-    match: {
-      ...BandGUpcoming.args?.match,
-      status: 'final',
-      homeTeam: { ...BANDG, score: 3, result: 'W' },
-      awayTeam: { ...AWAY_TEAM, name: 'Lions', score: 0, result: 'L' },
-    } as Match,
-  },
-};
-
 export const BandGTightGap: Story = {
   name: 'B&G / Tight Gap Warning',
   args: {
     match: {
-      ...BandGUpcoming.args?.match,
+      id: 'bg-tight',
+      homeTeam: BANDG,
+      awayTeam: AWAY_TEAM,
+      time: '12:30 PM',
+      location: 'Randall Island - Field 7',
+      status: 'upcoming',
+      date: 'May 17, 2026',
+      timestamp: now + 60 * MINUTE,
       isTightGap: true,
-    } as Match,
+    },
   },
 };
 
@@ -123,11 +129,15 @@ export const BandGLateKickoff: Story = {
   name: 'B&G / Late Afternoon',
   args: {
     match: {
-      ...BandGUpcoming.args?.match,
       id: 'bg-late',
-      time: '3:30 PM', // This should trigger the Sunset icon
-      date: 'Sunday, Apr 19',
-    } as Match,
+      homeTeam: BANDG,
+      awayTeam: AWAY_TEAM,
+      time: '5:30 PM',
+      location: 'Randall Island - Field 7',
+      status: 'upcoming',
+      date: 'May 17, 2026',
+      timestamp: now + 300 * MINUTE,
+    },
   },
 };
 
@@ -135,10 +145,14 @@ export const DrawState: Story = {
   name: 'Shared / Draw Result',
   args: {
     match: {
-      ...SorichaUpcoming.args?.match,
+      id: 'draw-1',
+      homeTeam: { ...SORICHA, score: 1, result: 'D' },
+      awayTeam: { ...AWAY_TEAM, score: 1, result: 'D' },
+      time: '9:00 AM',
+      location: 'Randall Island - Field 2',
       status: 'final',
-      homeTeam: { ...SORICHA, score: 0, result: 'D' },
-      awayTeam: { ...AWAY_TEAM, score: 0, result: 'D' },
-    } as Match,
+      date: 'May 17, 2026',
+      timestamp: now - 300 * MINUTE,
+    },
   },
 };
