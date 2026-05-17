@@ -33,12 +33,13 @@ export const AnimatedSplash = () => {
 
               scale: { repeat: Infinity, duration: 1.5, ease: 'easeInOut' },
             }}
+            className='-mt-16'
           >
             <Image
               src='/matchdule-symbol.svg'
               alt='Matchdule Logo'
-              width={125}
-              height={125}
+              width={130}
+              height={130}
               priority
               className='h-auto w-auto'
             />
