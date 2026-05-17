@@ -20,6 +20,9 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'Matchdule',
   },
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+  },
 };
 
 export default function RootLayout({
