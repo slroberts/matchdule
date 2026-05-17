@@ -68,9 +68,6 @@ async function ScheduleDataViewer({
   allMatches: Awaited<ReturnType<typeof getMatches>>;
   weekInfo: ReturnType<typeof getWeekData>;
 }) {
-  // Create a 150ms delay to ensure the skeleton paints to the DOM and prevents EmptyState ghosting
-  await new Promise((resolve) => setTimeout(resolve, 150));
-
   const currentWeekMatches = allMatches.filter((match) => {
     const matchTime = new Date(match.date).getTime();
     const endOfSunday = new Date(weekInfo.weekEnd);
