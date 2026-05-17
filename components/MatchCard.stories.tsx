@@ -32,21 +32,24 @@ const AWAY_TEAM: Team = {
   result: null,
 };
 
+// --- BASE MATCH BLUEPRINT  ---
+const baseSorichaMatch: Match = {
+  id: 's1',
+  homeTeam: SORICHA,
+  awayTeam: AWAY_TEAM,
+  time: '10:00 AM',
+  location: 'Randall Island - Field 4',
+  status: 'upcoming',
+  date: 'May 17, 2026',
+  timestamp: now + 120 * MINUTE, // Default: 2 hours in the future
+};
+
 // --- STORIES ---
 
 export const SorichaUpcoming: Story = {
   name: 'Soricha / Upcoming',
   args: {
-    match: {
-      id: 's1',
-      homeTeam: SORICHA,
-      awayTeam: AWAY_TEAM,
-      time: '10:00 AM',
-      location: 'Randall Island - Field 4',
-      status: 'upcoming',
-      date: 'May 17, 2026',
-      timestamp: now + 120 * MINUTE, // 2 hours in the future
-    },
+    match: baseSorichaMatch,
   },
 };
 
@@ -54,13 +57,10 @@ export const SorichaLive: Story = {
   name: 'Soricha / Live (Dynamic)',
   args: {
     match: {
+      ...baseSorichaMatch,
       id: 's-live',
       homeTeam: { ...SORICHA, score: 2 },
       awayTeam: { ...AWAY_TEAM, score: 1 },
-      time: '10:00 AM',
-      location: 'Randall Island - Field 4',
-      status: 'upcoming', // Mapper might say upcoming, but component will flip to live
-      date: 'May 17, 2026',
       timestamp: now - 30 * MINUTE, // Started 30 mins ago (inside 105 min window)
     },
   },
@@ -70,13 +70,9 @@ export const SorichaCanceled: Story = {
   name: 'Soricha / Canceled',
   args: {
     match: {
+      ...baseSorichaMatch,
       id: 's2',
-      homeTeam: SORICHA,
-      awayTeam: AWAY_TEAM,
-      time: '10:00 AM',
-      location: 'Randall Island - Field 4',
       status: 'canceled',
-      date: 'May 17, 2026',
       timestamp: now - 500 * MINUTE,
     },
   },
@@ -102,9 +98,10 @@ export const SorichaConflict: Story = {
   name: 'Soricha / Conflict Warning',
   args: {
     match: {
-      ...SorichaUpcoming.args?.match,
+      ...baseSorichaMatch,
+      id: 's-conflict',
       isConflict: true,
-    } as Match,
+    },
   },
 };
 
