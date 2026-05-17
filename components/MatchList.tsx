@@ -36,7 +36,7 @@ export const MatchList = ({ matches, className }: MatchListProps) => {
 };
 
 const EmptyState = () => (
-  <div className='flex flex-col items-center justify-center py-20 px-6 text-center opacity-0 animate-stagger-fade bg-surface-base z-10'>
+  <div className='flex flex-col items-center justify-center py-20 px-6 text-center opacity-0 animate-stagger-fade bg-surface-canvas z-10'>
     <div className='relative mb-6'>
       <div className='absolute inset-0 bg-brand-navy/5 blur-xl rounded-full scale-150' />
 
