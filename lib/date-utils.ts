@@ -36,6 +36,15 @@ export function getWeekData(targetDate?: Date | string) {
   const nyTimeStr = new Date().toLocaleString('en-US', {
     timeZone: 'America/New_York',
   });
+  const nyNow = new Date(nyTimeStr);
+
+  // --- THE SUNDAY NIGHT OFFSET ---
+  // If it is Sunday (0) and past 6:00 PM (18:00), the active match week is effectively over.
+  // Push logical "today" forward by 24 hours to Monday so the UI and Engine align perfectly.
+  if (nyNow.getDay() === 0 && nyNow.getHours() >= 18) {
+    nyNow.setDate(nyNow.getDate() + 1);
+  }
+
   const nyToday = new Date(nyTimeStr);
   nyToday.setHours(0, 0, 0, 0);
 
@@ -43,6 +52,7 @@ export function getWeekData(targetDate?: Date | string) {
   let date: Date;
 
   if (!targetDate) {
+    // If no target is passed, it correctly defaults to our shifted "Today"
     date = new Date(nyToday);
   } else {
     // Inject "T12:00:00" to force parsing at Noon, preventing UTC midnight shifts
