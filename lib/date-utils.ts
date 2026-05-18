@@ -32,30 +32,41 @@ export const getTimeOfDayAssets = (
  * the ISO week number, and whether it represents the current real-world week.
  */
 export function getWeekData(targetDate?: Date | string) {
-  // Get the exact current time in New York, regardless of server location
-  const nyTimeStr = new Date().toLocaleString('en-US', {
+  // Get exact New York time parts (Bypasses Vercel UTC server traps)
+  const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    weekday: 'short',
   });
-  const nyNow = new Date(nyTimeStr);
 
-  // --- THE SUNDAY NIGHT OFFSET ---
-  // If it is Sunday (0) and past 6:00 PM (18:00), the active match week is effectively over.
-  // Push logical "today" forward by 24 hours to Monday so the UI and Engine align perfectly.
-  if (nyNow.getDay() === 0 && nyNow.getHours() >= 18) {
+  const parts = formatter.formatToParts(new Date());
+  const ny = {} as Record<string, string>;
+  parts.forEach(({ type, value }) => (ny[type] = value));
+
+  // Safely initialize "Today" at Noon to avoid midnight timezone jumps
+  const nyNow = new Date(`${ny.year}-${ny.month}-${ny.day}T12:00:00`);
+
+  // The Sunday Night Offset
+  // Check the pure NY string values so server UTC offsets can't interfere
+  const isLateSunday = ny.weekday === 'Sun' && parseInt(ny.hour, 10) >= 18;
+
+  if (isLateSunday) {
     nyNow.setDate(nyNow.getDate() + 1);
   }
 
-  const nyToday = new Date(nyTimeStr);
+  const nyToday = new Date(nyNow);
   nyToday.setHours(0, 0, 0, 0);
 
   // Defensively parse the target date
   let date: Date;
 
   if (!targetDate) {
-    // If no target is passed, it correctly defaults to our shifted "Today"
     date = new Date(nyToday);
   } else {
-    // Inject "T12:00:00" to force parsing at Noon, preventing UTC midnight shifts
     const safeString =
       typeof targetDate === 'string' && !targetDate.includes('T')
         ? `${targetDate}T12:00:00`
@@ -63,7 +74,6 @@ export function getWeekData(targetDate?: Date | string) {
 
     date = new Date(safeString);
 
-    // Fallback if the string was total garbage
     if (isNaN(date.getTime())) {
       date = new Date(nyToday);
     }
@@ -73,14 +83,13 @@ export function getWeekData(targetDate?: Date | string) {
   const day = date.getDay();
   const diff = date.getDate() - day + (day === 0 ? -6 : 1);
 
-  // Create Monday securely without mutating the original date
   const monday = new Date(date);
   monday.setDate(diff);
 
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
 
-  // Format the Date Range (e.g., "Oct 19 - 25" or "Oct 28 - Nov 3")
+  // Format the Date Range
   const startMonth = monday.toLocaleDateString('en-US', { month: 'short' });
   const startDay = monday.getDate();
   const endMonth = sunday.toLocaleDateString('en-US', { month: 'short' });
@@ -99,7 +108,7 @@ export function getWeekData(targetDate?: Date | string) {
     (targetThursday.getTime() - firstThursday.getTime()) / 86400000;
   const weekNumber = 1 + Math.round(daysBetween / 7);
 
-  // Check if it is the current real-world week (Comparing against NY Today)
+  // Find the Monday of our adjusted "Today"
   const currentDay = nyToday.getDay();
   nyToday.setDate(nyToday.getDate() - currentDay + (currentDay === 0 ? -6 : 1));
 
@@ -117,7 +126,6 @@ export function getWeekData(targetDate?: Date | string) {
     dateRange,
     weekNumber,
     isCurrentWeek: nyToday.getTime() === targetMondayMidnight.getTime(),
-    // Format safely to YYYY-MM-DD to avoid .toISOString() UTC shifts
     prevWeekDate: `${prevWeek.getFullYear()}-${String(prevWeek.getMonth() + 1).padStart(2, '0')}-${String(prevWeek.getDate()).padStart(2, '0')}`,
     nextWeekDate: `${nextWeek.getFullYear()}-${String(nextWeek.getMonth() + 1).padStart(2, '0')}-${String(nextWeek.getDate()).padStart(2, '0')}`,
     weekStart: monday,
