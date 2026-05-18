@@ -60,6 +60,12 @@
 }
 
 /* --- Base Styles --- */
+html,
+body {
+  /* Disables the pull-to-refresh and rubber-banding effect */
+  overscroll-behavior-y: none;
+}
+
 :root {
   --background: var(--color-surface-canvas);
   --foreground: var(--color-brand-navy);
