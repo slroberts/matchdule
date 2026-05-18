@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import { AppleSplashScreens } from '@/components/AppleSplashScreens';
 import '@/styles/globals.css';
 import { PortraitLock } from '@/components/ProtraitLock';
-import { AnimatedSplash } from '@/components/AnimatedSplash';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -40,8 +39,6 @@ export default function RootLayout({
         <PortraitLock />
 
         {children}
-
-        <AnimatedSplash />
 
         {/* Register the Service Worker for PWA offline caching and installation */}
         <script
