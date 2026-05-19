@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Share2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/Button';
 import { Match } from '@/types/match';
-import { formatShortName } from '@/lib/match-utils';
+import { formatShortName } from '@/lib/matches/match-utils';
 
 export const ShareButton = ({ match }: { match: Match }) => {
   const [copied, setCopied] = useState(false);

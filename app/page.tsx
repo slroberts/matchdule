@@ -1,9 +1,9 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { MatchSkeleton } from '@/components/modules/matches/MatchSkeleton';
-import { getMatches } from '@/lib/matches';
-import { getWeekData } from '@/lib/date-utils';
-import { getPaginationBounds } from '@/lib/match-utils';
+import { getMatches } from '@/lib/matches/matches';
+import { getWeekData } from '@/lib/dates/date-utils';
+import { getPaginationBounds } from '@/lib/matches/match-utils';
 import { ClientView } from '@/components/layouts/ClientView';
 import { TabOption, TABS } from '@/types/match';
 
