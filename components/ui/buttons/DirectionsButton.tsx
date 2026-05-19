@@ -1,7 +1,7 @@
 'use client';
 
 import { MapPinned } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
 
 export const DirectionsButton = ({ location }: { location: string }) => {

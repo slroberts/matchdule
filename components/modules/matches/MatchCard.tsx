@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Badge } from './ui/Badge';
 import { Calendar, Clock, Flag, FoldHorizontal, MapPin } from 'lucide-react';
 import { Match, MatchResult, MatchStatus, Team } from '@/types/match';
-import { MetaItem } from './ui/MetaItem';
-import SoccerBallIcon from './ui/icons/SoccerBall';
 import { cn } from '@/lib/utils';
 import { getTimeOfDayAssets } from '@/lib/date-utils';
 import { getStatusConfig } from '@/lib/match-utils';
-import { ShareButton } from './ShareButton';
-import { DirectionsButton } from './DirectionsButton';
+import { ShareButton } from '@/components/ui/buttons/ShareButton';
+import { DirectionsButton } from '@/components/ui/buttons/DirectionsButton';
+import { MetaItem } from '@/components/ui/MetaItem/MetaItem';
+import { Badge } from '@/components/ui/Badge/Badge';
+import SoccerBallIcon from '@/components/ui/icons/SoccerBall';
 
 export const MatchCard = ({ match }: { match: Match }) => {
   const [currentStatus, setCurrentStatus] = useState<MatchStatus>(match.status);

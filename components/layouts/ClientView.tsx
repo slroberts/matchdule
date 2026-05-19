@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { Clock, Flag, FoldHorizontal } from 'lucide-react';
-import { MatchList } from '@/components/MatchList';
-import { Header } from '@/components/Header';
-import { Alert } from '@/components/ui/Alert';
+import { MatchList } from '@/components/modules/matches/MatchList';
+import { Header } from '@/components/layouts/Header/Header';
+import { Alert } from '@/components/ui/Alert/Alert';
 import { processWeekSpacing } from '@/lib/match-utils';
 import { getWeekData } from '@/lib/date-utils';
 import { Match, TabOption } from '@/types/match';

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
-import { AppleSplashScreens } from '@/components/AppleSplashScreens';
+import { AppleSplashScreens } from '@/components/system/AppleSplashScreens';
 import '@/styles/globals.css';
-import { PortraitLock } from '@/components/ProtraitLock';
+import { PortraitLock } from '@/components/system/PortraitLock';
 
 export const viewport: Viewport = {
   width: 'device-width',

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Share2, Check } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import { Match } from '@/types/match';
 import { formatShortName } from '@/lib/match-utils';
 

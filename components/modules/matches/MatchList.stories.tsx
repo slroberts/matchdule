@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { MatchList } from './MatchList';
-import { Match } from '../types/match';
+import { Match } from '@/types/match';
 
 const meta: Meta<typeof MatchList> = {
   title: 'Organisms/MatchList',

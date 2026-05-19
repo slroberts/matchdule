@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { MatchSkeleton } from '@/components/MatchSkeleton';
+import { MatchSkeleton } from '@/components/modules/matches/MatchSkeleton';
 import { getMatches } from '@/lib/matches';
 import { getWeekData } from '@/lib/date-utils';
 import { getPaginationBounds } from '@/lib/match-utils';
-import { ClientView } from '@/components/ClientView';
+import { ClientView } from '@/components/layouts/ClientView';
 import { TabOption, TABS } from '@/types/match';
 
 export default async function HomePage(props: {

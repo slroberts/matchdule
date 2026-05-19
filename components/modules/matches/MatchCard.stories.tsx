@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { MatchCard } from './MatchCard';
-import { Match, Team } from '../types/match';
+import { Match, Team } from '@/types/match';
 
 const meta: Meta<typeof MatchCard> = {
   title: 'Molecules/MatchCard/States',

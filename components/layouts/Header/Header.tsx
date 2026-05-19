@@ -1,11 +1,11 @@
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Badge } from './ui/Badge';
 import MatchduleLogo from '@/public/matchdule-logo.svg';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { TabOption } from '@/types/match';
-import { TeamTabs } from './TeamTabs';
+import { Badge } from '@/components/ui/Badge/Badge';
+import { TeamTabs } from '../TeamTabs';
 
 interface HeaderProps {
   dateRange: string;
