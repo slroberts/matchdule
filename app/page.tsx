@@ -1,12 +1,11 @@
 import { Suspense } from 'react';
-import { Clock, Flag, FoldHorizontal } from 'lucide-react';
-import { MatchList } from '@/components/MatchList';
-import { Header } from '@/components/Header';
+import { cookies } from 'next/headers';
 import { MatchSkeleton } from '@/components/MatchSkeleton';
-import { Alert } from '@/components/ui/Alert';
 import { getMatches } from '@/lib/matches';
 import { getWeekData } from '@/lib/date-utils';
-import { getPaginationBounds, processWeekSpacing } from '@/lib/match-utils';
+import { getPaginationBounds } from '@/lib/match-utils';
+import { ClientView } from '@/components/ClientView';
+import { TabOption, TABS } from '@/types/match';
 
 export default async function HomePage(props: {
   searchParams: Promise<{ date?: string }>;
@@ -16,10 +15,20 @@ export default async function HomePage(props: {
   const selectedDate = searchParams.date || new Date();
   const weekInfo = getWeekData(selectedDate);
 
-  // Fetch matches (This is heavily cached, so it's nearly instant!)
+  // Read the cookie securely on the server
+  const cookieStore = await cookies();
+  const savedTeamCookie = cookieStore.get('matchdule_selected_team')?.value;
+
+  // Validate the cookie against our allowed TABS
+  const initialTeam: TabOption =
+    savedTeamCookie && (TABS as readonly string[]).includes(savedTeamCookie)
+      ? (savedTeamCookie as TabOption)
+      : 'All Teams';
+
+  // Fetch all matches (Server-side)
   const allMatches = await getMatches();
 
-  // Calculate "Game Week" Number dynamically based on the FIRST game in the DB
+  // Calculate "Game Week" Number dynamically
   let gameWeekNumber = 1;
   if (allMatches.length > 0) {
     const firstMatchDate = new Date(allMatches[0].date);
@@ -40,91 +49,16 @@ export default async function HomePage(props: {
   );
 
   return (
-    <>
-      <Header
-        dateRange={weekInfo.dateRange}
-        weekNumber={gameWeekNumber}
-        isCurrentWeek={weekInfo.isCurrentWeek}
-        prevWeekDate={weekInfo.prevWeekDate}
-        nextWeekDate={weekInfo.nextWeekDate}
+    // The Suspense boundary catches the loading state while the server fetches
+    <Suspense key={weekInfo.dateRange} fallback={<MatchSkeleton />}>
+      <ClientView
+        allMatches={allMatches}
+        weekInfo={weekInfo}
+        gameWeekNumber={gameWeekNumber}
         hasPrev={hasPrev}
         hasNext={hasNext}
+        initialTeam={initialTeam}
       />
-      <main className='p-6'>
-        <Suspense key={weekInfo.dateRange} fallback={<MatchSkeleton />}>
-          {/* Pass the already-fetched matches down to the child */}
-          <ScheduleDataViewer allMatches={allMatches} weekInfo={weekInfo} />
-        </Suspense>
-      </main>
-    </>
-  );
-}
-
-// Use this to intentionally trigger the Suspense fallback for a clean transition
-async function ScheduleDataViewer({
-  allMatches,
-  weekInfo,
-}: {
-  allMatches: Awaited<ReturnType<typeof getMatches>>;
-  weekInfo: ReturnType<typeof getWeekData>;
-}) {
-  const currentWeekMatches = allMatches.filter((match) => {
-    const matchTime = new Date(match.date).getTime();
-    const endOfSunday = new Date(weekInfo.weekEnd);
-    endOfSunday.setHours(23, 59, 59, 999);
-    return (
-      matchTime >= weekInfo.weekStart.getTime() &&
-      matchTime <= endOfSunday.getTime()
-    );
-  });
-
-  const {
-    matchesWithSpacingStatus,
-    conflictDetails,
-    tightGapDetails,
-    tbdDetails,
-    hasConflict,
-    hasTightGap,
-    hasTBD,
-  } = processWeekSpacing(currentWeekMatches);
-
-  return (
-    <>
-      {(hasConflict || hasTightGap || hasTBD) && (
-        <div className='flex flex-col gap-3 w-full max-w-md mx-auto mb-6'>
-          {hasConflict && (
-            <Alert
-              variant='destructive'
-              icon={<Flag size={18} strokeWidth={2.5} />}
-              title={`${conflictDetails.length} Schedule Conflict ${conflictDetails.length > 1 ? 's' : ''}`}
-              description='You have overlapping matches. You cannot be in two places at once.'
-              details={conflictDetails}
-            />
-          )}
-
-          {hasTightGap && !hasConflict && (
-            <Alert
-              variant='warning'
-              icon={<FoldHorizontal size={18} strokeWidth={2.5} />}
-              title={`${tightGapDetails.length} Schedule Overlap ${tightGapDetails.length > 1 ? 's' : ''}`}
-              description='Matches are scheduled very close together. Pack snacks and plan travel accordingly.'
-              details={tightGapDetails}
-            />
-          )}
-
-          {hasTBD && (
-            <Alert
-              variant='warning'
-              icon={<Clock size={18} strokeWidth={2.5} />}
-              title={`${tbdDetails.length} Schedule Note ${tbdDetails.length > 1 ? 's' : ''}`}
-              description={`The exact kickoff time for ${tbdDetails.length > 1 ? 'these matches' : 'the match'} is currently TBD.`}
-              details={tbdDetails}
-            />
-          )}
-        </div>
-      )}
-
-      <MatchList matches={matchesWithSpacingStatus} />
-    </>
+    </Suspense>
   );
 }
