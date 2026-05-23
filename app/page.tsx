@@ -5,7 +5,7 @@ import { getMatches } from '@/lib/matches/matches';
 import { getWeekData } from '@/lib/dates/date-utils';
 import { getPaginationBounds } from '@/lib/matches/match-utils';
 import { ClientView } from '@/components/layouts/ClientView';
-import { TabOption, TABS } from '@/types/match';
+import { FilterState, INITIAL_FILTERS, TabOption, TABS } from '@/types/match';
 
 export default async function HomePage(props: {
   searchParams: Promise<{ date?: string }>;
@@ -18,12 +18,24 @@ export default async function HomePage(props: {
   // Read the cookie securely on the server
   const cookieStore = await cookies();
   const savedTeamCookie = cookieStore.get('matchdule_selected_team')?.value;
+  const savedFiltersCookie = cookieStore.get('matchdule_filters');
 
-  // Validate the cookie against our allowed TABS
+  // Validate the cookie
   const initialTeam: TabOption =
     savedTeamCookie && (TABS as readonly string[]).includes(savedTeamCookie)
       ? (savedTeamCookie as TabOption)
       : 'All Teams';
+
+  let initialFilters: FilterState = INITIAL_FILTERS;
+
+  if (savedFiltersCookie?.value) {
+    try {
+      // Decode the URL-safe string back into standard JSON, then parse it
+      initialFilters = JSON.parse(decodeURIComponent(savedFiltersCookie.value));
+    } catch (error) {
+      console.error('Failed to parse initial filters cookie, using defaults.');
+    }
+  }
 
   // Fetch all matches (Server-side)
   const allMatches = await getMatches();
@@ -58,6 +70,7 @@ export default async function HomePage(props: {
         hasPrev={hasPrev}
         hasNext={hasNext}
         initialTeam={initialTeam}
+        initialFilters={initialFilters}
       />
     </Suspense>
   );

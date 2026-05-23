@@ -166,10 +166,16 @@ export function mapApiToMatch(raw: RawScrapedMatch): Match {
     const now = Date.now();
     const gameEndMs = timestamp + 105 * 60000; // Kickoff + 105 minutes
 
-    if (now > gameEndMs) {
-      status = 'final';
-    } else if (now >= timestamp && now <= gameEndMs) {
+    if (now >= timestamp && now <= gameEndMs) {
       status = 'live';
+    } else if (now > gameEndMs) {
+      // SAFEGUARD: Only auto-finalize if we actually have scores parsed.
+      // If there's no score, it's a future game or pending kickoff.
+      if (homeScore !== undefined && awayScore !== undefined) {
+        status = 'final';
+      } else {
+        status = 'upcoming';
+      }
     }
   }
 
