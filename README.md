@@ -14,10 +14,12 @@ Matchdule isn't just a frontend—it's a complete automated scheduling system:
 ## ✨ Features
 
 - **Intelligent Conflict Detection:** The scheduling engine automatically scans weekend matchups and flags overlapping game times or physically impossible turnarounds.
-- **Smart UI Alerts:** Progressive disclosure alerts (collapsible accordion banners) warn parents of schedule conflicts and "TBD" game times.
+- **Persistent Timeline Filtration:** A sophisticated, fluid bottom-sheet drawer allows users to apply filters as a persistent lens over the timeline. Users can refine schedules by team side (Home/Away), match status (Upcoming/Final), time of day, or specific urgency alerts, all while seamlessly paginating through weeks without losing their filter context.
+- **Zero-Shift Server Hydration:** User filter preferences and active teams are securely persisted via cookies and parsed server-side. This guarantees the UI renders instantly on load with the correct data—eliminating client-side flashes and layout shifts.
+- **Smart UI Alerts & Contextual Empty States:** Progressive disclosure alerts warn parents of schedule conflicts and "TBD" game times. The interface maintains a perfectly stable, unified layout between standard and filtered states, utilizing an iOS-style notification badge to silently indicate active filters and intelligently swapping between "Rest Week" and "No Results" empty states.
 - **Native Web Sharing:** Integrated with the OS-level Web Share API, allowing parents to text beautifully formatted game details directly to family members, with a seamless clipboard fallback for desktop.
 - **One-Tap Directions:** Universal cross-platform Google Maps deep-linking gets parents to the right field immediately, with visual and functional disable-states for unassigned "TBD" locations.
-- **Custom Design System:** The entire UI is built from scratch using Tailwind CSS. It relies on a bespoke component architecture rather than pre-built UI libraries.
+- **Custom Design System:** The entire UI is built from scratch using Tailwind CSS and animated with Framer Motion. It relies on a bespoke component architecture rather than pre-built UI libraries.
 
 ## 🛠 Tech Stack
 
@@ -25,6 +27,7 @@ Matchdule isn't just a frontend—it's a complete automated scheduling system:
 
 - **Framework:** Next.js (App Router)
 - **Styling:** Tailwind CSS
+- **Animations:** Framer Motion
 - **Icons:** Lucide React
 - **Components:** 100% Custom UI Architecture
 
@@ -46,8 +49,6 @@ Matchdule isn't just a frontend—it's a complete automated scheduling system:
 - [x] Core Scheduling Engine (Overlap & Gap Math)
 - [x] Interactive Match Cards (Share & Directions)
 - [x] Smart Alert System
-- [ ] **Advanced Filtering & Toggles:** _(Currently in development)_
-  - **Squad Isolation:** Filter the timeline by specific child/team.
-  - **Status Toggles:** Switch views between "Upcoming Schedule" and "Past Results".
-  - **Venue Filtering:** Isolate games by field/location.
-  - **Alerts Quick-Filter:** A single toggle to only show matches with schedule conflicts or TBD times.
+- [x] Advanced Filtration Engine & Filter Drawer
+- [x] Server-Side State Hydration (Cookies)
+- [ ] Push Notifications for Schedule Changes

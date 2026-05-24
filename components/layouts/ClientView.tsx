@@ -4,16 +4,11 @@ import { useState, useEffect } from 'react';
 import { Clock, Flag, FoldHorizontal } from 'lucide-react';
 import { MatchList } from '@/components/modules/matches/MatchList';
 import { Header } from '@/components/layouts/Header/Header';
+import { TeamTabs } from './TeamTabs';
 import { Alert } from '@/components/ui/Alert/Alert';
 import { processWeekSpacing } from '@/lib/matches/match-utils';
 import { getWeekData } from '@/lib/dates/date-utils';
-import {
-  FilterState,
-  INITIAL_FILTERS,
-  Match,
-  TabOption,
-  TimeOfDayOption,
-} from '@/types/match';
+import { FilterState, Match, TabOption, TimeOfDayOption } from '@/types/match';
 import { FilterDrawer } from './FilterDrawer/FilterDrawer';
 import { AnimatePresence } from 'framer-motion';
 
@@ -77,10 +72,6 @@ export const ClientView = ({
     document.cookie = `matchdule_selected_team=${team}; path=/; max-age=31536000`;
   };
 
-  const handleReset = () => {
-    setFilters(INITIAL_FILTERS);
-  };
-
   // Calculate exactly how many individual filters are currently applied
   const activeFilterCount =
     (filters.homeAway !== 'all' ? 1 : 0) +
@@ -88,23 +79,18 @@ export const ClientView = ({
     filters.timeOfDay.length +
     (filters.matchState !== 'all' ? 1 : 0);
 
-  const isDrawerFilterActive = activeFilterCount > 0;
-
   // Main Unified Filtration Engine
   const displayedMatches = allMatches.filter((match) => {
-    // TIME RANGE BOUNDS (Bypassed if drawer filters are active)
-    if (!isDrawerFilterActive) {
-      const matchTime = new Date(match.date).getTime();
-      const endOfSunday = new Date(weekInfo.weekEnd);
-      endOfSunday.setHours(23, 59, 59, 999);
+    const matchTime = new Date(match.date).getTime();
+    const endOfSunday = new Date(weekInfo.weekEnd);
+    endOfSunday.setHours(23, 59, 59, 999);
 
-      const isThisWeek =
-        matchTime >= weekInfo.weekStart.getTime() &&
-        matchTime <= endOfSunday.getTime();
-      if (!isThisWeek) return false;
-    }
+    const isThisWeek =
+      matchTime >= weekInfo.weekStart.getTime() &&
+      matchTime <= endOfSunday.getTime();
 
-    // PRIMARY NAVIGATION SEGMENT CHECK (Active Tab Check)
+    if (!isThisWeek) return false;
+
     let isRightTeam = true;
     const targetUtility = getUtilityFromTab(currentTeam);
 
@@ -161,6 +147,15 @@ export const ClientView = ({
     return true;
   });
 
+  const handleClearFilters = () => {
+    setFilters({
+      homeAway: 'all',
+      urgency: [],
+      timeOfDay: [],
+      matchState: 'all',
+    });
+  };
+
   const {
     matchesWithSpacingStatus,
     conflictDetails,
@@ -173,24 +168,23 @@ export const ClientView = ({
 
   return (
     <>
-      <Header
-        dateRange={weekInfo.dateRange}
-        weekNumber={gameWeekNumber}
-        isCurrentWeek={weekInfo.isCurrentWeek}
-        prevWeekDate={weekInfo.prevWeekDate}
-        nextWeekDate={weekInfo.nextWeekDate}
-        hasPrev={hasPrev}
-        hasNext={hasNext}
-        activeTeam={currentTeam}
-        onTeamChange={handleTeamChange}
-        isFilterOpen={isFilterOpen}
-        setIsFilterOpen={setIsFilterOpen}
-        isSearching={isDrawerFilterActive}
-        onClearFilters={handleReset}
-        activeFilterCount={activeFilterCount}
-      />
+      <div className='sticky top-0 z-50 w-full flex flex-col'>
+        <Header
+          dateRange={weekInfo.dateRange}
+          weekNumber={gameWeekNumber}
+          isCurrentWeek={weekInfo.isCurrentWeek}
+          prevWeekDate={weekInfo.prevWeekDate}
+          nextWeekDate={weekInfo.nextWeekDate}
+          hasPrev={hasPrev}
+          hasNext={hasNext}
+          setIsFilterOpen={setIsFilterOpen}
+          activeFilterCount={activeFilterCount}
+        />
 
-      <main className='p-6'>
+        <TeamTabs activeTeam={currentTeam} onTeamChange={handleTeamChange} />
+      </div>
+
+      <main className='px-6 py-2'>
         {(hasConflict || hasTightGap || hasTBD) && (
           <div className='flex flex-col gap-3 w-full max-w-md mx-auto mb-6'>
             {hasConflict && (
@@ -225,7 +219,11 @@ export const ClientView = ({
           </div>
         )}
 
-        <MatchList matches={matchesWithSpacingStatus} />
+        <MatchList
+          matches={matchesWithSpacingStatus}
+          hasActiveFilters={activeFilterCount > 0}
+          onClearFilters={handleClearFilters}
+        />
       </main>
 
       <AnimatePresence>
