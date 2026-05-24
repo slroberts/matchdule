@@ -48,13 +48,15 @@ export const Header = ({
           <button
             onClick={() => setIsFilterOpen(true)}
             className={cn(
-              'flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest transition-opacity cursor-pointer',
+              'flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest transition-opacity cursor-pointer transform-gpu',
               hasActiveFilters
                 ? 'text-white opacity-100'
                 : 'opacity-70 hover:opacity-100',
             )}
           >
-            <SlidersHorizontal size={18} />
+            <span className='flex shrink-0'>
+              <SlidersHorizontal size={18} />
+            </span>
 
             {hasActiveFilters && (
               <span className='grid place-items-center w-4 h-4 rounded-full bg-white text-brand-navy text-[10px] font-black shrink-0'>
