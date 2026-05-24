@@ -54,14 +54,14 @@ export const Header = ({
                 : 'opacity-70 hover:opacity-100',
             )}
           >
-            <div className='relative flex items-center justify-center gap-2'>
-              <SlidersHorizontal size={18} />
-              {hasActiveFilters && (
-                <span className='grid place-items-center justify-center w-4 h-4 rounded-full bg-white text-brand-navy font-black shrink-0'>
-                  <span className='mt-[1px]'>{activeFilterCount}</span>
-                </span>
-              )}
-            </div>
+            <SlidersHorizontal size={18} />
+
+            {hasActiveFilters && (
+              <span className='grid place-items-center w-4 h-4 rounded-full bg-white text-brand-navy text-[10px] font-black shrink-0'>
+                <span className='mt-[1px]'>{activeFilterCount}</span>
+              </span>
+            )}
+
             <span>Filters</span>
           </button>
         </div>
