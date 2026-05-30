@@ -108,7 +108,26 @@ export const parseCrossBrowserDate = (
       minutes = 59;
     }
 
-    return new Date(year, monthIndex, day, hours, minutes);
+    // ---------------------------------------------------------
+    // VERCEL FIX: Dynamic Eastern Time Offset Calculation
+    // ---------------------------------------------------------
+    // Create a dummy UTC date for the target game day
+    const targetDateUTC = new Date(Date.UTC(year, monthIndex, day));
+
+    // Ask the native Intl API how New York formats this specific date
+    const nyFormat = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      timeZoneName: 'short',
+    }).format(targetDateUTC);
+
+    // Extract whether New York is in EDT or EST for this match
+    const offset = nyFormat.includes('EDT') ? '-04:00' : '-05:00';
+
+    // Build the final ISO string with the dynamic offset attached
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const isoString = `${year}-${pad(monthIndex + 1)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00${offset}`;
+
+    return new Date(isoString);
   } catch (e) {
     return null;
   }
