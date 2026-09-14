@@ -79,9 +79,13 @@ export const ClientView = ({
 
   // Set up boundary dates for the current week to calculate dynamic visibility
   const endOfSunday = new Date(weekInfo.weekEnd);
+  // Push forward 12 hours to safely bypass any UTC-to-Local negative timezone shifts
+  endOfSunday.setHours(endOfSunday.getHours() + 12);
   endOfSunday.setHours(23, 59, 59, 999);
 
   const startOfMonday = new Date(weekInfo.weekStart);
+  // Push forward 12 hours to safely bypass any UTC-to-Local negative timezone shifts
+  startOfMonday.setHours(startOfMonday.getHours() + 12);
   startOfMonday.setHours(0, 0, 0, 0);
 
   // Dynamically verify if matches exist outside the current view bounds
@@ -96,8 +100,9 @@ export const ClientView = ({
   const displayedMatches = allMatches.filter((match) => {
     const matchTime = match.timestamp;
 
+    // UPDATE THIS LINE: Use startOfMonday instead of weekInfo.weekStart
     const isThisWeek =
-      matchTime >= weekInfo.weekStart.getTime() &&
+      matchTime >= startOfMonday.getTime() &&
       matchTime <= endOfSunday.getTime();
 
     if (!isThisWeek) return false;
