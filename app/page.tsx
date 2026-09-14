@@ -14,8 +14,7 @@ export default async function HomePage(props: {
 }) {
   // Parse the URL
   const searchParams = await props.searchParams;
-  const selectedDate = searchParams.date || new Date();
-  const weekInfo = getWeekData(selectedDate);
+  const weekInfo = getWeekData(searchParams.date);
 
   // Read the cookie securely on the server
   const cookieStore = await cookies();
