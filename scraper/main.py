@@ -2,6 +2,7 @@ import os
 import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from playwright_stealth import Stealth
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -18,10 +19,13 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 def clean_team_name(name):
     if not name or name == "-":
         return "TBD"
+
     # Removes years and common suffixes
     cleaned = re.sub(
         r'(\d{4}|NYE|Maignan|Comets|Zidane|Baggio|Gold|Blue|PERSEUS)', '', name)
-    return cleaned.split("  ")[0].strip()
+
+    # Replace any block of multiple spaces/newlines with a single space
+    return re.sub(r'\s+', ' ', cleaned).strip()
 
 
 def clean_venue(venue_text):
@@ -30,9 +34,9 @@ def clean_venue(venue_text):
     return venue_text.split(" - ")[0].strip().title()
 
 
-def scrape_teams(team_ids):
+def scrape_teams(teams):
     all_matches = []
-    with sync_playwright() as p:
+    with Stealth().use_sync(sync_playwright()) as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -40,12 +44,13 @@ def scrape_teams(team_ids):
         )
         page = context.new_page()
 
-        for team_id in team_ids:
+        for events_id, team_id in teams:
             print(f"📡 Scraping Team: {team_id}...")
-            url = f"https://system.gotsport.com/org_event/events/50946/schedules?team={team_id}"
+            url = f"https://system.gotsport.com/org_event/events/{events_id}/schedules?team={team_id}"
 
             try:
-                page.goto(url, wait_until="networkidle", timeout=60000)
+                page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                page.wait_for_selector("tr", timeout=15000)
                 page.mouse.wheel(0, 500)
                 page.wait_for_timeout(2000)
 
@@ -112,6 +117,8 @@ def push_to_supabase(data):
 
 
 if __name__ == "__main__":
-    teams = ["3705640", "3802474"]
+    teams = [("54578", "4108117"),
+             ("55206", "4243561")]
+
     scraped_data = scrape_teams(teams)
     push_to_supabase(scraped_data)

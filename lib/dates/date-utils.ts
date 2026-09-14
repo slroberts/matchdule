@@ -50,13 +50,15 @@ export function getWeekData(targetDate?: Date | string) {
   // Safely initialize "Today" at Noon to avoid midnight timezone jumps
   const nyNow = new Date(`${ny.year}-${ny.month}-${ny.day}T12:00:00`);
 
-  // The Sunday Night Offset
-  // Check the pure NY string values so server UTC offsets can't interfere
-  const isLateSunday = ny.weekday === 'Sun' && parseInt(ny.hour, 10) >= 18;
-
-  if (isLateSunday) {
-    nyNow.setDate(nyNow.getDate() + 1);
-  }
+  // ---------------------------------------------------------
+  // SUNDAY NIGHT OFFSET REMOVED
+  // This ensures the week doesn't prematurely roll over to
+  // Monday on Sunday evenings.
+  // ---------------------------------------------------------
+  // const isLateSunday = ny.weekday === 'Sun' && parseInt(ny.hour, 10) >= 18;
+  // if (isLateSunday) {
+  //   nyNow.setDate(nyNow.getDate() + 1);
+  // }
 
   const nyToday = new Date(nyNow);
   nyToday.setHours(0, 0, 0, 0);

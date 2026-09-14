@@ -51,8 +51,6 @@ export const ClientView = ({
   allMatches,
   weekInfo,
   gameWeekNumber,
-  hasPrev,
-  hasNext,
   initialTeam,
   initialFilters,
 }: ClientViewProps) => {
@@ -79,11 +77,24 @@ export const ClientView = ({
     filters.timeOfDay.length +
     (filters.matchState !== 'all' ? 1 : 0);
 
+  // Set up boundary dates for the current week to calculate dynamic visibility
+  const endOfSunday = new Date(weekInfo.weekEnd);
+  endOfSunday.setHours(23, 59, 59, 999);
+
+  const startOfMonday = new Date(weekInfo.weekStart);
+  startOfMonday.setHours(0, 0, 0, 0);
+
+  // Dynamically verify if matches exist outside the current view bounds
+  const realHasNext = allMatches.some(
+    (match) => match.timestamp > endOfSunday.getTime(),
+  );
+  const realHasPrev = allMatches.some(
+    (match) => match.timestamp < startOfMonday.getTime(),
+  );
+
   // Main Unified Filtration Engine
   const displayedMatches = allMatches.filter((match) => {
-    const matchTime = new Date(match.date).getTime();
-    const endOfSunday = new Date(weekInfo.weekEnd);
-    endOfSunday.setHours(23, 59, 59, 999);
+    const matchTime = match.timestamp;
 
     const isThisWeek =
       matchTime >= weekInfo.weekStart.getTime() &&
@@ -175,8 +186,8 @@ export const ClientView = ({
           isCurrentWeek={weekInfo.isCurrentWeek}
           prevWeekDate={weekInfo.prevWeekDate}
           nextWeekDate={weekInfo.nextWeekDate}
-          hasPrev={hasPrev}
-          hasNext={hasNext}
+          hasPrev={realHasPrev}
+          hasNext={realHasNext}
           setIsFilterOpen={setIsFilterOpen}
           activeFilterCount={activeFilterCount}
         />

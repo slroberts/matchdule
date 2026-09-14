@@ -7,6 +7,8 @@ import { getPaginationBounds } from '@/lib/matches/match-utils';
 import { ClientView } from '@/components/layouts/ClientView';
 import { FilterState, INITIAL_FILTERS, TabOption, TABS } from '@/types/match';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage(props: {
   searchParams: Promise<{ date?: string }>;
 }) {

@@ -35,7 +35,7 @@ const parseDateTime = (rawDateTime: string) => {
     .replace(/\u00A0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  const timeMatch = normalized.match(/\d{1,2}:\d{2}[AP]M/i);
+  const timeMatch = normalized.match(/\d{1,2}:\d{2}\s?[AP]M/i);
 
   let time = 'TBD';
   let date = normalized;
