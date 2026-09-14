@@ -1,3 +1,4 @@
+playwright-stealth
 playwright
 supabase
 python-dotenv
