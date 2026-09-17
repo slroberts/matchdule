@@ -19,7 +19,7 @@ type Story = StoryObj<typeof Header>;
 export const CurrentWeek: Story = {
   args: {
     dateRange: 'Oct 19 - 25',
-    weekNumber: 43,
+    seasonLabel: 'Fall 2026',
     isCurrentWeek: true,
     prevWeekDate: '2026-10-12',
     nextWeekDate: '2026-10-26',
@@ -32,7 +32,7 @@ export const CurrentWeek: Story = {
 export const OtherWeek: Story = {
   args: {
     dateRange: 'Oct 26 - Nov 1',
-    weekNumber: 44,
+    seasonLabel: 'Fall 2026',
     isCurrentWeek: false,
     prevWeekDate: '2026-10-19',
     nextWeekDate: '2026-11-02',
@@ -45,7 +45,7 @@ export const OtherWeek: Story = {
 export const FirstWeekBoundary: Story = {
   args: {
     dateRange: 'Mar 23 - 29',
-    weekNumber: 13,
+    seasonLabel: 'Spring 2026',
     isCurrentWeek: false,
     prevWeekDate: '2026-03-16',
     nextWeekDate: '2026-03-30',
@@ -58,7 +58,7 @@ export const FirstWeekBoundary: Story = {
 export const LastWeekBoundary: Story = {
   args: {
     dateRange: 'May 25 - 31',
-    weekNumber: 22,
+    seasonLabel: 'Spring 2026',
     isCurrentWeek: false,
     prevWeekDate: '2026-05-18',
     nextWeekDate: '2026-06-01',
