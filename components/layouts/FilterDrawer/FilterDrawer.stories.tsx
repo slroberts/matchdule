@@ -68,6 +68,7 @@ export const WithActiveFilters: Story = {
   render: () => (
     <FilterDrawerWrapper
       initialState={{
+        ageGroup: 'u9',
         homeAway: 'home',
         urgency: ['conflict', 'tbd'],
         timeOfDay: ['morning', 'afternoon'],
