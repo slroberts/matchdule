@@ -1,5 +1,5 @@
 import { Match } from '@/types/match';
-import { MatchCard } from './MatchCard';
+import { MatchCard } from './MatchCard/MatchCard';
 import { cn } from '@/lib/utils';
 import { CalendarOff, FilterX } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/Button';

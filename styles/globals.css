@@ -1,17 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 @import 'tailwindcss';
 
 @theme {
   /* --- Brand Colors --- */
   --color-brand-navy: #0f172a;
   --color-brand-primary: #00a58e;
-
-  /* --- Header Gradient --- */
-  --background-image-brand-gradient-navy: linear-gradient(
-    180deg,
-    #0a0e27 0%,
-    #1a1f3a 100%
-  );
 
   /* --- Status Colors --- */
   --color-status-conflict: #ed1c24;
@@ -23,7 +16,7 @@
   /* --- Surface & Backgrounds --- */
   --color-surface-canvas: #f3f4f6;
   --color-surface-card: #ffffff;
-  --color-surface-muted: #94a3b8;
+  --color-surface-muted: #465161;
 
   /* --- System --- */
   --color-divider: #e5e7eb;
@@ -62,7 +55,6 @@
 /* --- Base Styles --- */
 html,
 body {
-  /* Disables the pull-to-refresh and rubber-banding effect */
   overscroll-behavior-y: none;
 }
 
@@ -76,13 +68,17 @@ body {
   color: var(--color-brand-navy);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  overscroll-behavior-y: none;
 }
 
 @layer utilities {
+  /* --- The Header Background Fix --- */
+  .bg-brand-gradient-navy {
+    background-image: linear-gradient(180deg, #0a0e27 0%, #1a1f3a 100%);
+  }
+
   /* --- Team Gradients --- */
   .b-and-g {
-    @apply rounded-full;
+    border-radius: var(--radius-badge);
     background: conic-gradient(
       from 0deg at 50% 50%,
       #1a1212 0deg,
@@ -91,7 +87,7 @@ body {
   }
 
   .soricha {
-    @apply rounded-full;
+    border-radius: var(--radius-badge);
     background: conic-gradient(
       from 0deg at 50% 50%,
       #1d4ed8 0deg,
@@ -100,7 +96,7 @@ body {
   }
 
   .away {
-    @apply rounded-full;
+    border-radius: var(--radius-badge);
     background: conic-gradient(
       from 0deg at 50% 50%,
       #363535 0deg,

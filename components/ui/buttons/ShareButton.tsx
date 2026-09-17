@@ -44,8 +44,8 @@ export const ShareButton = ({ match }: { match: Match }) => {
 
   return (
     <Button
-      variant='outline'
-      className='w-full py-2.5 transition-all duration-200 cursor-pointer'
+      variant='muted'
+      className='transition-all duration-200 cursor-pointer'
       onClick={handleShare}
     >
       {copied ? (
@@ -54,10 +54,9 @@ export const ShareButton = ({ match }: { match: Match }) => {
           <span className='text-status-success'>Copied!</span>
         </>
       ) : (
-        <>
-          <Share2 size={16} className='mr-1' />
-          Share
-        </>
+        <div className='p-2 rounded-full'>
+          <Share2 size={16} />
+        </div>
       )}
     </Button>
   );

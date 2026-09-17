@@ -78,6 +78,33 @@ export const formatShortName = (name: string, wordCount = 2) => {
 };
 
 /**
+ * Strips out age brackets, divisions, and hanging punctuation from raw database names.
+ * Converts "FC Copa Academy Brooklyn B13/14 Black" -> "FC Copa Academy Brooklyn"
+ */
+export const cleanTeamName = (name: string) => {
+  if (!name) return '';
+
+  let cleanName = name;
+
+  // 1. TRUNCATE FROM THE AGE BRACKET ONWARD
+  // This looks for B13, U12, B-14, B/14, /14, /18, EDP, or empty parenthesis
+  // and deletes that marker AND everything after it (like "Black" or "Jade")
+  const truncationRegex =
+    /(\b[BU][\-\/]?\d{1,2}\b|\/\s*\d{2}\b|\bEDP\b|\(\s*-\s*\)|\b17$).*/i;
+  cleanName = cleanName.replace(truncationRegex, '');
+
+  // 2. CLEAN UP LEFTOVER ACADEMY SUFFIXES
+  // Catches hanging prefixes like " SA -" or " SA B -" left over at the end of names
+  cleanName = cleanName.replace(/\bSA\s*B?\s*-$/i, '');
+
+  // 3. FINAL SWEEP
+  // Removes any orphaned dashes, slashes, or extra spaces left at the very end of the string
+  cleanName = cleanName.replace(/[\/\-\s]+$/, '');
+
+  return cleanName.trim();
+};
+
+/**
  * Determines if there are matches before or after the current week
  * to enable/disable pagination arrows.
  */

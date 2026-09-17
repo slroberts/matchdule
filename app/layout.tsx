@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { AppleSplashScreens } from '@/components/system/AppleSplashScreens';
 import '@/styles/globals.css';
-import { PortraitLock } from '@/components/system/PortraitLock';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -36,12 +35,10 @@ export default function RootLayout({
         <AppleSplashScreens />
       </head>
       <body className='antialiased min-h-screen'>
-        <PortraitLock />
-
         {children}
 
         {/* Register the Service Worker for PWA offline caching and installation */}
-        <script
+        {/* <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
@@ -51,7 +48,7 @@ export default function RootLayout({
               }
             `,
           }}
-        />
+        /> */}
       </body>
     </html>
   );

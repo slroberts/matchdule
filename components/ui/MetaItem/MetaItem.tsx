@@ -11,14 +11,16 @@ interface MetaItemProps {
 export const MetaItem = ({
   icon: Icon,
   label,
-  iconColor = 'text-brand-primary',
+  iconColor = 'text-surface-muted',
   className = '',
 }: MetaItemProps) => {
   return (
     <div className={cn('flex items-center gap-1 min-w-0', className)}>
-      <Icon size={14} className={cn('shrink-0', iconColor)} />
+      <Icon size={16} className={cn('shrink-0', iconColor)} />
 
-      <span className='text-brand-navy truncate'>{label}</span>
+      <span className='text-surface-muted truncate text-sm font-semibold'>
+        {label}
+      </span>
     </div>
   );
 };
