@@ -13,7 +13,12 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
-import { FilterState, HomeAwayFilter, MatchStateFilter } from '@/types/match';
+import {
+  AgeFilter,
+  FilterState,
+  HomeAwayFilter,
+  MatchStateFilter,
+} from '@/types/match';
 
 interface FilterDrawerProps {
   onClose: () => void;
@@ -23,6 +28,7 @@ interface FilterDrawerProps {
 
 const TEAM_SIDE_OPTIONS = ['all', 'home', 'away'] as const;
 const MATCH_STATUS_OPTIONS = ['upcoming', 'live', 'final'] as const;
+const AGE_GROUP_OPTIONS = ['all', 'u9', 'u13'] as const;
 
 const URGENCY_OPTIONS = [
   {
@@ -62,11 +68,12 @@ export const FilterDrawer = ({
       urgency: [],
       timeOfDay: [],
       matchState: 'all',
+      ageGroup: 'all',
     });
   };
 
   const toggleSingleFilter = (
-    field: 'homeAway' | 'matchState',
+    field: 'homeAway' | 'matchState' | 'ageGroup',
     value: string,
   ) => {
     setFilters((prev) => ({
@@ -134,7 +141,45 @@ export const FilterDrawer = ({
 
         {/* FILTER CONTROL SECTIONS */}
         <div className='flex flex-col gap-grid-md overflow-y-auto flex-1 pr-1 pb-4'>
-          {/* FILTER A: TEAM SIDE */}
+          {/* FILTER A: Age Group */}
+          <div className='flex flex-col gap-2'>
+            <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
+              Age Group
+            </label>
+            <div className='flex flex-wrap bg-white/5 p-1 rounded-lg border border-white/5 relative gap-1 sm:gap-0'>
+              {AGE_GROUP_OPTIONS.map((option) => {
+                const isSelected = filters.ageGroup === (option as AgeFilter);
+
+                return (
+                  <button
+                    key={option}
+                    onClick={() => toggleSingleFilter('ageGroup', option)}
+                    className={cn(
+                      'relative flex-1 min-w-[75px] py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
+                      isSelected
+                        ? 'text-white'
+                        : 'text-white/40 hover:text-white/70',
+                    )}
+                  >
+                    <span className='relative z-10'>{option}</span>
+                    {isSelected && (
+                      <motion.div
+                        layoutId='active-age-pill'
+                        className='absolute inset-0 bg-white/10 rounded-lg border border-white/10 z-0'
+                        transition={{
+                          type: 'spring',
+                          stiffness: 380,
+                          damping: 30,
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* FILTER B: TEAM SIDE */}
           <div className='flex flex-col gap-2'>
             <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
               Team Side
@@ -175,7 +220,7 @@ export const FilterDrawer = ({
             </div>
           </div>
 
-          {/* FILTER B: URGENCY ALERTS */}
+          {/* FILTER C: URGENCY ALERTS */}
           <div className='flex flex-col gap-2'>
             <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
               Urgency Alerts
@@ -211,7 +256,7 @@ export const FilterDrawer = ({
             </div>
           </div>
 
-          {/* FILTER C: TIME OF DAY */}
+          {/* FILTER D: TIME OF DAY */}
           <div className='flex flex-col gap-2'>
             <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
               Time of Day
@@ -246,7 +291,7 @@ export const FilterDrawer = ({
             </div>
           </div>
 
-          {/* FILTER D: MATCH STATE */}
+          {/* FILTER E: MATCH STATE */}
           <div className='flex flex-col gap-2'>
             <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
               Match Status

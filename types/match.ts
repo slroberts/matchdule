@@ -40,12 +40,14 @@ export type HomeAwayFilter = 'all' | 'home' | 'away';
 export type UrgencyOption = 'conflict' | 'tight-gap' | 'tbd';
 export type MatchStateFilter = 'all' | 'upcoming' | 'live' | 'final';
 export type TimeOfDayOption = 'all' | 'morning' | 'afternoon' | 'evening';
+export type AgeFilter = 'all' | 'u9' | 'u13';
 
 export interface FilterState {
   homeAway: HomeAwayFilter;
   urgency: UrgencyOption[];
   matchState: MatchStateFilter;
   timeOfDay: TimeOfDayOption[];
+  ageGroup: AgeFilter;
 }
 
 export const INITIAL_FILTERS: FilterState = {
@@ -53,4 +55,5 @@ export const INITIAL_FILTERS: FilterState = {
   urgency: [],
   matchState: 'all',
   timeOfDay: [],
+  ageGroup: 'all',
 };

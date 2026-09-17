@@ -72,6 +72,7 @@ export const ClientView = ({
 
   // Calculate exactly how many individual filters are currently applied
   const activeFilterCount =
+    (filters.ageGroup !== 'all' ? 1 : 0) +
     (filters.homeAway !== 'all' ? 1 : 0) +
     filters.urgency.length +
     filters.timeOfDay.length +
@@ -117,7 +118,27 @@ export const ClientView = ({
     }
     if (!isRightTeam) return false;
 
-    // DRAWER FILTER A: TEAM SIDE
+    // DRAWER FILTER A: AGE GROUP
+    if (filters.ageGroup !== 'all') {
+      const home = match.homeTeam.name || '';
+      const away = match.awayTeam.name || '';
+
+      if (filters.ageGroup === 'u13') {
+        const isU13 =
+          home.includes('Soricha Foot SFA EDP') ||
+          away.includes('Soricha Foot SFA EDP');
+        if (!isU13) return false;
+      }
+
+      if (filters.ageGroup === 'u9') {
+        const isU9 =
+          home.includes('Soricha Foot SFA /18') ||
+          away.includes('Soricha Foot SFA /18');
+        if (!isU9) return false;
+      }
+    }
+
+    // DRAWER FILTER B: TEAM SIDE
     if (filters.homeAway !== 'all') {
       const isHomeSelected = filters.homeAway === 'home';
 
@@ -135,7 +156,7 @@ export const ClientView = ({
       }
     }
 
-    // DRAWER FILTER B: URGENCY ALERTS
+    // DRAWER FILTER C: URGENCY ALERTS
     if (filters.urgency.length > 0) {
       const hasConflict =
         filters.urgency.includes('conflict') && match.isConflict;
@@ -148,14 +169,14 @@ export const ClientView = ({
       if (!hasConflict && !hasTightGap && !hasTbd) return false;
     }
 
-    // DRAWER FILTER C: TIME OF DAY
+    // DRAWER FILTER D: TIME OF DAY
     if (filters.timeOfDay.length > 0) {
       const matchPeriod = getTimePeriod(match.time);
       if (!filters.timeOfDay.includes(matchPeriod as TimeOfDayOption))
         return false;
     }
 
-    // DRAWER FILTER D: MATCH STATUS
+    // DRAWER FILTER E: MATCH STATUS
     if (filters.matchState !== 'all') {
       if (match.status !== filters.matchState) return false;
     }
@@ -169,6 +190,7 @@ export const ClientView = ({
       urgency: [],
       timeOfDay: [],
       matchState: 'all',
+      ageGroup: 'all',
     });
   };
 
