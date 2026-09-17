@@ -155,7 +155,7 @@ export const FilterDrawer = ({
                     key={option}
                     onClick={() => toggleSingleFilter('ageGroup', option)}
                     className={cn(
-                      'relative flex-1 min-w-[75px] py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
+                      'relative flex-1 min-w-18.75 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
                       isSelected
                         ? 'text-white'
                         : 'text-white/40 hover:text-white/70',
@@ -194,7 +194,7 @@ export const FilterDrawer = ({
                     key={option}
                     onClick={() => toggleSingleFilter('homeAway', option)}
                     className={cn(
-                      'relative flex-1 min-w-[75px] py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
+                      'relative flex-1 min-w-18.75 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
                       isSelected
                         ? 'text-white'
                         : 'text-white/40 hover:text-white/70',
@@ -306,7 +306,7 @@ export const FilterDrawer = ({
                     key={option}
                     onClick={() => toggleSingleFilter('matchState', option)}
                     className={cn(
-                      'relative flex-1 min-w-[70px] py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
+                      'relative flex-1 min-w-17.5 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
                       isSelected
                         ? 'text-white'
                         : 'text-white/40 hover:text-white/70',

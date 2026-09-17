@@ -60,7 +60,7 @@ export const Header = ({
 
             {hasActiveFilters && (
               <span className='grid place-items-center w-4 h-4 rounded-full bg-white text-brand-navy text-[10px] font-black shrink-0'>
-                <span className='mt-[1px]'>{activeFilterCount}</span>
+                <span className='mt-px'>{activeFilterCount}</span>
               </span>
             )}
 

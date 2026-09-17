@@ -61,7 +61,7 @@ const MatchTeamRow = ({
       </div>
 
       {/* Score Area */}
-      <div className='text-brand-navy font-black text-2xl tabular-nums min-w-[2rem] flex justify-end ml-4'>
+      <div className='text-brand-navy font-black text-2xl tabular-nums min-w-8 flex justify-end ml-4'>
         {status === 'upcoming' ? (
           <div className='bg-divider w-4 h-1 self-center rounded-full opacity-50' />
         ) : score !== undefined ? (
