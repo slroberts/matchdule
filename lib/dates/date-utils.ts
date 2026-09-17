@@ -28,6 +28,19 @@ export const getTimeOfDayAssets = (
 };
 
 /**
+ * Determines the season (Spring, Summer, Fall, Winter) and year for a given date.
+ */
+export function getSeason(date: Date): string {
+  const month = date.getMonth(); // 0 = Jan, 11 = Dec
+  const year = date.getFullYear();
+
+  if (month >= 2 && month <= 5) return `Spring ${year}`;
+  if (month >= 5 && month <= 7) return `Off Season`;
+  if (month >= 8 && month <= 10) return `Fall ${year}`;
+  return `Off Season`;
+}
+
+/**
  * Take any date and figure out the Monday-to-Sunday range,
  * the ISO week number, and whether it represents the current real-world week.
  */

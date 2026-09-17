@@ -7,7 +7,7 @@ import { Header } from '@/components/layouts/Header/Header';
 import { TeamTabs } from './TeamTabs';
 import { Alert } from '@/components/ui/Alert/Alert';
 import { processWeekSpacing } from '@/lib/matches/match-utils';
-import { getWeekData } from '@/lib/dates/date-utils';
+import { getWeekData, getSeason } from '@/lib/dates/date-utils';
 import { FilterState, Match, TabOption, TimeOfDayOption } from '@/types/match';
 import { FilterDrawer } from './FilterDrawer/FilterDrawer';
 import { AnimatePresence } from 'framer-motion';
@@ -50,7 +50,6 @@ const getTimePeriod = (
 export const ClientView = ({
   allMatches,
   weekInfo,
-  gameWeekNumber,
   initialTeam,
   initialFilters,
 }: ClientViewProps) => {
@@ -58,6 +57,7 @@ export const ClientView = ({
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentTeam, setCurrentTeam] = useState<TabOption>(initialTeam);
+  const currentSeason = getSeason(weekInfo.weekStart);
 
   // Auto-sync to cookie whenever filters change
   useEffect(() => {
@@ -209,7 +209,7 @@ export const ClientView = ({
       <div className='sticky top-0 z-50 w-full flex flex-col'>
         <Header
           dateRange={weekInfo.dateRange}
-          weekNumber={gameWeekNumber}
+          seasonLabel={currentSeason}
           isCurrentWeek={weekInfo.isCurrentWeek}
           prevWeekDate={weekInfo.prevWeekDate}
           nextWeekDate={weekInfo.nextWeekDate}

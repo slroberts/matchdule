@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge/Badge';
 
 interface HeaderProps {
   dateRange: string;
-  weekNumber: number;
+  seasonLabel: string;
   isCurrentWeek: boolean;
   prevWeekDate: string;
   nextWeekDate: string;
@@ -20,7 +20,7 @@ interface HeaderProps {
 
 export const Header = ({
   dateRange,
-  weekNumber,
+  seasonLabel,
   isCurrentWeek = false,
   prevWeekDate,
   nextWeekDate,
@@ -88,7 +88,7 @@ export const Header = ({
             <h2 className='mb-1 text-lg font-bold text-center'>{dateRange}</h2>
 
             <div className='flex items-center justify-center gap-2 h-6 text-[10px] font-bold uppercase tracking-widest text-white/50'>
-              <span className='shrink-0'>Week {weekNumber}</span>
+              <span className='shrink-0'>{seasonLabel}</span>
 
               <div className='shrink-0'>
                 {isCurrentWeek ? (
