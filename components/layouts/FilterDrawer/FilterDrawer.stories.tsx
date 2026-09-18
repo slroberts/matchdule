@@ -73,6 +73,7 @@ export const WithActiveFilters: Story = {
         urgency: ['conflict', 'tbd'],
         timeOfDay: ['morning', 'afternoon'],
         matchState: 'upcoming',
+        resultsState: 'W',
       }}
     />
   ),

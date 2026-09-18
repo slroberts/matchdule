@@ -41,6 +41,7 @@ export type UrgencyOption = 'conflict' | 'tight-gap' | 'tbd';
 export type MatchStateFilter = 'all' | 'upcoming' | 'live' | 'final';
 export type TimeOfDayOption = 'all' | 'morning' | 'afternoon' | 'evening';
 export type AgeFilter = 'all' | 'u9' | 'u13';
+export type ResultsFilter = MatchResult;
 
 export interface FilterState {
   homeAway: HomeAwayFilter;
@@ -48,6 +49,7 @@ export interface FilterState {
   matchState: MatchStateFilter;
   timeOfDay: TimeOfDayOption[];
   ageGroup: AgeFilter;
+  resultsState: ResultsFilter;
 }
 
 export const INITIAL_FILTERS: FilterState = {
@@ -56,4 +58,5 @@ export const INITIAL_FILTERS: FilterState = {
   matchState: 'all',
   timeOfDay: [],
   ageGroup: 'all',
+  resultsState: null,
 };

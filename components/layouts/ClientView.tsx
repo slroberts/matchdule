@@ -76,7 +76,8 @@ export const ClientView = ({
     (filters.homeAway !== 'all' ? 1 : 0) +
     filters.urgency.length +
     filters.timeOfDay.length +
-    (filters.matchState !== 'all' ? 1 : 0);
+    (filters.matchState !== 'all' ? 1 : 0) +
+    (filters.resultsState !== null ? 1 : 0);
 
   // Set up boundary dates for the current week to calculate dynamic visibility
   const endOfSunday = new Date(weekInfo.weekEnd);
@@ -181,6 +182,39 @@ export const ClientView = ({
       if (match.status !== filters.matchState) return false;
     }
 
+    // DRAWER FILTER F: RESULTS
+    if (filters.resultsState && filters.resultsState !== null) {
+      // 1. Identify our team dynamically
+      let myTeam;
+      if (currentTeam !== 'All Teams') {
+        const targetUtility = getUtilityFromTab(currentTeam);
+        myTeam =
+          match.homeTeam.utility === targetUtility
+            ? match.homeTeam
+            : match.awayTeam;
+      } else {
+        const isHomeOurs =
+          match.homeTeam.utility === 'b-and-g' ||
+          match.homeTeam.utility === 'soricha';
+        myTeam = isHomeOurs ? match.homeTeam : match.awayTeam;
+      }
+
+      // 2. Safely grab the strings and standardize them to uppercase
+      const rawResult = myTeam?.result || '';
+      const activeFilter = filters.resultsState.toUpperCase();
+
+      // 3. Map the strings just in case your drawer uses full words (e.g., 'WIN')
+      // but your database uses letters (e.g., 'W')
+      const isWin = activeFilter.startsWith('W') && rawResult.startsWith('W');
+      const isLoss = activeFilter.startsWith('L') && rawResult.startsWith('L');
+      const isDraw = activeFilter.startsWith('D') && rawResult.startsWith('D');
+
+      // 4. If none of these match, drop the game from the list
+      if (!isWin && !isLoss && !isDraw) {
+        return false;
+      }
+    }
+
     return true;
   });
 
@@ -191,6 +225,7 @@ export const ClientView = ({
       timeOfDay: [],
       matchState: 'all',
       ageGroup: 'all',
+      resultsState: null,
     });
   };
 

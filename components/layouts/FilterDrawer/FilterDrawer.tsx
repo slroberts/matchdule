@@ -18,6 +18,7 @@ import {
   FilterState,
   HomeAwayFilter,
   MatchStateFilter,
+  ResultsFilter,
 } from '@/types/match';
 
 interface FilterDrawerProps {
@@ -29,6 +30,7 @@ interface FilterDrawerProps {
 const TEAM_SIDE_OPTIONS = ['all', 'home', 'away'] as const;
 const MATCH_STATUS_OPTIONS = ['upcoming', 'live', 'final'] as const;
 const AGE_GROUP_OPTIONS = ['all', 'u9', 'u13'] as const;
+const RESULTS_OPTIONS = ['win', 'loss', 'draw'] as const;
 
 const URGENCY_OPTIONS = [
   {
@@ -69,11 +71,12 @@ export const FilterDrawer = ({
       timeOfDay: [],
       matchState: 'all',
       ageGroup: 'all',
+      resultsState: null,
     });
   };
 
   const toggleSingleFilter = (
-    field: 'homeAway' | 'matchState' | 'ageGroup',
+    field: 'homeAway' | 'matchState' | 'ageGroup' | 'resultsState',
     value: string,
   ) => {
     setFilters((prev) => ({
@@ -316,6 +319,45 @@ export const FilterDrawer = ({
                     {isSelected && (
                       <motion.div
                         layoutId='active-status-pill'
+                        className='absolute inset-0 bg-white/10 rounded-lg border border-white/10 z-0'
+                        transition={{
+                          type: 'spring',
+                          stiffness: 380,
+                          damping: 30,
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* FILTER F: Results */}
+          <div className='flex flex-col gap-2'>
+            <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
+              Game Results
+            </label>
+            <div className='flex flex-wrap bg-white/5 p-1 rounded-lg border border-white/5 relative gap-1 sm:gap-0'>
+              {RESULTS_OPTIONS.map((option) => {
+                const isSelected =
+                  filters.resultsState === (option as ResultsFilter);
+
+                return (
+                  <button
+                    key={option}
+                    onClick={() => toggleSingleFilter('resultsState', option)}
+                    className={cn(
+                      'relative flex-1 min-w-18.75 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
+                      isSelected
+                        ? 'text-white'
+                        : 'text-white/40 hover:text-white/70',
+                    )}
+                  >
+                    <span className='relative z-10'>{option}</span>
+                    {isSelected && (
+                      <motion.div
+                        layoutId='active-results-pill'
                         className='absolute inset-0 bg-white/10 rounded-lg border border-white/10 z-0'
                         transition={{
                           type: 'spring',
