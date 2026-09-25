@@ -22,7 +22,7 @@ export const DirectionsButton = ({ location }: { location: string }) => {
     <Button
       variant='muted'
       className={cn(
-        'flex justify-between w-full transition-all duration-200',
+        'flex flex-1 min-w-0 shrink-0 justify-between w-full transition-all duration-200',
         isTBD ? 'opacity-40 pointer-events-none' : 'opacity-100 cursor-pointer',
       )}
       onClick={handleDirections}

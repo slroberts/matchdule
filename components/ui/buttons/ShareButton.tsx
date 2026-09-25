@@ -45,7 +45,7 @@ export const ShareButton = ({ match }: { match: Match }) => {
   return (
     <Button
       variant='muted'
-      className='transition-all duration-200 cursor-pointer'
+      className='shrink-0 transition-all duration-200 cursor-pointer'
       onClick={handleShare}
     >
       {copied ? (

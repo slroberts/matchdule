@@ -244,14 +244,14 @@ export const StandingsView = ({ activeTeam, matches }: StandingsViewProps) => {
                   </div>
 
                   {/* Perfectly Symmetrical 2-Row Stat Layout with Inner Divider */}
-                  <div className='pl-10 pr-4 flex flex-col'>
+                  <div className='pl-2 pr-2 sm:pl-10 sm:pr-4 flex flex-col'>
                     {/* Top Row: Outcomes */}
                     <div className='flex items-end justify-between'>
                       <div className='flex flex-col'>
                         <span className='text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1.5'>
                           Points
                         </span>
-                        <span className='text-4xl font-black text-brand-navy leading-none tracking-tighter tabular-nums'>
+                        <span className='text-3xl sm:text-4xl font-black text-brand-navy leading-none tracking-tighter tabular-nums'>
                           {team.pts}
                         </span>
                       </div>
@@ -260,7 +260,7 @@ export const StandingsView = ({ activeTeam, matches }: StandingsViewProps) => {
                         <span className='text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1.5'>
                           Record
                         </span>
-                        <span className='text-4xl font-black text-slate-700 leading-none tracking-tighter tabular-nums'>
+                        <span className='text-3xl sm:text-4xl font-black text-slate-700 leading-none tracking-tighter tabular-nums'>
                           {team.w}-{team.l}-{team.d}
                         </span>
                       </div>
@@ -296,7 +296,7 @@ export const StandingsView = ({ activeTeam, matches }: StandingsViewProps) => {
                         <span className='text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1.5'>
                           Goals For
                         </span>
-                        <span className='text-4xl font-black text-slate-700 leading-none tracking-tighter tabular-nums'>
+                        <span className='text-3xl sm:text-4xl font-black text-slate-700 leading-none tracking-tighter tabular-nums'>
                           {team.gf}
                         </span>
                       </div>
@@ -305,7 +305,7 @@ export const StandingsView = ({ activeTeam, matches }: StandingsViewProps) => {
                         <span className='text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1.5'>
                           Goals Against
                         </span>
-                        <span className='text-4xl font-black text-slate-400 leading-none tracking-tighter tabular-nums'>
+                        <span className='text-3xl sm:text-4xl font-black text-slate-400 leading-none tracking-tighter tabular-nums'>
                           {team.ga}
                         </span>
                       </div>
@@ -315,7 +315,7 @@ export const StandingsView = ({ activeTeam, matches }: StandingsViewProps) => {
                           Goal Diff
                         </span>
                         <span
-                          className={`text-4xl font-black leading-none tracking-tighter tabular-nums ${team.gd > 0 ? 'text-emerald-500' : team.gd < 0 ? 'text-rose-500' : 'text-slate-700'}`}
+                          className={`text-3xl sm:text-4xl font-black leading-none tracking-tighter tabular-nums ${team.gd > 0 ? 'text-emerald-500' : team.gd < 0 ? 'text-rose-500' : 'text-slate-700'}`}
                         >
                           {team.gd > 0 ? `+${team.gd}` : team.gd}
                         </span>

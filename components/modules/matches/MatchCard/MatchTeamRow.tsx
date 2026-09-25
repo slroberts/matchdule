@@ -18,8 +18,9 @@ const MatchTeamRow = ({
 
   return (
     <div className='flex items-center justify-between w-full'>
-      <div className='flex items-center gap-grid-md min-w-0 flex-1'>
+      <div className='flex items-center gap-grid-md min-w-0 flex-1 pr-2'>
         <div className='bg-surface-canvas w-1 h-10 rounded-2xl shrink-0'></div>
+
         {/* The Icon Container */}
         <div
           className={cn(
@@ -31,14 +32,14 @@ const MatchTeamRow = ({
         </div>
 
         {/* Name and Badge Container */}
-        <div className='flex flex-col items-start gap-2 min-w-0 flex-wrap'>
-          {/* The Team Name Text */}
-          <div className='text-brand-navy font-black text-xl tracking-normal leading-5.5 uppercase text-wrap w-64'>
+        <div className='flex flex-col items-start gap-2 min-w-0 flex-1'>
+          {/* The Team Name Text: Removed w-64, added w-full & break-words, scaled text for mobile */}
+          <div className='text-brand-navy font-black text-lg sm:text-xl tracking-normal leading-tight uppercase break-words w-full'>
             {cleanTeamName(team.name)}
           </div>
 
-          <div className='-mt-2'>
-            {/* The Badges (Siblings to the text) */}
+          <div className='-mt-1'>
+            {/* The Badges */}
             {team.name?.includes('Soricha Foot SFA EDP') && (
               <Badge
                 variant='default'
@@ -61,7 +62,7 @@ const MatchTeamRow = ({
       </div>
 
       {/* Score Area */}
-      <div className='text-brand-navy font-black text-2xl tabular-nums min-w-8 flex justify-end ml-4'>
+      <div className='text-brand-navy font-black text-2xl tabular-nums shrink-0 flex justify-end ml-2'>
         {status === 'upcoming' ? (
           <div className='bg-divider w-4 h-1 self-center rounded-full opacity-50' />
         ) : score !== undefined ? (
