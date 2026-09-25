@@ -21,11 +21,12 @@ export const TeamTabs = ({
 }: TeamTabsProps) => {
   return (
     <div
-      className='flex w-md mx-auto justify-between items-center gap-grid-md px-4 py-4 '
+      className='flex w-full max-w-md mx-auto justify-between items-center gap-3 px-4 py-4'
       role='tablist'
       aria-label='Filter teams'
     >
-      <div className='flex w-full max-w-sm bg-white border border-slate-200 p-1 rounded-xl relative'>
+      {/* Removed max-w-sm and added flex-1 so it perfectly scales beside the button */}
+      <div className='flex flex-1 bg-white border border-slate-200 p-1 rounded-xl relative'>
         {TABS.map((tab) => {
           const isActive = activeTeam === tab;
 
@@ -57,6 +58,7 @@ export const TeamTabs = ({
           );
         })}
       </div>
+
       <motion.button
         whileTap={{ scale: 0.95 }}
         onClick={() =>
