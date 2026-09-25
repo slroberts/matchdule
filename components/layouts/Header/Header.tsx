@@ -16,6 +16,7 @@ interface HeaderProps {
   hasNext: boolean;
   setIsFilterOpen: Dispatch<SetStateAction<boolean>>;
   activeFilterCount: number;
+  viewMode: string;
 }
 
 export const Header = ({
@@ -28,6 +29,7 @@ export const Header = ({
   hasNext,
   setIsFilterOpen,
   activeFilterCount,
+  viewMode,
 }: HeaderProps) => {
   const hasActiveFilters = activeFilterCount > 0;
 
@@ -45,27 +47,29 @@ export const Header = ({
             loading='eager'
           />
 
-          <button
-            onClick={() => setIsFilterOpen(true)}
-            className={cn(
-              'flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest transition-opacity cursor-pointer transform-gpu',
-              hasActiveFilters
-                ? 'text-white opacity-100'
-                : 'opacity-70 hover:opacity-100',
-            )}
-          >
-            <span className='flex shrink-0'>
-              <SlidersHorizontal size={18} />
-            </span>
-
-            {hasActiveFilters && (
-              <span className='grid place-items-center w-4 h-4 rounded-full bg-white text-brand-navy text-[10px] font-black shrink-0'>
-                <span className='mt-px'>{activeFilterCount}</span>
+          {viewMode === 'schedule' && (
+            <button
+              onClick={() => setIsFilterOpen(true)}
+              className={cn(
+                'flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest transition-opacity cursor-pointer transform-gpu',
+                hasActiveFilters
+                  ? 'text-white opacity-100'
+                  : 'opacity-70 hover:opacity-100',
+              )}
+            >
+              <span className='flex shrink-0'>
+                <SlidersHorizontal size={18} />
               </span>
-            )}
 
-            <span>Filters</span>
-          </button>
+              {hasActiveFilters && (
+                <span className='grid place-items-center w-4 h-4 rounded-full bg-white text-brand-navy text-[10px] font-black shrink-0'>
+                  <span className='mt-px'>{activeFilterCount}</span>
+                </span>
+              )}
+
+              <span>Filters</span>
+            </button>
+          )}
         </div>
       </div>
 

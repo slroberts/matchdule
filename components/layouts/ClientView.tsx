@@ -11,6 +11,7 @@ import { getWeekData, getSeason } from '@/lib/dates/date-utils';
 import { FilterState, Match, TabOption, TimeOfDayOption } from '@/types/match';
 import { FilterDrawer } from './FilterDrawer/FilterDrawer';
 import { AnimatePresence } from 'framer-motion';
+import { StandingsView } from './StandingsView';
 
 interface ClientViewProps {
   allMatches: Match[];
@@ -58,6 +59,9 @@ export const ClientView = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentTeam, setCurrentTeam] = useState<TabOption>(initialTeam);
   const currentSeason = getSeason(weekInfo.weekStart);
+  const [viewMode, setViewMode] = useState<'schedule' | 'standings'>(
+    'schedule',
+  );
 
   // Auto-sync to cookie whenever filters change
   useEffect(() => {
@@ -252,13 +256,19 @@ export const ClientView = ({
           hasNext={realHasNext}
           setIsFilterOpen={setIsFilterOpen}
           activeFilterCount={activeFilterCount}
+          viewMode={viewMode}
         />
 
-        <TeamTabs activeTeam={currentTeam} onTeamChange={handleTeamChange} />
+        <TeamTabs
+          activeTeam={currentTeam}
+          onTeamChange={handleTeamChange}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+        />
       </div>
 
       <main className='px-6 py-2'>
-        {(hasConflict || hasTightGap || hasTBD) && (
+        {viewMode === 'schedule' && (hasConflict || hasTightGap || hasTBD) && (
           <div className='flex flex-col gap-3 w-full max-w-md mx-auto mb-6'>
             {hasConflict && (
               <Alert
@@ -291,12 +301,15 @@ export const ClientView = ({
             )}
           </div>
         )}
-
-        <MatchList
-          matches={matchesWithSpacingStatus}
-          hasActiveFilters={activeFilterCount > 0}
-          onClearFilters={handleClearFilters}
-        />
+        {viewMode === 'schedule' ? (
+          <MatchList
+            matches={matchesWithSpacingStatus}
+            hasActiveFilters={activeFilterCount > 0}
+            onClearFilters={handleClearFilters}
+          />
+        ) : (
+          <StandingsView activeTeam={currentTeam} matches={allMatches} />
+        )}
       </main>
 
       <AnimatePresence>
