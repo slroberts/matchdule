@@ -205,8 +205,9 @@ export const ClientView = ({
   } = processWeekSpacing(displayedMatches);
 
   return (
-    <>
-      {/* Sticky chrome: token z-index keeps it BELOW the scrim + sheet */}
+    <div className='flex min-h-dvh flex-col'>
+      {/* Sticky chrome: token z-index keeps it BELOW the scrim + sheet.
+          Sits on the dark <body>, so the iOS status-bar edge samples dark, never the canvas. */}
       <div className='sticky top-0 z-(--z-header) flex w-full flex-col'>
         <Header
           dateRange={weekInfo.dateRange}
@@ -226,7 +227,7 @@ export const ClientView = ({
       </div>
 
       {/* Bottom padding clears the floating TabBar + home indicator */}
-      <main className='pt-(--space-stack-sm) pb-[calc(var(--size-tab-bar)+var(--safe-bottom)+24px)]'>
+      <main className='page-canvas flex-1 pt-(--space-stack-sm) pb-[calc(var(--size-tab-bar)+var(--safe-bottom)+24px)]'>
         {/* Applied filters — Figma: Schedule / Filters active */}
         {/* Always mounted in schedule view: its live region must survive "Clear all" */}
         {viewMode === 'schedule' && (
@@ -297,6 +298,6 @@ export const ClientView = ({
           />
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };

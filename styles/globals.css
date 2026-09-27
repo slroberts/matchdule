@@ -525,7 +525,10 @@
   body {
     margin: 0;
     min-height: 100dvh;
-    background: var(--color-bg-canvas);
+    /* Dark on purpose: iOS (Safari + home-screen apps) samples <body> for the
+       status-bar edge blur. The light canvas lives on the content area below the
+       header (`.page-canvas`), so nothing light ever touches the top edge. */
+    background: var(--color-chrome-base);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
     font-size: 1rem;
@@ -680,6 +683,12 @@
       background: var(--color-bg-surface);
     }
   }
+  /* Light app surface for content BELOW the dark header (body itself is dark) */
+  .page-canvas {
+    background: var(--color-bg-canvas);
+    color: var(--color-text-primary);
+  }
+
   /* Header chrome: sheen + teal glow over a near-black base (Figma: Top bar) */
   .surface-chrome {
     background: var(--gradient-chrome), var(--color-chrome-base);
