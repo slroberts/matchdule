@@ -1,69 +1,98 @@
-import { Radio, CheckCircle2, XCircle, LucideIcon } from 'lucide-react';
+import {
+  CheckCircle2,
+  Hourglass,
+  Radio,
+  XCircle,
+  type LucideIcon,
+} from 'lucide-react';
 import { Match, MatchStatus } from '@/types/match';
+import { MATCH_PLAY_MINUTES } from './match-constants';
 
 /* =====================================================================
    TYPES & INTERFACES
    ===================================================================== */
 
 interface StatusConfig {
+  /** Sentence case — caps come from the text-label style */
   label: string;
   icon: LucideIcon;
+  /** Token classes (bg + text) merged over the neutral badge */
   className: string;
 }
+
+/* =====================================================================
+   RESULT STATE
+   ===================================================================== */
+
+/** Both scores reported */
+export const hasScores = (m: Pick<Match, 'homeTeam' | 'awayTeam'>) =>
+  m.homeTeam.score !== undefined && m.awayTeam.score !== undefined;
+
+/**
+ * The game is over but the league hasn't posted the score yet.
+ * Shown as "Awaiting score" instead of FINAL with empty dashes.
+ */
+export const isAwaitingResult = (
+  m: Pick<Match, 'homeTeam' | 'awayTeam'>,
+  status: MatchStatus,
+) => status === 'final' && !hasScores(m);
 
 /* =====================================================================
    UI & PRESENTATION UTILITIES
    ===================================================================== */
 
 /**
- * Sets game status icons, labels, and styles based on game status
+ * Status badge config. Live is rendered by MatchHeader (pulsing dot), but kept
+ * here for other consumers.
  */
-export const getStatusConfig = (status: MatchStatus): StatusConfig | null => {
-  const configs: Record<string, StatusConfig> = {
+export const getStatusConfig = (
+  status: MatchStatus,
+  { awaitingResult = false }: { awaitingResult?: boolean } = {},
+): StatusConfig | null => {
+  if (status === 'final' && awaitingResult) {
+    return {
+      label: 'Awaiting score',
+      icon: Hourglass,
+      className:
+        'bg-(--color-warning-surface) text-(--color-warning-on-surface)',
+    };
+  }
+
+  const configs: Partial<Record<MatchStatus, StatusConfig>> = {
     live: {
-      label: 'LIVE',
+      label: 'Live',
       icon: Radio,
-      className: 'text-status-conflict animate-pulse font-black',
+      className: 'bg-(--color-danger-surface) text-(--color-danger-on-surface)',
     },
     final: {
-      label: 'FINAL',
+      label: 'Final',
       icon: CheckCircle2,
-      className: 'text-surface-muted font-bold',
+      className: 'bg-(--color-bg-subtle) text-(--color-text-secondary)',
     },
     canceled: {
-      label: 'CANCELED',
+      label: 'Canceled',
       icon: XCircle,
-      className: 'text-status-conflict line-through opacity-70',
+      className: 'bg-(--color-danger-surface) text-(--color-danger-on-surface)',
     },
   };
 
-  return configs[status] || null;
+  return configs[status] ?? null;
 };
 
 /* =====================================================================
    DOMAIN & LIST HELPERS
    ===================================================================== */
 
-/**
- * Helper to always grab tracked team's name, regardless of Home/Away status
- */
+/** Helper to always grab tracked team's name, regardless of Home/Away status */
 export const getTrackedTeam = (m: Match) => {
   const home = m.homeTeam.name;
   const away = m.awayTeam.name;
-
-  // Check if the home team contains our target keywords
   if (home.includes('B&G') || home.includes('Soricha')) return home;
-
-  // Check the away team
   if (away.includes('B&G') || away.includes('Soricha')) return away;
-
-  // Fallback just in case neither matches
   return home;
 };
 
-/**
- * Helper to always grab the opponent's name by finding our tracked team first
- */
+/** Helper to always grab the opponent's name by finding our tracked team first */
 export const getOpponentTeam = (m: Match) => {
   const trackedTeam = getTrackedTeam(m);
   return m.homeTeam.name === trackedTeam ? m.awayTeam.name : m.homeTeam.name;
@@ -73,35 +102,66 @@ export const getOpponentTeam = (m: Match) => {
  * Formats a long team name into a clean, scannable short name for UI alerts.
  * Converts "B&G 2017 Boys Elite Blue" -> "B&G 2017"
  */
-export const formatShortName = (name: string, wordCount = 2) => {
-  return name.split(' ').slice(0, wordCount).join(' ');
+export const formatShortName = (name: string, wordCount = 2) =>
+  name.split(' ').slice(0, wordCount).join(' ');
+
+/* ---------------------------------------------------------------------
+   Team-name casing
+   Source data mixes "ALBION SC Brooklyn" style shouting with real acronyms.
+   Rule: an ALL-CAPS word becomes Title Case only if it looks like a word
+   (≥ 4 letters, has a vowel, not a known acronym). SC / FC / SFA / PBSC stay.
+   --------------------------------------------------------------------- */
+const ACRONYMS = new Set([
+  'AC',
+  'AFC',
+  'B&G',
+  'CF',
+  'EDP',
+  'FA',
+  'FC',
+  'NY',
+  'NYC',
+  'PBSC',
+  'PFC',
+  'SA',
+  'SC',
+  'SFA',
+  'USA',
+  'YSC',
+]);
+
+const smartCaseWord = (word: string) => {
+  const isAllCaps = /^[A-Z][A-Z'&.\-]*$/.test(word);
+  if (!isAllCaps) return word;
+  if (ACRONYMS.has(word) || word.length < 4 || !/[AEIOUY]/.test(word))
+    return word;
+  return word.charAt(0) + word.slice(1).toLowerCase();
 };
 
 /**
- * Strips out age brackets, divisions, and hanging punctuation from raw database names.
- * Converts "FC Copa Academy Brooklyn B13/14 Black" -> "FC Copa Academy Brooklyn"
+ * Display name: strips age brackets/divisions + fixes shouting case.
+ * "FC Copa Academy Brooklyn B13/14 Black" -> "FC Copa Academy Brooklyn"
+ * "ALBION SC Brooklyn"                    -> "Albion SC Brooklyn"
+ * NOTE: display only — age detection must keep using the raw team.name.
  */
 export const cleanTeamName = (name: string) => {
   if (!name) return '';
 
   let cleanName = name;
 
-  // 1. TRUNCATE FROM THE AGE BRACKET ONWARD
-  // This looks for B13, U12, B-14, B/14, /14, /18, EDP, or empty parenthesis
-  // and deletes that marker AND everything after it (like "Black" or "Jade")
+  // 1. Truncate from the age bracket onward (B13, U12, B-14, /14, EDP, "( - )", trailing 17)
   const truncationRegex =
     /(\b[BU][\-\/]?\d{1,2}\b|\/\s*\d{2}\b|\bEDP\b|\(\s*-\s*\)|\b17$).*/i;
   cleanName = cleanName.replace(truncationRegex, '');
 
-  // 2. CLEAN UP LEFTOVER ACADEMY SUFFIXES
-  // Catches hanging prefixes like " SA -" or " SA B -" left over at the end of names
+  // 2. Leftover academy suffixes (" SA -", " SA B -")
   cleanName = cleanName.replace(/\bSA\s*B?\s*-$/i, '');
 
-  // 3. FINAL SWEEP
-  // Removes any orphaned dashes, slashes, or extra spaces left at the very end of the string
+  // 3. Orphaned dashes / slashes / spaces at the end
   cleanName = cleanName.replace(/[\/\-\s]+$/, '');
 
-  return cleanName.trim();
+  // 4. Casing
+  return cleanName.trim().split(/\s+/).map(smartCaseWord).join(' ');
 };
 
 /**
@@ -133,9 +193,7 @@ export function getPaginationBounds(
    CORE SCHEDULING ENGINE
    ===================================================================== */
 
-// ---------------------------------------------------------------------
-// Internal Time Parser (Private helper for analyzeMatchSpacing)
-// ---------------------------------------------------------------------
+/** Internal time parser (private helper for analyzeMatchSpacing) */
 const getMsFromTime = (timeStr: string) => {
   const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
   if (!match) return 0;
@@ -157,7 +215,7 @@ const getMsFromTime = (timeStr: string) => {
 /**
  * Analyzes the spacing between two matches to determine if they conflict
  * or have a tight gap.
- * @param tightGapThresholdMins Defines how many minutes between games triggers a warning (default: 60)
+ * @param tightGapThresholdMins Minutes between games that triggers a warning (default: 60)
  */
 export function analyzeMatchSpacing(
   matchA: Match,
@@ -169,27 +227,25 @@ export function analyzeMatchSpacing(
   overlapMins: number;
   gapMins: number;
 } {
-  if (matchA.time === 'TBD' || matchB.time === 'TBD') {
-    return { isConflict: false, isTightGap: false, overlapMins: 0, gapMins: 0 };
-  }
-
-  if (matchA.date !== matchB.date) {
+  if (
+    matchA.time === 'TBD' ||
+    matchB.time === 'TBD' ||
+    matchA.date !== matchB.date
+  ) {
     return { isConflict: false, isTightGap: false, overlapMins: 0, gapMins: 0 };
   }
 
   const startA = getMsFromTime(matchA.time);
   const startB = getMsFromTime(matchB.time);
 
-  const matchDurationMs = 90 * 60000; // 90 minutes
+  const matchDurationMs = MATCH_PLAY_MINUTES * 60000;
   const endA = startA + matchDurationMs;
   const endB = startB + matchDurationMs;
 
-  // Calculate Overlap
   const overlapMs = Math.min(endA, endB) - Math.max(startA, startB);
   const isConflict = overlapMs > 0;
   const overlapMins = isConflict ? Math.round(overlapMs / 60000) : 0;
 
-  // Calculate Gap
   const gapMs = startA > startB ? startA - endB : startB - endA;
   const gapMins = gapMs >= 0 ? Math.round(gapMs / 60000) : 0;
   const isTightGap = !isConflict && gapMins <= tightGapThresholdMins;
@@ -217,11 +273,9 @@ export function processWeekSpacing(currentWeekMatches: Match[]) {
 
     const isPast = match.status === 'final' || match.status === 'canceled';
 
-    // Only run if the match is still active
     if (!isPast) {
       const myTeam = formatShortName(getTrackedTeam(match));
 
-      // Check for TBD and build the detail string
       if (match.time === 'TBD') {
         const opponent = formatShortName(getOpponentTeam(match));
         tbdDetails.push(`${myTeam} vs ${opponent}`);

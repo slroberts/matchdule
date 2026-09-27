@@ -65,6 +65,7 @@ const MatchHeader = ({
   status,
   isHomeGame,
   showDate = true,
+  awaitingResult = false,
 }: {
   isConflict?: boolean;
   isTightGap?: boolean;
@@ -74,8 +75,11 @@ const MatchHeader = ({
   status: MatchStatus;
   isHomeGame: boolean;
   showDate?: boolean;
+  /** Game over, score not posted yet → "Awaiting score" instead of "Final" */
+  awaitingResult?: boolean;
 }) => {
-  const statusConfig = status === 'live' ? null : getStatusConfig(status);
+  const statusConfig =
+    status === 'live' ? null : getStatusConfig(status, { awaitingResult });
   const when = isTBD ? 'Time TBD' : formatTime(time);
   const label = showDate ? `${formatDate(date)} · ${when}` : when;
   // Same icon + buckets as the filter drawer's Morning/Afternoon/Evening chips
