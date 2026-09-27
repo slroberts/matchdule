@@ -1,38 +1,52 @@
-'use client';
-
 import { MapPin, Navigation } from 'lucide-react';
-import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
-import { MetaItem } from '../MetaItem/MetaItem';
+
+/**
+ * DirectionsButton — Figma: MatchCard › Footer › Directions
+ * The whole row is ONE 44px target and a real link (long-press, open-in-new-tab, screen readers all work).
+ */
+
+const ICON = { size: 16, strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
+const ROW =
+  'flex min-h-(--size-tap) min-w-0 flex-1 items-center gap-(--space-stack-sm) rounded-(--radius-control) bg-(--color-bg-subtle) px-(--space-stack-md) py-(--space-stack-sm)';
 
 export const DirectionsButton = ({ location }: { location: string }) => {
-  const isTBD = location.trim().toUpperCase() === 'TBD';
+  const isTBD = !location.trim() || location.trim().toUpperCase() === 'TBD';
 
-  const handleDirections = () => {
-    if (isTBD) return;
+  if (isTBD) {
+    return (
+      <div className={cn(ROW, 'text-(--color-text-disabled)')}>
+        <MapPin {...ICON} aria-hidden='true' className='shrink-0' />
+        <span className='text-meta truncate'>Location TBD</span>
+      </div>
+    );
+  }
 
-    const encodedLocation = encodeURIComponent(location);
-
-    const url = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
-
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
+  const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
 
   return (
-    <Button
-      variant='muted'
-      className={cn(
-        'flex flex-1 min-w-0 shrink-0 justify-between w-full transition-all duration-200',
-        isTBD ? 'opacity-40 pointer-events-none' : 'opacity-100 cursor-pointer',
-      )}
-      onClick={handleDirections}
-      disabled={isTBD}
-      aria-disabled={isTBD}
+    <a
+      href={url}
+      target='_blank'
+      rel='noopener noreferrer'
+      className={cn(ROW, 'pressable text-(--color-text-primary)')}
     >
-      <MetaItem icon={MapPin} label={location} />
-      <div className='rounded-full bg-brand-primary text-white p-2'>
-        <Navigation size={16} />
-      </div>
-    </Button>
+      <MapPin
+        {...ICON}
+        aria-hidden='true'
+        className='shrink-0 text-(--color-icon-default)'
+      />
+      {/* Visible label stays in the accessible name (WCAG 2.5.3) */}
+      <span className='text-meta min-w-0 flex-1 truncate'>
+        <span className='visually-hidden'>Directions to </span>
+        {location}
+        <span className='visually-hidden'> (opens Maps)</span>
+      </span>
+      <Navigation
+        {...ICON}
+        aria-hidden='true'
+        className='shrink-0 text-(--color-icon-default)'
+      />
+    </a>
   );
 };

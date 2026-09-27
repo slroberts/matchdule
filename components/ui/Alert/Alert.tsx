@@ -1,16 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+
+/**
+ * Alert — Figma: Molecules › AlertBanner
+ * Tinted surface + dark on-surface text (≥ 7:1, both modes) replaces white-on-gradient (~2:1).
+ *
+ * Structure (no nested interactive elements):
+ *   [ button: icon · title · chevron  (toggles body) ] [ button: Mute ]
+ *   [ body: description + details  (animated grid-rows collapse) ]
+ */
 
 interface AlertProps {
   variant: 'destructive' | 'warning';
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
   details?: string[];
 }
+
+const TONES = {
+  destructive: 'bg-(--color-danger-surface) text-(--color-danger-on-surface)',
+  warning: 'bg-(--color-warning-surface) text-(--color-warning-on-surface)',
+  muted: 'bg-(--color-bg-subtle) text-(--color-text-secondary)',
+} as const;
 
 export const Alert = ({
   variant,
@@ -21,86 +36,92 @@ export const Alert = ({
 }: AlertProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
-
-  const styles = {
-    destructive: 'bg-gradient-to-r from-[#FB2C36] to-[#E7000B]',
-    warning: 'bg-gradient-to-r from-[#FBB000] to-[#F0A30A]',
-  };
+  const titleId = useId();
+  const bodyId = useId();
 
   const handleMuteToggle = () => {
-    setIsMuted(!isMuted);
-    if (!isMuted) {
-      setIsExpanded(false);
-    }
+    setIsMuted((muted) => !muted);
+    if (!isMuted) setIsExpanded(false); // muting collapses; unmuting leaves it collapsed
   };
 
   return (
-    <div
+    <section
+      aria-labelledby={titleId}
       className={cn(
-        'relative flex flex-col p-4 rounded-xl shadow-md text-white transition-all duration-300',
-        isMuted ? 'bg-zinc-500' : styles[variant],
+        'flex flex-col rounded-(--radius-card) px-(--space-card-pad) py-(--space-stack-xs)',
+        'transition-colors duration-(--duration-scrim)',
+        isMuted ? TONES.muted : TONES[variant],
       )}
     >
-      <div
-        className='flex items-start justify-between gap-3 cursor-pointer group'
-        onClick={() => setIsExpanded(!isExpanded)}
-        role='button'
-        aria-expanded={isExpanded}
-      >
-        <div className='flex items-center gap-3'>
-          <div className='shrink-0'>{icon}</div>
-          <h4 className='text-sm font-bold uppercase tracking-wide leading-none shadow-black/10 text-shadow-sm mt-0.5'>
-            {title}
-
-            {isMuted && (
-              <span className='ml-2 lowercase tracking-normal font-medium opacity-70'>
-                (muted)
-              </span>
-            )}
-          </h4>
-        </div>
-
+      {/* Summary row */}
+      <div className='flex items-center gap-(--space-stack-sm)'>
         <button
-          className='shrink-0 opacity-70 group-hover:opacity-100 transition-opacity focus:outline-none mt-0.5'
-          aria-label={isExpanded ? 'Collapse alert' : 'Expand alert'}
+          type='button'
+          onClick={() => setIsExpanded((open) => !open)}
+          aria-expanded={isExpanded}
+          aria-controls={bodyId}
+          className='flex min-h-(--size-tap) min-w-0 flex-1 items-center gap-(--space-stack-sm) text-left'
         >
-          {isExpanded ? (
-            <ChevronUp size={18} strokeWidth={2.5} />
-          ) : (
-            <ChevronDown size={18} strokeWidth={2.5} />
-          )}
+          <span aria-hidden='true' className='shrink-0 [&_svg]:size-4'>
+            {icon}
+          </span>
+          <span id={titleId} className='text-control min-w-0 flex-1'>
+            {title}
+            {isMuted && (
+              <span className='font-medium opacity-80'> · Muted</span>
+            )}
+          </span>
+          <ChevronDown
+            size={16}
+            strokeWidth={1.5}
+            absoluteStrokeWidth
+            aria-hidden='true'
+            className={cn(
+              'shrink-0 transition-transform duration-(--duration-fade)',
+              isExpanded && 'rotate-180',
+            )}
+          />
+        </button>
+
+        {/* Sibling, not nested — visible label is the accessible name; state via aria-pressed */}
+        <button
+          type='button'
+          onClick={handleMuteToggle}
+          aria-pressed={isMuted}
+          className='text-control min-h-(--size-tap) shrink-0 px-(--space-stack-sm) underline decoration-1 underline-offset-3 hover:decoration-2'
+        >
+          {isMuted ? 'Unmute' : 'Mute'}
         </button>
       </div>
 
-      {isExpanded && (
-        <div className='flex flex-col gap-1 pr-6 pl-8 animate-stagger-fade mt-2'>
-          <p className='text-sm font-medium opacity-95 leading-snug'>
-            {description}
-          </p>
+      {/* Body — grid-rows 0fr↔1fr animates height without measuring; tokens handle reduced motion */}
+      <div
+        id={bodyId}
+        aria-hidden={!isExpanded}
+        className={cn(
+          'grid transition-[grid-template-rows] duration-(--duration-page) ease-out',
+          isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+        )}
+      >
+        <div className='overflow-hidden'>
+          <div className='flex flex-col gap-(--space-stack-sm) pb-(--space-stack-md) pl-6'>
+            <p className='text-meta'>{description}</p>
 
-          {details && details.length > 0 && (
-            <ul className='mt-2 flex flex-col gap-1 border-t border-white/20 pt-2 w-full'>
-              {details.map((detail, idx) => (
-                <li
-                  key={idx}
-                  className='text-sm font-bold opacity-90 tracking-wide'
-                >
-                  {detail}
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className='flex justify-end mt-1'>
-            <button
-              className='opacity-70 hover:opacity-100 transition-opacity focus:outline-none mt-1 cursor-pointer text-xs font-bold uppercase tracking-wider'
-              aria-label={isMuted ? 'Alert muted' : 'Alert unmuted'}
-              onClick={handleMuteToggle}
-            >
-              {isMuted ? 'Unmute' : 'Mute Alert'}
-            </button>
+            {details && details.length > 0 && (
+              <ul className='flex flex-col gap-(--space-stack-xs) border-t border-current/20 pt-(--space-stack-sm)'>
+                {details.map((detail, idx) => (
+                  <li
+                    key={idx}
+                    className='text-meta font-semibold tabular-nums'
+                  >
+                    {detail}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </section>
   );
 };

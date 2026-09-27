@@ -1,88 +1,162 @@
+import Link from 'next/link';
+import { CalendarOff, FilterX } from 'lucide-react';
 import { Match } from '@/types/match';
 import { MatchCard } from './MatchCard/MatchCard';
 import { cn } from '@/lib/utils';
-import { CalendarOff, FilterX } from 'lucide-react';
-import { Button } from '@/components/ui/buttons/Button';
+
+/**
+ * MatchList — Figma: Screens › Schedule
+ * Matches are grouped under day headers ("Sunday, Sep 27"), so each card shows time only.
+ * Stagger animation is motion-safe: with reduced motion, cards render visible immediately
+ * (a bare `opacity-0` would leave them invisible when the animation is disabled).
+ */
 
 interface MatchListProps {
   matches: Match[];
   className?: string;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
+  /** Rest-week escape hatch, e.g. { href: '/?date=2026-10-12', label: 'Oct 12 – 18' } */
+  nextMatch?: { href: string; label: string };
 }
+
+const formatDay = (date: string) => {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(date));
+  } catch {
+    return date;
+  }
+};
+
+const groupByDay = (matches: Match[]) => {
+  const groups = new Map<string, Match[]>();
+  for (const match of matches) {
+    const day = groups.get(match.date) ?? [];
+    day.push(match);
+    groups.set(match.date, day);
+  }
+  return [...groups.entries()];
+};
 
 export const MatchList = ({
   matches,
   className,
   hasActiveFilters = false,
   onClearFilters,
+  nextMatch,
 }: MatchListProps) => {
+  if (matches.length === 0) {
+    return (
+      <EmptyState
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={onClearFilters}
+        nextMatch={nextMatch}
+      />
+    );
+  }
+
+  // Global order for the stagger delay across day groups
+  const order = new Map(matches.map((m, i) => [m.id, i]));
+
   return (
-    <div>
-      {matches.length > 0 ? (
-        <ul
-          className={cn(
-            'flex flex-col gap-grid-md w-full max-w-md mx-auto',
-            className,
-          )}
-        >
-          {matches.map((match: Match, index: number) => (
-            <li
-              key={match.id}
-              className='list-none opacity-0 animate-stagger-fade'
-              style={{ animationDelay: `${index * 75}ms` }}
-            >
-              <MatchCard match={match} />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EmptyState
-          hasActiveFilters={hasActiveFilters}
-          onClearFilters={onClearFilters}
-        />
+    <div
+      className={cn(
+        'mx-auto flex w-full max-w-lg flex-col gap-(--space-stack-md) px-(--space-gutter)',
+        className,
       )}
+    >
+      {groupByDay(matches).map(([day, dayMatches]) => {
+        const headingId = `day-${day.replace(/\W+/g, '-')}`;
+
+        return (
+          <section
+            key={day}
+            aria-labelledby={headingId}
+            className='flex flex-col gap-(--space-stack-md)'
+          >
+            <h3
+              id={headingId}
+              className='text-label text-(--color-text-secondary)'
+            >
+              {formatDay(day)}
+            </h3>
+
+            <ul className='flex flex-col gap-(--space-stack-md)'>
+              {dayMatches.map((match) => (
+                <li
+                  key={match.id}
+                  className='stagger-fade list-none'
+                  style={{
+                    animationDelay: `${(order.get(match.id) ?? 0) * 75}ms`,
+                  }}
+                >
+                  <MatchCard match={match} showDate={false} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 };
 
+/* Figma: Molecules › Button (Type=Primary) */
+const PRIMARY_ACTION =
+  'pressable text-control inline-flex min-h-(--size-tap) items-center justify-center rounded-(--radius-control) bg-(--color-bg-inverse) px-(--space-stack-md) py-(--space-stack-md) text-(--color-text-on-inverse) shadow-(--shadow-control-selected)';
+
+/** Figma: Molecules › EmptyState — what happened, why, and what to do next */
 const EmptyState = ({
   hasActiveFilters,
   onClearFilters,
+  nextMatch,
 }: {
   hasActiveFilters: boolean;
   onClearFilters?: () => void;
-}) => (
-  <div className='flex flex-col items-center justify-center py-20 -mx-6 px-6 text-center opacity-0 animate-stagger-fade bg-surface-canvas z-10'>
-    <div className='relative mb-6'>
-      <div className='absolute inset-0 bg-brand-navy/5 blur-xl rounded-full scale-150' />
+  nextMatch?: { href: string; label: string };
+}) => {
+  const Icon = hasActiveFilters ? FilterX : CalendarOff;
 
-      <div className='relative bg-surface-card border-2 border-divider shadow-sm rounded-full p-6 text-brand-navy/40'>
-        {hasActiveFilters ? (
-          <FilterX size={42} strokeWidth={1.5} />
-        ) : (
-          <CalendarOff size={42} strokeWidth={1.5} />
-        )}
+  return (
+    <div className='mx-auto flex w-full max-w-lg flex-col items-center gap-(--space-stack-md) px-(--space-card-pad) py-8 text-center stagger-fade'>
+      <div className='grid size-18 place-items-center rounded-full bg-(--color-bg-surface) text-(--color-icon-default) shadow-(--shadow-raised)'>
+        <Icon
+          size={28}
+          strokeWidth={1.5}
+          absoluteStrokeWidth
+          aria-hidden='true'
+        />
       </div>
+
+      <h3 className='text-score text-(--color-text-primary)'>
+        {hasActiveFilters ? 'No matches fit these filters' : 'Rest week'}
+      </h3>
+
+      <p className='text-meta max-w-70 text-(--color-text-secondary)'>
+        {hasActiveFilters
+          ? "None of this week's matches fit your filters. Remove one or clear them to see more."
+          : 'No matches scheduled this week.'}
+      </p>
+
+      {hasActiveFilters && onClearFilters && (
+        <button
+          type='button'
+          onClick={onClearFilters}
+          className={PRIMARY_ACTION}
+        >
+          Clear filters
+        </button>
+      )}
+
+      {!hasActiveFilters && nextMatch && (
+        <Link href={nextMatch.href} className={PRIMARY_ACTION}>
+          Go to {nextMatch.label}
+        </Link>
+      )}
     </div>
-
-    <h3 className='text-xl font-black text-brand-navy uppercase tracking-tight mb-2'>
-      {hasActiveFilters ? 'No Results' : 'Rest Week'}
-    </h3>
-
-    <p className='text-sm font-medium text-surface-muted max-w-[260px] leading-relaxed'>
-      {hasActiveFilters
-        ? "We couldn't find any matches that fit your current filters. Try broadening your search."
-        : 'There are no matches scheduled for this timeframe. Time to recover and hit the training pitch.'}
-    </p>
-
-    {hasActiveFilters && onClearFilters && (
-      <Button
-        onClick={onClearFilters}
-        className='mt-4 bg-brand-navy text-white hover:bg-brand-navy/90 active:scale-95 transition-all px-8 py-3.5 rounded-lg text-xs font-bold uppercase tracking-widest shadow-md'
-      >
-        Clear Filters
-      </Button>
-    )}
-  </div>
-);
+  );
+};

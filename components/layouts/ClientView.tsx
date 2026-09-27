@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Clock, Flag, FoldHorizontal } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { Clock, Flag, TriangleAlert } from 'lucide-react';
 import { MatchList } from '@/components/modules/matches/MatchList';
 import { Header } from '@/components/layouts/Header/Header';
 import { TeamTabs } from './TeamTabs';
@@ -9,9 +10,15 @@ import { Alert } from '@/components/ui/Alert/Alert';
 import { processWeekSpacing } from '@/lib/matches/match-utils';
 import { getWeekData, getSeason } from '@/lib/dates/date-utils';
 import { FilterState, Match, TabOption, TimeOfDayOption } from '@/types/match';
-import { FilterDrawer } from './FilterDrawer/FilterDrawer';
-import { AnimatePresence } from 'framer-motion';
+import {
+  DEFAULT_FILTERS,
+  FilterDrawer,
+  getActiveFilterCount,
+  normalizeFilters,
+} from './FilterDrawer/FilterDrawer';
 import { StandingsView } from './StandingsView';
+import { TabBar } from './TabBar';
+import { ActiveFilters } from './ActiveFilters';
 
 interface ClientViewProps {
   allMatches: Match[];
@@ -23,10 +30,20 @@ interface ClientViewProps {
   initialFilters: FilterState;
 }
 
+const INTERNAL_UTILITIES = ['b-and-g', 'soricha'];
+
 const getUtilityFromTab = (tab: TabOption) => {
   if (tab === 'B&G') return 'b-and-g';
   if (tab === 'Soricha') return 'soricha';
   return null;
+};
+
+const isTeamMatch = (match: Match, team: TabOption) => {
+  if (team === 'All Teams') return true;
+  const utility = getUtilityFromTab(team);
+  return (
+    match.homeTeam.utility === utility || match.awayTeam.utility === utility
+  );
 };
 
 const getTimePeriod = (
@@ -44,9 +61,19 @@ const getTimePeriod = (
   if (!isPM && hour === 12) hour = 0;
 
   if (hour < 12) return 'morning';
-  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour < 17) return 'afternoon';
   return 'evening';
 };
+
+/** Local YYYY-MM-DD for ?date= links (any day inside the target week) */
+const toDateParam = (timestamp: number) => {
+  const d = new Date(timestamp);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+};
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export const ClientView = ({
   allMatches,
@@ -54,8 +81,10 @@ export const ClientView = ({
   initialTeam,
   initialFilters,
 }: ClientViewProps) => {
-  // Initialize state directly with the server's prop to prevent hydration flash
-  const [filters, setFilters] = useState<FilterState>(initialFilters);
+  // normalizeFilters repairs cookies saved with the old resultsState: 'all' bug
+  const [filters, setFilters] = useState<FilterState>(() =>
+    normalizeFilters(initialFilters),
+  );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentTeam, setCurrentTeam] = useState<TabOption>(initialTeam);
   const currentSeason = getSeason(weekInfo.weekStart);
@@ -63,7 +92,7 @@ export const ClientView = ({
     'schedule',
   );
 
-  // Auto-sync to cookie whenever filters change
+  // Persist filters (effect updates an external system — the cookie — which is the correct use)
   useEffect(() => {
     const encodedFilters = encodeURIComponent(JSON.stringify(filters));
     document.cookie = `matchdule_filters=${encodedFilters}; path=/; max-age=31536000`;
@@ -74,94 +103,76 @@ export const ClientView = ({
     document.cookie = `matchdule_selected_team=${team}; path=/; max-age=31536000`;
   };
 
-  // Calculate exactly how many individual filters are currently applied
-  const activeFilterCount =
-    (filters.ageGroup !== 'all' ? 1 : 0) +
-    (filters.homeAway !== 'all' ? 1 : 0) +
-    filters.urgency.length +
-    filters.timeOfDay.length +
-    (filters.matchState !== 'all' ? 1 : 0) +
-    (filters.resultsState !== null ? 1 : 0);
+  const activeFilterCount = getActiveFilterCount(filters);
 
-  // Set up boundary dates for the current week to calculate dynamic visibility
+  // Week boundaries (+12h guards against UTC → local negative offsets)
   const endOfSunday = new Date(weekInfo.weekEnd);
-  // Push forward 12 hours to safely bypass any UTC-to-Local negative timezone shifts
   endOfSunday.setHours(endOfSunday.getHours() + 12);
   endOfSunday.setHours(23, 59, 59, 999);
 
   const startOfMonday = new Date(weekInfo.weekStart);
-  // Push forward 12 hours to safely bypass any UTC-to-Local negative timezone shifts
   startOfMonday.setHours(startOfMonday.getHours() + 12);
   startOfMonday.setHours(0, 0, 0, 0);
 
-  // Dynamically verify if matches exist outside the current view bounds
   const realHasNext = allMatches.some(
-    (match) => match.timestamp > endOfSunday.getTime(),
+    (m) => m.timestamp > endOfSunday.getTime(),
   );
   const realHasPrev = allMatches.some(
-    (match) => match.timestamp < startOfMonday.getTime(),
+    (m) => m.timestamp < startOfMonday.getTime(),
   );
 
-  // Main Unified Filtration Engine
+  // Rest-week escape hatch: this team's next match after the current week
+  const nextTeamMatch = allMatches
+    .filter(
+      (m) => m.timestamp > endOfSunday.getTime() && isTeamMatch(m, currentTeam),
+    )
+    .reduce<
+      Match | undefined
+    >((soonest, m) => (!soonest || m.timestamp < soonest.timestamp ? m : soonest), undefined);
+  const nextMatch = nextTeamMatch
+    ? {
+        href: `/?date=${toDateParam(nextTeamMatch.timestamp)}`,
+        label: new Intl.DateTimeFormat('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        }).format(new Date(nextTeamMatch.timestamp)),
+      }
+    : undefined;
+
+  // Main filtration engine
   const displayedMatches = allMatches.filter((match) => {
-    const matchTime = match.timestamp;
-
-    // UPDATE THIS LINE: Use startOfMonday instead of weekInfo.weekStart
     const isThisWeek =
-      matchTime >= startOfMonday.getTime() &&
-      matchTime <= endOfSunday.getTime();
-
+      match.timestamp >= startOfMonday.getTime() &&
+      match.timestamp <= endOfSunday.getTime();
     if (!isThisWeek) return false;
+    if (!isTeamMatch(match, currentTeam)) return false;
 
-    let isRightTeam = true;
     const targetUtility = getUtilityFromTab(currentTeam);
 
-    if (currentTeam !== 'All Teams') {
-      isRightTeam =
-        match.homeTeam.utility === targetUtility ||
-        match.awayTeam.utility === targetUtility;
-    }
-    if (!isRightTeam) return false;
-
-    // DRAWER FILTER A: AGE GROUP
+    // A: Age group
     if (filters.ageGroup !== 'all') {
       const home = match.homeTeam.name || '';
       const away = match.awayTeam.name || '';
-
-      if (filters.ageGroup === 'u13') {
-        const isU13 =
-          home.includes('Soricha Foot SFA EDP') ||
-          away.includes('Soricha Foot SFA EDP');
-        if (!isU13) return false;
-      }
-
-      if (filters.ageGroup === 'u9') {
-        const isU9 =
-          home.includes('Soricha Foot SFA /18') ||
-          away.includes('Soricha Foot SFA /18');
-        if (!isU9) return false;
-      }
+      const needle =
+        filters.ageGroup === 'u13'
+          ? 'Soricha Foot SFA EDP'
+          : 'Soricha Foot SFA /18';
+      if (!home.includes(needle) && !away.includes(needle)) return false;
     }
 
-    // DRAWER FILTER B: TEAM SIDE
+    // B: Team side
     if (filters.homeAway !== 'all') {
-      const isHomeSelected = filters.homeAway === 'home';
-
-      if (currentTeam !== 'All Teams') {
-        const activeSideUtility = isHomeSelected
-          ? match.homeTeam.utility
-          : match.awayTeam.utility;
-        if (activeSideUtility !== targetUtility) return false;
-      } else {
-        const targetSideTeam = isHomeSelected ? match.homeTeam : match.awayTeam;
-        const isInternalOnTargetSide =
-          targetSideTeam.utility === 'b-and-g' ||
-          targetSideTeam.utility === 'soricha';
-        if (!isInternalOnTargetSide) return false;
-      }
+      const sideTeam =
+        filters.homeAway === 'home' ? match.homeTeam : match.awayTeam;
+      const isOursOnSide =
+        currentTeam !== 'All Teams'
+          ? sideTeam.utility === targetUtility
+          : INTERNAL_UTILITIES.includes(sideTeam.utility ?? '');
+      if (!isOursOnSide) return false;
     }
 
-    // DRAWER FILTER C: URGENCY ALERTS
+    // C: Alerts
     if (filters.urgency.length > 0) {
       const hasConflict =
         filters.urgency.includes('conflict') && match.isConflict;
@@ -170,68 +181,37 @@ export const ClientView = ({
       const hasTbd =
         filters.urgency.includes('tbd') &&
         (!match.time || match.time.toUpperCase() === 'TBD');
-
       if (!hasConflict && !hasTightGap && !hasTbd) return false;
     }
 
-    // DRAWER FILTER D: TIME OF DAY
+    // D: Time of day
     if (filters.timeOfDay.length > 0) {
-      const matchPeriod = getTimePeriod(match.time);
-      if (!filters.timeOfDay.includes(matchPeriod as TimeOfDayOption))
-        return false;
+      const period = getTimePeriod(match.time);
+      if (!filters.timeOfDay.includes(period as TimeOfDayOption)) return false;
     }
 
-    // DRAWER FILTER E: MATCH STATUS
-    if (filters.matchState !== 'all') {
-      if (match.status !== filters.matchState) return false;
-    }
+    // E: Match status
+    if (filters.matchState !== 'all' && match.status !== filters.matchState)
+      return false;
 
-    // DRAWER FILTER F: RESULTS
-    if (filters.resultsState && filters.resultsState !== null) {
-      // 1. Identify our team dynamically
-      let myTeam;
-      if (currentTeam !== 'All Teams') {
-        const targetUtility = getUtilityFromTab(currentTeam);
-        myTeam =
-          match.homeTeam.utility === targetUtility
+    // F: Result (only reachable with Final — enforced by normalizeFilters)
+    if (filters.resultsState) {
+      const myTeam =
+        currentTeam !== 'All Teams'
+          ? match.homeTeam.utility === targetUtility
+            ? match.homeTeam
+            : match.awayTeam
+          : INTERNAL_UTILITIES.includes(match.homeTeam.utility ?? '')
             ? match.homeTeam
             : match.awayTeam;
-      } else {
-        const isHomeOurs =
-          match.homeTeam.utility === 'b-and-g' ||
-          match.homeTeam.utility === 'soricha';
-        myTeam = isHomeOurs ? match.homeTeam : match.awayTeam;
-      }
 
-      // 2. Safely grab the strings and standardize them to uppercase
-      const rawResult = myTeam?.result || '';
-      const activeFilter = filters.resultsState.toUpperCase();
-
-      // 3. Map the strings just in case your drawer uses full words (e.g., 'WIN')
-      // but your database uses letters (e.g., 'W')
-      const isWin = activeFilter.startsWith('W') && rawResult.startsWith('W');
-      const isLoss = activeFilter.startsWith('L') && rawResult.startsWith('L');
-      const isDraw = activeFilter.startsWith('D') && rawResult.startsWith('D');
-
-      // 4. If none of these match, drop the game from the list
-      if (!isWin && !isLoss && !isDraw) {
+      const wanted = filters.resultsState[0].toUpperCase(); // 'W' | 'L' | 'D'
+      if (!(myTeam?.result ?? '').toUpperCase().startsWith(wanted))
         return false;
-      }
     }
 
     return true;
   });
-
-  const handleClearFilters = () => {
-    setFilters({
-      homeAway: 'all',
-      urgency: [],
-      timeOfDay: [],
-      matchState: 'all',
-      ageGroup: 'all',
-      resultsState: null,
-    });
-  };
 
   const {
     matchesWithSpacingStatus,
@@ -245,7 +225,8 @@ export const ClientView = ({
 
   return (
     <>
-      <div className='sticky top-0 z-50 w-full flex flex-col'>
+      {/* Sticky chrome: token z-index keeps it BELOW the scrim + sheet */}
+      <div className='sticky top-0 z-(--z-header) flex w-full flex-col'>
         <Header
           dateRange={weekInfo.dateRange}
           seasonLabel={currentSeason}
@@ -256,26 +237,23 @@ export const ClientView = ({
           hasNext={realHasNext}
           setIsFilterOpen={setIsFilterOpen}
           activeFilterCount={activeFilterCount}
-          viewMode={viewMode}
         />
-
-        <TeamTabs
-          activeTeam={currentTeam}
-          onTeamChange={handleTeamChange}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-        />
+        {/* Opaque canvas so cards don't show through the tabs while scrolling */}
+        <div className='bg-(--color-bg-canvas) pt-(--space-stack-sm)'>
+          <TeamTabs activeTeam={currentTeam} onTeamChange={handleTeamChange} />
+        </div>
       </div>
 
-      <main className='px-6 py-2'>
+      {/* Bottom padding clears the floating TabBar + home indicator */}
+      <main className='pt-(--space-stack-sm) pb-[calc(var(--size-tab-bar)+var(--safe-bottom)+24px)]'>
         {viewMode === 'schedule' && (hasConflict || hasTightGap || hasTBD) && (
-          <div className='flex flex-col gap-3 w-full max-w-md mx-auto mb-6'>
+          <div className='mx-auto mb-(--space-stack-md) flex w-full max-w-lg flex-col gap-(--space-stack-sm) px-(--space-gutter)'>
             {hasConflict && (
               <Alert
                 variant='destructive'
-                icon={<Flag size={18} strokeWidth={2.5} />}
-                title={`${conflictDetails.length} Schedule Conflict${conflictDetails.length > 1 ? 's' : ''}`}
-                description='You have overlapping matches. You cannot be in two places at once.'
+                icon={<Flag size={16} strokeWidth={1.5} absoluteStrokeWidth />}
+                title={`${plural(conflictDetails.length, 'conflict')} this week`}
+                description='These matches overlap — you can’t be at both.'
                 details={conflictDetails}
               />
             )}
@@ -283,9 +261,15 @@ export const ClientView = ({
             {hasTightGap && !hasConflict && (
               <Alert
                 variant='warning'
-                icon={<FoldHorizontal size={18} strokeWidth={2.5} />}
-                title={`${tightGapDetails.length} Schedule Overlap${tightGapDetails.length > 1 ? 's' : ''}`}
-                description='Matches are scheduled very close together. Pack snacks and plan travel accordingly.'
+                icon={
+                  <TriangleAlert
+                    size={16}
+                    strokeWidth={1.5}
+                    absoluteStrokeWidth
+                  />
+                }
+                title={`${plural(tightGapDetails.length, 'tight gap')} this week`}
+                description='Less than an hour between games. Plan travel and pack snacks.'
                 details={tightGapDetails}
               />
             )}
@@ -293,24 +277,32 @@ export const ClientView = ({
             {hasTBD && (
               <Alert
                 variant='warning'
-                icon={<Clock size={18} strokeWidth={2.5} />}
-                title={`${tbdDetails.length} Schedule Note${tbdDetails.length > 1 ? 's' : ''}`}
-                description={`The exact kickoff time for ${tbdDetails.length > 1 ? 'these matches' : 'the match'} is currently TBD.`}
+                icon={<Clock size={16} strokeWidth={1.5} absoluteStrokeWidth />}
+                title={`${plural(tbdDetails.length, 'kickoff time')} TBD`}
+                description={`We’ll show the time as soon as ${tbdDetails.length > 1 ? 'they’re' : 'it’s'} confirmed.`}
                 details={tbdDetails}
               />
             )}
           </div>
         )}
+
+        {viewMode === 'schedule' && (
+          <ActiveFilters filters={filters} setFilters={setFilters} />
+        )}
+
         {viewMode === 'schedule' ? (
           <MatchList
             matches={matchesWithSpacingStatus}
             hasActiveFilters={activeFilterCount > 0}
-            onClearFilters={handleClearFilters}
+            onClearFilters={() => setFilters(DEFAULT_FILTERS)}
+            nextMatch={nextMatch}
           />
         ) : (
           <StandingsView activeTeam={currentTeam} matches={allMatches} />
         )}
       </main>
+
+      <TabBar viewMode={viewMode} setViewMode={setViewMode} />
 
       <AnimatePresence>
         {isFilterOpen && (
@@ -318,6 +310,7 @@ export const ClientView = ({
             onClose={() => setIsFilterOpen(false)}
             filters={filters}
             setFilters={setFilters}
+            matchCount={displayedMatches.length}
           />
         )}
       </AnimatePresence>

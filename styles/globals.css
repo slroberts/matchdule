@@ -1,119 +1,770 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+/* ==========================================================================
+   Matchdule — global.css
+   Tailwind entry + design tokens + base layer. Generated from Figma: "Matchdule — Design System v1"
+   (Local Variables: Primitives · Color [Light/Dark] · Density [Compact/Regular],
+   Text Styles, Effect Styles). Token names mirror Figma's WEB code syntax 1:1,
+   so what Dev Mode shows is exactly what exists here.
+
+   Layers (lowest → highest priority):
+     tokens      → custom properties only, no selectors that style elements
+     base        → element defaults (body, focus, selection)
+     components  → composite text styles (.text-display … .text-label)
+     utilities   → single-purpose classes (.elevation-*, .glass, .tap-area …)
+   Text styles sit in `components` so Tailwind utilities override them:
+     class="text-label font-bold"  → bold wins (Tailwind utilities > components)
+
+   Theming
+     <html>                        Light (default)
+     <html data-theme="dark">      Dark app-wide
+     <header data-theme="dark">    Dark *island* (the top bar) inside a light page
+     <html data-theme="auto">      Follow OS setting (opt-in: enable once Dark body screens are QA'd)
+
+   Density
+     < 390px   Compact     ≥ 390px   Regular
+     Force per subtree with data-density="compact" | "regular".
+   ========================================================================== */
+
+/* Tailwind v4 entry. MUST be the first rule in the file (CSS only allows
+   @import before other rules). It declares Tailwind's layer order
+   (theme → base → components → utilities); the @layer statement below merges
+   into it and appends `tokens`, so:
+     - text styles in `components` stay overridable by utilities (font-bold …)
+     - our `base` rules merge with Preflight
+   Fonts: load via next/font (see layout.tsx) — no remote font @import here. */
 @import 'tailwindcss';
 
-@theme {
-  /* --- Brand Colors --- */
-  --color-brand-navy: #0f172a;
-  --color-brand-primary: #00a58e;
+@layer tokens, base, components, utilities;
 
-  /* --- Status Colors --- */
-  --color-status-conflict: #ed1c24;
-  --color-status-warning: #f59e0b;
-  --color-status-success: #10b981;
-  --color-status-draw: #9ca3af;
-  --color-status-loss: #ef4444;
+/* ==========================================================================
+   1. TOKENS
+   ========================================================================== */
+@layer tokens {
+  /* ---------- 1.1 Primitives (raw palette — never use directly in components) */
+  :root {
+    --primitive-navy-1000: #03040a;
+    --primitive-navy-950: #0b0f24;
+    --primitive-navy-900: #13172e;
+    --primitive-navy-800: #1e2238;
+    --primitive-navy-700: #2c3150;
+    --primitive-slate-600: #475569;
+    --primitive-slate-500: #64748b;
+    --primitive-slate-400: #94a3b8;
+    --primitive-slate-200: #e2e8f0;
+    --primitive-slate-100: #f4f5f7;
+    --primitive-white: #ffffff;
+    --primitive-teal-700: #007a66;
+    --primitive-teal-400: #2dd4bf;
+    --primitive-amber-900: #78350f;
+    --primitive-amber-500: #f5a800;
+    --primitive-amber-300: #fcd34d;
+    --primitive-amber-100: #fef3c7;
+    --primitive-green-600: #16803f;
+    --primitive-green-400: #4ade80;
+    --primitive-red-600: #c81e3a;
+    --primitive-alpha-ink-08: rgb(11 15 36 / 0.08);
+    --primitive-alpha-ink-20: rgb(11 15 36 / 0.2);
+    --primitive-alpha-white-08: rgb(255 255 255 / 0.08);
+    --primitive-alpha-white-14: rgb(255 255 255 / 0.14);
+    --primitive-alpha-white-70: rgb(255 255 255 / 0.7);
+    --primitive-alpha-black-45: rgb(0 0 0 / 0.45);
+    --primitive-red-50: #fef2f2;
+    --primitive-red-300: #fca5a5;
+    --primitive-red-800: #991b1b;
+    --primitive-red-950: #450a0a;
+    --primitive-teal-50: #e6f7f4;
+    --primitive-teal-900: #0e3b36;
 
-  /* --- Surface & Backgrounds --- */
-  --color-surface-canvas: #f3f4f6;
-  --color-surface-card: #ffffff;
-  --color-surface-muted: #465161;
+    /* Brand assets (fixed; not themeable) */
+    --brand-crest-from: #2f5bd3;
+    --brand-crest-to: #1e2a78;
+    --brand-crest-ring: #e8b923;
+    --brand-soricha-blue: #2f5bd3;
+    --brand-soricha-yellow: #e8b923;
+    --brand-crest-mid: #7c8394;
+    --brand-graphite-900: #27272a;
+    --brand-graphite-700: #4b4b52;
+    --brand-graphite-500: #7a7a82;
+  }
 
-  /* --- System --- */
-  --color-divider: #e5e7eb;
+  /* ---------- 1.2 Semantic color — Light (default) */
+  :root,
+  [data-theme='light'] {
+    color-scheme: light;
+    /* bg */
+    --color-bg-canvas: var(--primitive-slate-100);
+    --color-bg-surface: var(--primitive-white);
+    --color-bg-subtle: var(--primitive-slate-100);
+    --color-bg-inverse: var(--primitive-navy-950);
+    --color-bg-accent: var(--primitive-teal-700);
 
-  /* --- Spacing System --- */
-  --spacing-grid-xs: 4px;
-  --spacing-grid-sm: 8px;
-  --spacing-grid-md: 16px;
-  --spacing-grid-lg: 24px;
+    /* chrome */
+    --color-chrome-base: var(--primitive-navy-1000);
 
-  /* --- Radii --- */
-  --radius-card: 1.5rem;
-  --radius-badge: 9999px;
+    /* text */
+    --color-text-primary: var(--primitive-navy-950);
+    --color-text-secondary: var(--primitive-slate-600);
+    --color-text-disabled: var(--primitive-slate-400);
+    --color-text-accent: var(--primitive-teal-700);
+    --color-text-on-inverse: var(--primitive-white);
+    --color-text-on-accent: var(--primitive-white);
+    --color-text-on-result: var(--primitive-white);
+    --color-text-win: var(--primitive-green-600);
 
-  /* --- Font --- */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    /* icon */
+    --color-icon-default: var(--primitive-slate-600);
+    --color-icon-accent: var(--primitive-teal-700);
+    --color-icon-on-inverse: var(--primitive-white);
+    --color-icon-disabled: var(--primitive-slate-400);
 
-  /* --- Custom Shadows --- */
-  --shadow-header:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    /* border */
+    --color-border-default: var(--primitive-slate-200);
+    --color-border-strong: var(--primitive-slate-400);
 
-  /* Smooth, eased slide-up fade */
-  --animate-stagger-fade: stagger-fade 0.6s cubic-bezier(0.16, 1, 0.3, 1)
-    forwards;
+    /* warning */
+    --color-warning-surface: var(--primitive-amber-100);
+    --color-warning-on-surface: var(--primitive-amber-900);
 
-  @keyframes stagger-fade {
-    0% {
-      opacity: 0;
+    /* danger */
+    --color-danger-surface: var(--primitive-red-50);
+    --color-danger-on-surface: var(--primitive-red-800);
+
+    /* accent */
+    --color-accent-surface: var(--primitive-teal-50);
+    --color-accent-on-surface: var(--primitive-teal-700);
+
+    /* result */
+    --color-result-win: var(--primitive-green-600);
+    --color-result-loss: var(--primitive-red-600);
+    --color-result-draw: var(--primitive-slate-500);
+
+    /* effect */
+    --color-effect-hairline: var(--primitive-alpha-ink-08);
+    --color-effect-highlight: var(--primitive-alpha-white-70);
+    --color-effect-shadow: var(--primitive-alpha-ink-20);
+  }
+
+  /* ---------- 1.3 Semantic color — Dark */
+  [data-theme='dark'] {
+    color-scheme: dark;
+    /* bg */
+    --color-bg-canvas: var(--primitive-navy-950);
+    --color-bg-surface: var(--primitive-navy-900);
+    --color-bg-subtle: var(--primitive-navy-800);
+    --color-bg-inverse: var(--primitive-white);
+    --color-bg-accent: var(--primitive-teal-700);
+
+    /* chrome */
+    --color-chrome-base: var(--primitive-navy-1000);
+
+    /* text */
+    --color-text-primary: var(--primitive-white);
+    --color-text-secondary: var(--primitive-slate-400);
+    --color-text-disabled: var(--primitive-slate-500);
+    --color-text-accent: var(--primitive-teal-400);
+    --color-text-on-inverse: var(--primitive-navy-950);
+    --color-text-on-accent: var(--primitive-white);
+    --color-text-on-result: var(--primitive-white);
+    --color-text-win: var(--primitive-green-400);
+
+    /* icon */
+    --color-icon-default: var(--primitive-slate-400);
+    --color-icon-accent: var(--primitive-teal-400);
+    --color-icon-on-inverse: var(--primitive-navy-950);
+    --color-icon-disabled: var(--primitive-slate-500);
+
+    /* border */
+    --color-border-default: var(--primitive-navy-700);
+    --color-border-strong: var(--primitive-slate-600);
+
+    /* warning */
+    --color-warning-surface: var(--primitive-amber-900);
+    --color-warning-on-surface: var(--primitive-amber-300);
+
+    /* danger */
+    --color-danger-surface: var(--primitive-red-950);
+    --color-danger-on-surface: var(--primitive-red-300);
+
+    /* accent */
+    --color-accent-surface: var(--primitive-teal-900);
+    --color-accent-on-surface: var(--primitive-teal-400);
+
+    /* result */
+    --color-result-win: var(--primitive-green-600);
+    --color-result-loss: var(--primitive-red-600);
+    --color-result-draw: var(--primitive-slate-500);
+
+    /* effect */
+    --color-effect-hairline: var(--primitive-alpha-white-08);
+    --color-effect-highlight: var(--primitive-alpha-white-14);
+    --color-effect-shadow: var(--primitive-alpha-black-45);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    [data-theme='auto'] {
+      color-scheme: dark;
+      /* bg */
+      --color-bg-canvas: var(--primitive-navy-950);
+      --color-bg-surface: var(--primitive-navy-900);
+      --color-bg-subtle: var(--primitive-navy-800);
+      --color-bg-inverse: var(--primitive-white);
+      --color-bg-accent: var(--primitive-teal-700);
+
+      /* chrome */
+      --color-chrome-base: var(--primitive-navy-1000);
+
+      /* text */
+      --color-text-primary: var(--primitive-white);
+      --color-text-secondary: var(--primitive-slate-400);
+      --color-text-disabled: var(--primitive-slate-500);
+      --color-text-accent: var(--primitive-teal-400);
+      --color-text-on-inverse: var(--primitive-navy-950);
+      --color-text-on-accent: var(--primitive-white);
+      --color-text-on-result: var(--primitive-white);
+      --color-text-win: var(--primitive-green-400);
+
+      /* icon */
+      --color-icon-default: var(--primitive-slate-400);
+      --color-icon-accent: var(--primitive-teal-400);
+      --color-icon-on-inverse: var(--primitive-navy-950);
+      --color-icon-disabled: var(--primitive-slate-500);
+
+      /* border */
+      --color-border-default: var(--primitive-navy-700);
+      --color-border-strong: var(--primitive-slate-600);
+
+      /* warning */
+      --color-warning-surface: var(--primitive-amber-900);
+      --color-warning-on-surface: var(--primitive-amber-300);
+
+      /* danger */
+      --color-danger-surface: var(--primitive-red-950);
+      --color-danger-on-surface: var(--primitive-red-300);
+
+      /* accent */
+      --color-accent-surface: var(--primitive-teal-900);
+      --color-accent-on-surface: var(--primitive-teal-400);
+
+      /* result */
+      --color-result-win: var(--primitive-green-600);
+      --color-result-loss: var(--primitive-red-600);
+      --color-result-draw: var(--primitive-slate-500);
+
+      /* effect */
+      --color-effect-hairline: var(--primitive-alpha-white-08);
+      --color-effect-highlight: var(--primitive-alpha-white-14);
+      --color-effect-shadow: var(--primitive-alpha-black-45);
     }
-    100% {
-      opacity: 1;
+  }
+
+  /* ---------- 1.4 Theme-derived composites
+     These reference semantic colors, so they MUST be re-declared at every
+     theme boundary. A custom property resolves var() where it is declared and
+     then inherits the *resolved* value — declaring these on :root alone would
+     leak Light shadows into a data-theme="dark" island. */
+  :root,
+  [data-theme] {
+    /* Elevation — mode-aware (Figma: Elevation/Control, /Control Selected, /Recessed) */
+    --shadow-control:
+      0 1px 2px var(--color-effect-shadow),
+      inset 0 0 0 1px var(--color-effect-hairline),
+      inset 0 1px 0 var(--color-effect-highlight);
+    --shadow-control-selected:
+      0 4px 12px -2px var(--color-effect-shadow),
+      0 1px 2px var(--color-effect-shadow),
+      inset 0 1px 0 var(--color-effect-highlight);
+    --shadow-recessed:
+      inset 0 1px 3px var(--color-effect-shadow),
+      inset 0 0 0 1px var(--color-effect-hairline);
+
+    /* Glass (Figma: TabBar — surface @ 82% + background blur 24) */
+    --glass-bg: color-mix(in srgb, var(--color-bg-surface) 82%, transparent);
+
+    /* Focus ring — not in Figma; required for WCAG 2.4.7 */
+    --focus-ring-color: var(--color-text-accent);
+  }
+
+  /* ---------- 1.5 Density — Compact (default, < 390px) */
+  :root,
+  [data-density='compact'] {
+    --space-gutter: 16px;
+    --space-card-pad: 16px;
+    --space-stack-xs: 4px;
+    --space-stack-sm: 8px;
+    --space-stack-md: 12px;
+    --radius-card: 20px;
+    --radius-control: 12px;
+    --radius-full: 999px;
+    --size-tap: 44px;
+    --size-avatar: 32px;
+    --font-size-label: 0.6875rem;
+    --font-size-meta: 0.8125rem;
+    --font-size-title: 1rem;
+    --font-size-score: 1.125rem;
+    --font-size-display: 1.375rem;
+  }
+
+  /* ---------- 1.6 Density — Regular (≥ 390px) */
+  @media (min-width: 390px) {
+    :root:not([data-density='compact']) {
+      --space-gutter: 20px;
+      --space-card-pad: 20px;
+      --space-stack-xs: 4px;
+      --space-stack-sm: 8px;
+      --space-stack-md: 16px;
+      --radius-card: 24px;
+      --radius-control: 12px;
+      --radius-full: 999px;
+      --size-tap: 44px;
+      --size-avatar: 36px;
+      --font-size-label: 0.75rem;
+      --font-size-meta: 0.875rem;
+      --font-size-title: 1.0625rem;
+      --font-size-score: 1.25rem;
+      --font-size-display: 1.5rem;
     }
   }
-}
-
-/* --- Base Styles --- */
-html,
-body {
-  overscroll-behavior-y: none;
-}
-
-:root {
-  --background: var(--color-surface-canvas);
-  --foreground: var(--color-brand-navy);
-}
-
-body {
-  background: var(--color-surface-canvas);
-  color: var(--color-brand-navy);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-}
-
-@layer utilities {
-  /* --- The Header Background Fix --- */
-  .bg-brand-gradient-navy {
-    background-image: linear-gradient(180deg, #0a0e27 0%, #1a1f3a 100%);
+  [data-density='regular'] {
+    --space-gutter: 20px;
+    --space-card-pad: 20px;
+    --space-stack-xs: 4px;
+    --space-stack-sm: 8px;
+    --space-stack-md: 16px;
+    --radius-card: 24px;
+    --radius-control: 12px;
+    --radius-full: 999px;
+    --size-tap: 44px;
+    --size-avatar: 36px;
+    --font-size-label: 0.75rem;
+    --font-size-meta: 0.875rem;
+    --font-size-title: 1.0625rem;
+    --font-size-score: 1.25rem;
+    --font-size-display: 1.5rem;
   }
 
-  /* --- Team Gradients --- */
-  .b-and-g {
-    border-radius: var(--radius-badge);
-    background: conic-gradient(
-      from 0deg at 50% 50%,
-      #1a1212 0deg,
-      #dc2625 360deg
-    );
-  }
+  /* ---------- 1.7 Static tokens (mode-independent) */
+  :root {
+    /* Typography — families */
+    /* next/font renames families (e.g. "__Inter_a1b2c3"), so a literal "Inter" never matches.
+       Reference the next/font CSS variables first; literal names remain as a fallback. */
+    --font-sans:
+      var(--font-inter, 'Inter'), ui-sans-serif, system-ui, -apple-system,
+      'Segoe UI', Roboto, sans-serif;
+    --font-display:
+      var(--font-geist-sans, 'Geist'), var(--font-inter, 'Inter'),
+      ui-sans-serif, system-ui, -apple-system, sans-serif;
+    /* Countdowns / scoreboard digits. Also overrides Tailwind's --font-mono, so `font-mono` = Geist Mono */
+    --font-mono:
+      var(--font-geist-mono, 'Geist Mono'), ui-monospace, 'SF Mono', Menlo,
+      monospace;
 
-  .soricha {
-    border-radius: var(--radius-badge);
-    background: conic-gradient(
-      from 0deg at 50% 50%,
-      #1d4ed8 0deg,
-      #facc15 360deg
-    );
-  }
+    /* Typography — weights */
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
 
-  .away {
-    border-radius: var(--radius-badge);
-    background: conic-gradient(
-      from 0deg at 50% 50%,
-      #363535 0deg,
-      #7f7e7e 360deg
-    );
-  }
+    /* Typography — line height (unitless, from Figma %) */
+    --leading-label: 1.2;
+    --leading-meta: 1.3;
+    --leading-title: 1.25;
+    --leading-score: 1.2;
+    --leading-display: 1.15;
 
-  /* --- Header Utilities --- */
-  .bg-glass-gradient {
-    background: linear-gradient(
+    /* Typography — tracking (Figma % → em) */
+    --tracking-label: 0.06em;
+    --tracking-title: -0.01em;
+    --tracking-score: -0.02em;
+    --tracking-display: -0.03em;
+
+    /* Elevation — static (Figma: Elevation/Card, /Raised, /Sheet, /Accent) */
+    --shadow-card:
+      0 0 0 1px rgb(11 15 36 / 0.05), 0 1px 2px rgb(11 15 36 / 0.04),
+      0 8px 24px -6px rgb(11 15 36 / 0.08);
+    --shadow-raised:
+      0 0 0 1px rgb(11 15 36 / 0.04), 0 2px 4px rgb(11 15 36 / 0.06),
+      0 12px 32px -8px rgb(11 15 36 / 0.14);
+    --shadow-sheet: 0 -8px 40px rgb(11 15 36 / 0.35);
+    --shadow-accent: 0 6px 16px -4px rgb(0 122 102 / 0.28);
+    --shadow-footer-lift: 0 -12px 24px -8px rgb(0 0 0 / 0.35);
+
+    /* Surfaces */
+    --glass-blur: blur(24px) saturate(180%);
+    /* Header chrome — Figma "Top bar" geometry in px (frame 375 × 183, incl. 47px status bar).
+       --chrome-offset aligns the gradient to where the status bar would be:
+         iPhone (safe-area ≈ 47px) → 0      → identical to the Figma frame
+         browser (no safe area)    → -47px  → identical to Figma *below* the status bar
+       Pixel radii (not %) keep the glow the same size at any header height/width. */
+    --chrome-offset: calc(env(safe-area-inset-top, 0px) - 47px);
+    --gradient-chrome:
+      radial-gradient(
+        234px 166px at calc(100% - 56px) calc(var(--chrome-offset) - 7px),
+        rgb(46 212 191 / 0.16),
+        rgb(46 212 191 / 0) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgb(31 36 64 / 0.9) var(--chrome-offset),
+        rgb(31 36 64 / 0) calc(var(--chrome-offset) + 183px)
+      );
+    --gradient-sheet: linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.05) 0%,
-      rgba(0, 0, 0, 0) 100%
+      rgb(33 38 69 / 0.85),
+      rgb(33 38 69 / 0) 35%
     );
+    /* Team crests — conic "split ball", seam at 12 o'clock (Figma: Crest Tone=Soricha|Opponent) */
+    --gradient-crest-soricha: conic-gradient(
+      from 0deg,
+      var(--brand-soricha-blue) 0%,
+      var(--brand-crest-mid) 50%,
+      var(--brand-soricha-yellow) 100%
+    );
+    --gradient-crest-opponent: conic-gradient(
+      from 0deg,
+      var(--brand-graphite-900) 0%,
+      var(--brand-graphite-700) 50%,
+      var(--brand-graphite-500) 100%
+    );
+    /* Versus hero: club half (brand blue) | opponent half (navy), hard diagonal split */
+    --gradient-versus: linear-gradient(
+      115deg,
+      var(--brand-crest-to) 0% 50%,
+      var(--primitive-navy-900) 50% 100%
+    );
+    --radius-sheet: 20px;
+
+    /* Layout */
+    --size-app-header: 56px;
+    --size-tab-bar: 56px;
+    --size-status-bar: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --size-form-dot: 20px;
+    --content-max: 640px;
+
+    /* Layering */
+    --z-sticky: 10;
+    --z-header: 20;
+    --z-tab-bar: 30;
+    --z-scrim: 40;
+    --z-sheet: 50;
+    --z-toast: 60;
+
+    /* Motion (from the premium motion spec) */
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring: linear(
+      0,
+      0.054,
+      0.176,
+      0.32,
+      0.463,
+      0.591,
+      0.699,
+      0.785,
+      0.851,
+      0.901,
+      0.937,
+      0.962,
+      0.979,
+      0.99,
+      0.997,
+      1,
+      1.002,
+      1.003,
+      1.003,
+      1.003,
+      1.003,
+      1.002,
+      1.002,
+      1.001,
+      1
+    ); /* stiffness 400 · damping 35 · mass 1 */
+    --duration-press: 120ms;
+    --duration-fade: 150ms;
+    --duration-scrim: 200ms;
+    --duration-page: 220ms;
+    --duration-spring: 440ms;
+    --motion-press-scale: 0.98;
+    --motion-page-distance: 24px;
   }
 
-  .nav-button {
-    @apply flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 transition-colors hover:bg-white/20;
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --ease-spring: var(--ease-out);
+      --duration-spring: var(--duration-fade);
+      --duration-page: var(--duration-fade);
+      --motion-press-scale: 1;
+      --motion-page-distance: 0px;
+    }
+  }
+}
+
+/* ==========================================================================
+   2. BASE
+   ========================================================================== */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--color-bg-canvas);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: var(--font-weight-regular);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Theme islands paint their own background + text color */
+  [data-theme] {
+    background-color: var(--color-bg-canvas);
+    color: var(--color-text-primary);
+  }
+
+  img,
+  svg,
+  video {
+    display: block;
+    max-width: 100%;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-bg-accent) 25%, transparent);
+  }
+}
+
+/* ==========================================================================
+   3. COMPONENTS — composite text styles
+   Below `utilities`, so single-purpose overrides (font-bold, tracking-normal,
+   normal-case …) win without !important.
+   ========================================================================== */
+@layer components {
+  /* ---------- Text styles (Figma: Matchdule/*) */
+  .text-display {
+    font-family: var(--font-display);
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    font-variant-numeric: tabular-nums;
+  }
+  .text-score {
+    font-family: var(--font-display);
+    font-size: var(--font-size-score);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--leading-score);
+    letter-spacing: var(--tracking-score);
+    font-variant-numeric: tabular-nums;
+  }
+  .text-title {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-title);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--leading-title);
+    letter-spacing: var(--tracking-title);
+  }
+  .text-control {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-meta);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-meta);
+  }
+  .text-meta {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-meta);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--leading-meta);
+  }
+  .text-label {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-label);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase; /* casing is presentational — keep source strings in sentence case */
+  }
+}
+
+/* ==========================================================================
+   4. UTILITIES
+   ========================================================================== */
+@layer utilities {
+  /* Team names clamp at 2 lines (Figma: TeamRow › Team name, maxLines 2) */
+  .clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  .truncate {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Elevation */
+  .elevation-card {
+    box-shadow: var(--shadow-card);
+  }
+  .elevation-raised {
+    box-shadow: var(--shadow-raised);
+  }
+  .elevation-sheet {
+    box-shadow: var(--shadow-sheet);
+  }
+  .elevation-accent {
+    box-shadow: var(--shadow-accent);
+  }
+  .elevation-control {
+    box-shadow: var(--shadow-control);
+  }
+  .elevation-control-selected {
+    box-shadow: var(--shadow-control-selected);
+  }
+  .elevation-recessed {
+    box-shadow: var(--shadow-recessed);
+  }
+
+  /* ---------- Surfaces */
+  .glass {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+  @supports not (
+    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+  ) {
+    .glass {
+      background: var(--color-bg-surface);
+    }
+  }
+  /* Header chrome: sheen + teal glow over a near-black base (Figma: Top bar) */
+  .surface-chrome {
+    background: var(--gradient-chrome), var(--color-chrome-base);
+  }
+
+  /* ---------- Interaction */
+  .tap-target {
+    min-width: var(--size-tap);
+    min-height: var(--size-tap);
+  }
+  .pressable {
+    transition: transform var(--duration-press) var(--ease-out);
+  }
+  .pressable:active {
+    transform: scale(var(--motion-press-scale));
+  }
+
+  /* Entrance stagger (cards, empty states).
+     fill-mode "both" holds the first keyframe during animation-delay, so no
+     opacity-0 class is needed — nothing can get stuck invisible.
+     Reduced motion: tokens drop the distance to 0 and shorten the duration,
+     so it degrades to a quick fade automatically. */
+  @keyframes stagger-fade {
+    from {
+      opacity: 0;
+      transform: translateY(var(--motion-page-distance));
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .stagger-fade {
+    animation: stagger-fade var(--duration-page) var(--ease-out) both;
+  }
+
+  /* Tap area ≠ visual size.
+     A control can LOOK compact (32–36px) while keeping a 44px touch target:
+       <button class="tap-area"><span class="tap-visual …">Label</span></button>
+     The button is unpainted; the span is the visible shape. Press feedback and the
+     focus ring render on the visible shape, never on the invisible box. */
+  .tap-area {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--size-tap);
+    outline: none;
+  }
+  .tap-visual {
+    transition:
+      transform var(--duration-press) var(--ease-out),
+      background-color var(--duration-fade) var(--ease-out),
+      color var(--duration-fade) var(--ease-out),
+      box-shadow var(--duration-fade) var(--ease-out);
+  }
+  .tap-area:active:not(:disabled, [aria-disabled='true']) > .tap-visual {
+    transform: scale(var(--motion-press-scale));
+  }
+  .tap-area:focus-visible > .tap-visual {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+  .tap-area:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Horizontal scroller (Figma: Team tabs row) */
+  .scroll-x {
+    display: flex;
+    gap: var(--space-stack-sm);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    padding-block: 4px 10px; /* room for selected-tab glow */
+  }
+  .scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+  .scroll-x > * {
+    scroll-snap-align: start;
+    flex: none;
+  }
+
+  /* ---------- Accessibility */
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
   }
 }

@@ -1,10 +1,64 @@
-import { Badge } from '@/components/ui/Badge/Badge';
-import { MetaItem } from '@/components/ui/MetaItem/MetaItem';
-import { getTimeOfDayAssets } from '@/lib/dates/date-utils';
+import {
+  Calendar,
+  Clock,
+  Flag,
+  TriangleAlert,
+  type LucideIcon,
+} from 'lucide-react';
 import { getStatusConfig } from '@/lib/matches/match-utils';
 import { cn } from '@/lib/utils';
 import { MatchStatus } from '@/types/match';
-import { Calendar, Clock, Flag, FoldHorizontal } from 'lucide-react';
+
+/**
+ * MatchHeader — Figma: MatchCard › Meta
+ * [icon] [time · FILL] [status] ……… [warning badges] [Home|Away]
+ * Alert vocabulary (audit): "Conflict" = overlapping times · "Tight gap" = < 60 min between games
+ */
+
+const ICON = { size: 16, strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
+const BADGE_ICON = {
+  size: 12,
+  strokeWidth: 1.5,
+  absoluteStrokeWidth: true,
+} as const;
+
+/* Figma: Atoms › Badge */
+const BADGE =
+  'text-label inline-flex shrink-0 items-center gap-(--space-stack-xs) whitespace-nowrap rounded-(--radius-full) px-(--space-stack-sm) py-(--space-stack-xs)';
+const BADGE_NEUTRAL = 'bg-(--color-bg-subtle) text-(--color-text-secondary)';
+const BADGE_WARNING =
+  'bg-(--color-warning-surface) text-(--color-warning-on-surface)';
+
+const formatDate = (date: string) => {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(date));
+  } catch {
+    return date;
+  }
+};
+
+/** "1:00PM" | "5:15 pm" → "1:00 PM" (audit: one time format everywhere) */
+export const formatTime = (time: string) => {
+  const m = time.trim().match(/^(\d{1,2}:\d{2})\s*([ap])\.?m\.?$/i);
+  return m ? `${m[1]} ${m[2].toUpperCase()}M` : time;
+};
+
+const WarningBadge = ({
+  icon: Icon,
+  label,
+}: {
+  icon: LucideIcon;
+  label: string;
+}) => (
+  <span className={cn(BADGE, BADGE_WARNING)}>
+    <Icon {...BADGE_ICON} aria-hidden='true' />
+    {label}
+  </span>
+);
 
 const MatchHeader = ({
   isConflict,
@@ -14,6 +68,7 @@ const MatchHeader = ({
   time,
   status,
   isHomeGame,
+  showDate = true,
 }: {
   isConflict?: boolean;
   isTightGap?: boolean;
@@ -22,90 +77,54 @@ const MatchHeader = ({
   time: string;
   status: MatchStatus;
   isHomeGame: boolean;
+  showDate?: boolean;
 }) => {
-  const { TimeIcon } = getTimeOfDayAssets(time);
-  const statusConfig = getStatusConfig(status);
-
-  // Cross-browser safe Date formatting fallback logic
-  const getFormattedDate = () => {
-    try {
-      return new Intl.DateTimeFormat('en-US', {
-        day: 'numeric',
-        month: 'short',
-        weekday: 'short',
-      }).format(new Date(date));
-    } catch (e) {
-      return date; // Graceful fallback if original string pattern gets injected directly
-    }
-  };
+  const statusConfig = status === 'live' ? null : getStatusConfig(status);
+  const when = isTBD ? 'Time TBD' : formatTime(time);
+  const label = showDate ? `${formatDate(date)} · ${when}` : when;
+  const LeadIcon = isTBD ? Clock : Calendar;
 
   return (
-    <div className='flex items-center justify-between w-full text-xs font-semibold tracking-tight'>
-      {/* Match Meta Info */}
-      <div className='flex items-center gap-grid-sm min-w-0 flex-1 '>
-        <MetaItem
-          icon={Calendar}
-          label={getFormattedDate()}
-          className='shrink-0'
+    <div className='flex w-full flex-wrap items-center gap-(--space-stack-sm)'>
+      <div className='flex min-w-0 flex-1 items-center gap-(--space-stack-sm)'>
+        <LeadIcon
+          {...ICON}
+          aria-hidden='true'
+          className={cn(
+            'shrink-0',
+            isTBD
+              ? 'text-(--color-warning-on-surface)'
+              : 'text-(--color-icon-default)',
+          )}
         />
-        <div className='text-lg text-surface-muted'>·</div>
-        {/* Dynamic Live Status Badge Swapping Layer */}
-        {status === 'live' ? (
-          <div className='flex items-center gap-1.5 text-status-conflict font-black shrink-0 animate-pulse'>
-            <span className='relative flex h-2 w-2'>
-              <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-status-conflict opacity-75' />
-              <span className='relative inline-flex rounded-full h-2 w-2 bg-status-conflict' />
+        <span className='text-control truncate tabular-nums text-(--color-text-primary)'>
+          {label}
+        </span>
+
+        {status === 'live' && (
+          <span className='text-label inline-flex shrink-0 items-center gap-1.5 text-(--color-result-loss)'>
+            <span className='relative flex size-2' aria-hidden='true'>
+              <span className='absolute inline-flex size-full rounded-full bg-(--color-result-loss) opacity-75 motion-safe:animate-ping' />
+              <span className='relative inline-flex size-2 rounded-full bg-(--color-result-loss)' />
             </span>
-            <span className='uppercase tracking-widest text-[10px]'>Live</span>
-          </div>
-        ) : statusConfig ? (
-          <div
-            className={cn(
-              'flex items-center gap-1 shrink-0',
-              statusConfig.className,
-            )}
-          >
-            <statusConfig.icon size={14} />
-            <span className='uppercase tracking-widest text-[10px]'>
-              {statusConfig.label}
-            </span>
-          </div>
-        ) : (
-          <MetaItem icon={TimeIcon} label={time} className={cn('shrink-0')} />
+            Live
+          </span>
         )}
-        {/* Status Badges */}
-        <div className='flex gap-grid-xs ml-auto'>
-          {isHomeGame ? (
-            <Badge
-              variant='default'
-              className='px-1.5 text-surface-muted bg-surface-canvas'
-            >
-              Home
-            </Badge>
-          ) : (
-            <Badge
-              variant='default'
-              className='px-1.5 text-surface-muted bg-surface-canvas'
-            >
-              Away
-            </Badge>
-          )}
-          {isConflict && (
-            <Badge variant='destructive' className='px-1.5'>
-              <Flag size={12} fill='currentColor' />
-            </Badge>
-          )}
-          {isTightGap && (
-            <Badge variant='warning' className='px-1.5'>
-              <FoldHorizontal size={12} fill='currentColor' />
-            </Badge>
-          )}
-          {isTBD && (
-            <Badge variant='warning' className='px-1.5'>
-              <Clock size={12} strokeWidth={2.5} />
-            </Badge>
-          )}
-        </div>
+
+        {statusConfig && (
+          <span className={cn(BADGE, BADGE_NEUTRAL, statusConfig.className)}>
+            <statusConfig.icon {...BADGE_ICON} aria-hidden='true' />
+            {statusConfig.label}
+          </span>
+        )}
+      </div>
+
+      <div className='ml-auto flex shrink-0 items-center gap-(--space-stack-xs)'>
+        {isConflict && <WarningBadge icon={Flag} label='Conflict' />}
+        {isTightGap && <WarningBadge icon={TriangleAlert} label='Tight gap' />}
+        <span className={cn(BADGE, BADGE_NEUTRAL)}>
+          {isHomeGame ? 'Home' : 'Away'}
+        </span>
       </div>
     </div>
   );

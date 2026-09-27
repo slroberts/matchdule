@@ -1,78 +1,121 @@
 'use client';
 
-import { Dispatch, SetStateAction } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { motion, MotionConfig } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { TabOption, TABS } from '@/types/match';
-import { Calendar, Trophy } from 'lucide-react';
+
+/**
+ * TeamTabs — Figma: Atoms › TeamTab (State=Default|Selected) in a horizontal scroller
+ * Default:  surface fill · Elevation/Card · text-secondary
+ * Selected: accent fill  · Elevation/Accent · text-on-accent (pill slides via shared layout)
+ * Requires global.css (tokens + .scroll-x, .text-control).
+ *
+ * Size hierarchy: 36px visual pill inside a 44px tap target — one step above the 32px
+ * active-filter chips (navigation > state summary). Press + focus render on the pill.
+ *
+ * The Schedule/Standings toggle moved to <TabBar /> (bottom navigation) per the audit.
+ */
+
+/* .tap-area (44px, unpainted) + .tap-visual (press + focus) come from global.css */
+const HIT = 'tap-area shrink-0';
+const PILL =
+  'tap-visual text-control relative isolate inline-flex h-9 items-center whitespace-nowrap rounded-(--radius-full) px-(--space-stack-md)';
 
 interface TeamTabsProps {
   activeTeam: TabOption;
   onTeamChange: (team: TabOption) => void;
-  viewMode: string;
-  setViewMode: Dispatch<SetStateAction<'schedule' | 'standings'>>;
 }
 
-export const TeamTabs = ({
-  activeTeam,
-  onTeamChange,
-  viewMode,
-  setViewMode,
-}: TeamTabsProps) => {
+/* Motion spec: stiffness 400 · damping 35 (matches --ease-spring) */
+const PILL_SPRING = { type: 'spring', stiffness: 400, damping: 35 } as const;
+
+export const TeamTabs = ({ activeTeam, onTeamChange }: TeamTabsProps) => {
+  const tabRefs = useRef<Map<TabOption, HTMLButtonElement>>(new Map());
+
+  // Keep the selected tab visible when the row overflows (many teams / long names)
+  useEffect(() => {
+    tabRefs.current.get(activeTeam)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'nearest',
+    });
+  }, [activeTeam]);
+
+  // WAI-ARIA tabs: arrows move + select, Home/End jump to ends (roving tabindex)
+  const handleKeyDown = (
+    e: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    const last = TABS.length - 1;
+    const next =
+      e.key === 'ArrowRight'
+        ? index === last
+          ? 0
+          : index + 1
+        : e.key === 'ArrowLeft'
+          ? index === 0
+            ? last
+            : index - 1
+          : e.key === 'Home'
+            ? 0
+            : e.key === 'End'
+              ? last
+              : null;
+    if (next === null) return;
+    e.preventDefault();
+    const team = TABS[next];
+    onTeamChange(team);
+    tabRefs.current.get(team)?.focus();
+  };
+
   return (
-    <div
-      className='flex w-full max-w-md mx-auto justify-between items-center gap-3 px-4 py-4'
-      role='tablist'
-      aria-label='Filter teams'
-    >
-      {/* Removed max-w-sm and added flex-1 so it perfectly scales beside the button */}
-      <div className='flex flex-1 bg-white border border-slate-200 p-1 rounded-xl relative'>
-        {TABS.map((tab) => {
+    <MotionConfig reducedMotion='user'>
+      <div
+        role='tablist'
+        aria-label='Teams'
+        className='scroll-x mx-auto w-full max-w-lg px-(--space-gutter)'
+      >
+        {TABS.map((tab, index) => {
           const isActive = activeTeam === tab;
 
           return (
             <button
               key={tab}
-              onClick={() => onTeamChange(tab)}
+              ref={(el) => {
+                if (el) tabRefs.current.set(tab, el);
+                else tabRefs.current.delete(tab);
+              }}
+              type='button'
               role='tab'
               aria-selected={isActive}
-              className={cn(
-                'relative flex h-full flex-1 items-center justify-center rounded-lg py-2.5 text-[11px] font-bold uppercase tracking-widest transition-colors duration-300 z-10',
-                isActive ? 'text-white' : 'text-slate-400 hover:text-slate-600',
-              )}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => onTeamChange(tab)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              className={HIT}
             >
-              <span className='relative z-10'>{tab}</span>
-
-              {isActive && (
-                <motion.div
-                  layoutId='active-team-pill'
-                  className='absolute inset-0 bg-brand-primary rounded-lg shadow-md z-0'
-                  transition={{
-                    type: 'spring',
-                    stiffness: 380,
-                    damping: 30,
-                  }}
-                />
-              )}
+              <span
+                className={cn(
+                  PILL,
+                  isActive
+                    ? 'text-(--color-text-on-accent)'
+                    : 'bg-(--color-bg-surface) text-(--color-text-secondary) shadow-(--shadow-card) hover:text-(--color-text-primary)',
+                )}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId='active-team-pill'
+                    aria-hidden='true'
+                    className='absolute inset-0 -z-10 rounded-(--radius-full) bg-(--color-bg-accent) shadow-(--shadow-accent)'
+                    transition={PILL_SPRING}
+                  />
+                )}
+                {tab}
+              </span>
             </button>
           );
         })}
       </div>
-
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={() =>
-          setViewMode(viewMode === 'schedule' ? 'standings' : 'schedule')
-        }
-        aria-label='Toggle View'
-        className='flex justify-center items-center rounded-full h-12 w-12 bg-[#1B2033] text-white shadow-sm hover:bg-slate-800 transition-colors shrink-0'
-      >
-        {viewMode === 'schedule' ? (
-          <Trophy size={20} strokeWidth={2} />
-        ) : (
-          <Calendar size={20} strokeWidth={2} />
-        )}
-      </motion.button>
-    </div>
+    </MotionConfig>
   );
 };

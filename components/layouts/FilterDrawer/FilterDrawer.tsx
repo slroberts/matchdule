@@ -1,394 +1,605 @@
 'use client';
 
-import { Dispatch, SetStateAction } from 'react';
-import { motion } from 'framer-motion';
 import {
-  X,
-  Sun,
-  Sunset,
-  Moon,
+  useEffect,
+  useId,
+  useRef,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from 'react';
+import { motion, MotionConfig } from 'framer-motion';
+import {
+  Check,
   Clock,
   Flag,
-  FoldHorizontal,
+  Moon,
+  Sun,
+  Sunset,
+  TriangleAlert,
+  X,
+  type LucideIcon,
 } from 'lucide-react';
-import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
-import {
-  AgeFilter,
-  FilterState,
-  HomeAwayFilter,
-  MatchStateFilter,
-  ResultsFilter,
-} from '@/types/match';
+import { FilterState, TimeOfDayOption } from '@/types/match';
+
+/**
+ * FilterDrawer — Figma: Screens › Filters / Sheet (Default · Results unlocked · Zero-result prevention)
+ * Dark island (data-theme="dark") bottom sheet · SegmentedControl for exclusive choices ·
+ * FilterChip for everything else · live-count CTA · Result locked until Final.
+ */
+
+/* ── Shared filter helpers (also used by ClientView) ───────────────── */
+
+export const DEFAULT_FILTERS: FilterState = {
+  homeAway: 'all',
+  urgency: [],
+  timeOfDay: [],
+  matchState: 'all',
+  ageGroup: 'all',
+  resultsState: null,
+};
+
+type ResultValue = NonNullable<FilterState['resultsState']>;
+const RESULT_CODES = ['W', 'L', 'D'] as const satisfies readonly ResultValue[];
+
+/**
+ * Coerces any stored result to the MatchResult letter code.
+ * Older cookies hold words ('win' | 'loss' | 'draw') or the buggy 'all' — map or drop them.
+ */
+const toResultCode = (value: unknown): ResultValue | null => {
+  const letter =
+    typeof value === 'string' ? value.trim().charAt(0).toUpperCase() : '';
+  return (RESULT_CODES as readonly string[]).includes(letter)
+    ? (letter as ResultValue)
+    : null;
+};
+
+/**
+ * Enforces valid combinations:
+ * - Result only exists alongside Final (no "Upcoming + Win")
+ * - Repairs legacy cookie values ('win' → 'W', 'all' → null)
+ */
+export const normalizeFilters = (f: FilterState): FilterState => ({
+  ...f,
+  resultsState: f.matchState === 'final' ? toResultCode(f.resultsState) : null,
+});
+
+export const getActiveFilterCount = (f: FilterState) =>
+  (f.ageGroup !== 'all' ? 1 : 0) +
+  (f.homeAway !== 'all' ? 1 : 0) +
+  f.urgency.length +
+  f.timeOfDay.length +
+  (f.matchState !== 'all' ? 1 : 0) +
+  (f.resultsState ? 1 : 0);
+
+/* ── Options ────────────────────────────────────────────────────────── */
+
+type Option<V> = { value: V; label: string; icon?: LucideIcon };
+
+const TEAM_SIDE: Option<FilterState['homeAway']>[] = [
+  { value: 'all', label: 'Both' },
+  { value: 'home', label: 'Home' },
+  { value: 'away', label: 'Away' },
+];
+const AGE_GROUPS: Option<FilterState['ageGroup']>[] = [
+  { value: 'u9', label: 'U9' },
+  { value: 'u13', label: 'U13' },
+];
+const TIMES: Option<TimeOfDayOption>[] = [
+  { value: 'morning' as TimeOfDayOption, label: 'Morning', icon: Sun },
+  { value: 'afternoon' as TimeOfDayOption, label: 'Afternoon', icon: Sunset },
+  { value: 'evening' as TimeOfDayOption, label: 'Evening', icon: Moon },
+];
+const STATUSES: Option<FilterState['matchState']>[] = [
+  { value: 'upcoming', label: 'Upcoming' },
+  { value: 'live', label: 'Live' },
+  { value: 'final', label: 'Final' },
+];
+/* Values are MatchResult letter codes — labels stay human-readable */
+const RESULTS: Option<ResultValue>[] = [
+  { value: 'W', label: 'Win' },
+  { value: 'L', label: 'Loss' },
+  { value: 'D', label: 'Draw' },
+];
+/* Vocabulary (audit): Conflict = overlapping times · Tight gap = < 60 min between games */
+const ALERTS: Option<FilterState['urgency'][number]>[] = [
+  { value: 'conflict', label: 'Conflicts', icon: Flag },
+  { value: 'tight-gap', label: 'Tight gaps', icon: TriangleAlert },
+  { value: 'tbd', label: 'Time TBD', icon: Clock },
+];
+
+const labelsFor = <V,>(options: Option<V>[], selected: V[]) =>
+  options
+    .filter((o) => selected.includes(o.value))
+    .map((o) => o.label)
+    .join(', ') || undefined;
+
+/* ── Active filter chips (schedule "Applied filters" row) ───────────── */
+
+export type ActiveFilterChip = {
+  key: string;
+  label: string;
+  /** Pure removal — callers run the result through normalizeFilters */
+  remove: (f: FilterState) => FilterState;
+};
+
+const labelOf = <V,>(options: Option<V>[], value: V) =>
+  options.find((o) => o.value === value)?.label ?? String(value);
+
+/** One chip per applied value, in the same order as the sheet's groups */
+export const getActiveFilterChips = (f: FilterState): ActiveFilterChip[] => {
+  const chips: ActiveFilterChip[] = [];
+
+  if (f.homeAway !== 'all')
+    chips.push({
+      key: 'side',
+      label: labelOf(TEAM_SIDE, f.homeAway),
+      remove: (p) => ({ ...p, homeAway: 'all' }),
+    });
+
+  if (f.ageGroup !== 'all')
+    chips.push({
+      key: 'age',
+      label: labelOf(AGE_GROUPS, f.ageGroup),
+      remove: (p) => ({ ...p, ageGroup: 'all' }),
+    });
+
+  for (const v of f.timeOfDay)
+    chips.push({
+      key: `time-${v}`,
+      label: labelOf(TIMES, v),
+      remove: (p) => ({ ...p, timeOfDay: p.timeOfDay.filter((x) => x !== v) }),
+    });
+
+  if (f.matchState !== 'all')
+    chips.push({
+      key: 'status',
+      label: labelOf(STATUSES, f.matchState),
+      remove: (p) => ({ ...p, matchState: 'all' }),
+    });
+
+  if (f.resultsState)
+    chips.push({
+      key: 'result',
+      label: labelOf(RESULTS, f.resultsState),
+      remove: (p) => ({ ...p, resultsState: null }),
+    });
+
+  for (const v of f.urgency)
+    chips.push({
+      key: `alert-${v}`,
+      label: labelOf(ALERTS, v),
+      remove: (p) => ({ ...p, urgency: p.urgency.filter((x) => x !== v) }),
+    });
+
+  return chips;
+};
+
+/* ── Motion (spec: spring 400 / 35) ─────────────────────────────────── */
+const SPRING = { type: 'spring', stiffness: 400, damping: 35 } as const;
+const ICON = { size: 16, strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
+const CHIP_ICON = {
+  size: 14,
+  strokeWidth: 1.5,
+  absoluteStrokeWidth: true,
+} as const;
+
+/* ── Building blocks ────────────────────────────────────────────────── */
+
+/** Figma: Atoms › FilterChip (State=Default|Selected|Disabled) */
+const FilterChip = ({
+  label,
+  icon: Icon,
+  selected,
+  disabled = false,
+  onClick,
+}: {
+  label: string;
+  icon?: LucideIcon;
+  selected: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type='button'
+    aria-pressed={selected}
+    disabled={disabled}
+    onClick={onClick}
+    className='tap-area'
+  >
+    {/* 36px visual chip inside the 44px tap area */}
+    <span
+      className={cn(
+        'tap-visual text-control inline-flex h-9 items-center gap-1.5 rounded-(--radius-full) px-(--space-stack-md)',
+        disabled
+          ? 'bg-(--color-bg-subtle) text-(--color-text-disabled)'
+          : selected
+            ? 'bg-(--color-bg-inverse) text-(--color-text-on-inverse) shadow-(--shadow-control-selected)'
+            : 'bg-(--color-bg-surface) text-(--color-text-primary) shadow-(--shadow-control)',
+      )}
+    >
+      {Icon && (
+        <Icon
+          {...CHIP_ICON}
+          aria-hidden='true'
+          className={cn(
+            !disabled && !selected && 'text-(--color-icon-default)',
+          )}
+        />
+      )}
+      {label}
+      {selected && <Check {...CHIP_ICON} aria-hidden='true' />}
+    </span>
+  </button>
+);
+
+/** Label row shows the group's current value ("Any" when unset) — state readable at a glance */
+const FilterGroup = ({
+  label,
+  status,
+  helper,
+  children,
+}: {
+  label: string;
+  status?: string;
+  helper?: string;
+  children: ReactNode;
+}) => {
+  const id = useId();
+  return (
+    <section
+      aria-labelledby={id}
+      className='flex flex-col gap-(--space-stack-xs)'
+    >
+      <div className='flex items-center justify-between gap-(--space-stack-sm)'>
+        <h3 id={id} className='text-label text-(--color-text-secondary)'>
+          {label}
+        </h3>
+        <span
+          className={cn(
+            'text-meta truncate',
+            status
+              ? 'text-(--color-text-primary)'
+              : 'text-(--color-text-disabled)',
+          )}
+        >
+          {status ?? 'Any'}
+        </span>
+      </div>
+      <div
+        role='group'
+        aria-labelledby={id}
+        className='flex flex-wrap gap-x-(--space-stack-sm) gap-y-0'
+      >
+        {children}
+      </div>
+      {helper && (
+        <p className='text-meta text-(--color-text-secondary)'>{helper}</p>
+      )}
+    </section>
+  );
+};
+
+/* ── Drawer ─────────────────────────────────────────────────────────── */
 
 interface FilterDrawerProps {
   onClose: () => void;
   filters: FilterState;
   setFilters: Dispatch<SetStateAction<FilterState>>;
+  /** Matches this week that pass the current filters (drives the live-count CTA) */
+  matchCount: number;
 }
-
-const TEAM_SIDE_OPTIONS = ['all', 'home', 'away'] as const;
-const MATCH_STATUS_OPTIONS = ['upcoming', 'live', 'final'] as const;
-const AGE_GROUP_OPTIONS = ['all', 'u9', 'u13'] as const;
-const RESULTS_OPTIONS = ['win', 'loss', 'draw'] as const;
-
-const URGENCY_OPTIONS = [
-  {
-    id: 'conflict',
-    label: 'Conflicts',
-    icon: Flag,
-    inactiveColor: 'text-status-conflict',
-  },
-  {
-    id: 'tight-gap',
-    label: 'Tight Gaps',
-    icon: FoldHorizontal,
-    inactiveColor: 'text-status-warning',
-  },
-  {
-    id: 'tbd',
-    label: 'TBD',
-    icon: Clock,
-    inactiveColor: 'text-status-success',
-  },
-] as const;
-
-const TIME_OPTIONS = [
-  { id: 'morning', label: 'Morning', icon: Sun },
-  { id: 'afternoon', label: 'Afternoon', icon: Sunset },
-  { id: 'evening', label: 'Evening', icon: Moon },
-] as const;
 
 export const FilterDrawer = ({
   onClose,
   filters,
   setFilters,
+  matchCount,
 }: FilterDrawerProps) => {
-  const handleReset = () => {
-    setFilters({
-      homeAway: 'all',
-      urgency: [],
-      timeOfDay: [],
-      matchState: 'all',
-      ageGroup: 'all',
-      resultsState: null,
-    });
-  };
+  const titleId = useId();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
-  const toggleSingleFilter = (
-    field: 'homeAway' | 'matchState' | 'ageGroup' | 'resultsState',
-    value: string,
-  ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: prev[field] === value ? 'all' : value,
-    }));
-  };
+  // Dialog behavior: lock page scroll, focus Close, Escape closes, restore focus on exit.
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
 
-  const toggleArrayFilter = <T extends string>(
-    field: 'urgency' | 'timeOfDay',
-    value: T,
-  ) => {
-    setFilters((prev) => {
-      const currentValues = prev[field] as string[];
-      const isAlreadySelected = currentValues.includes(value);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCloseRef.current();
+    };
+    document.addEventListener('keydown', onKeyDown);
 
-      const newValues = isAlreadySelected
-        ? currentValues.filter((v) => v !== value)
-        : [...currentValues, value];
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+      previousFocus?.focus();
+    };
+  }, []);
 
+  const activeCount = getActiveFilterCount(filters);
+  const resultsUnlocked = filters.matchState === 'final';
+  const hasMatches = matchCount > 0;
+
+  /* Every update runs through normalizeFilters, so invalid states can't exist */
+  const update = (patch: (prev: FilterState) => Partial<FilterState>) =>
+    setFilters((prev) => normalizeFilters({ ...prev, ...patch(prev) }));
+
+  const toggleOne = <K extends 'ageGroup' | 'matchState'>(
+    key: K,
+    value: FilterState[K],
+  ) =>
+    update(
+      (prev) =>
+        ({
+          [key]: prev[key] === value ? 'all' : value,
+        }) as Partial<FilterState>,
+    );
+
+  const toggleMany = (key: 'urgency' | 'timeOfDay', value: string) =>
+    update((prev) => {
+      const current = prev[key] as string[];
       return {
-        ...prev,
-        [field]: newValues,
-      };
+        [key]: current.includes(value)
+          ? current.filter((v) => v !== value)
+          : [...current, value],
+      } as Partial<FilterState>;
     });
-  };
 
   return (
-    <>
-      {/* ANIMATED BACKDROP */}
+    <MotionConfig reducedMotion='user'>
+      {/* Scrim */}
       <motion.div
+        aria-hidden='true'
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.25 }}
-        className='fixed inset-0 z-50 bg-black/60 pointer-events-auto'
+        transition={{ duration: 0.2 }}
         onClick={onClose}
+        className='fixed inset-0 z-(--z-scrim) bg-[rgb(5_8_20/0.6)]'
       />
 
-      {/* ANIMATED FULLSCREEN PANEL */}
+      {/* Sheet */}
       <motion.div
-        initial={{ translateY: '100%' }}
-        animate={{ translateY: 0 }}
-        exit={{ translateY: '100%' }}
-        transition={{ type: 'tween', ease: 'easeOut', duration: 0.3 }}
-        className='fixed inset-x-0 bottom-0 z-50 flex flex-col gap-grid-md bg-brand-navy bg-brand-gradient-navy p-grid-md text-white border-t border-white/10 w-full max-w-lg shadow-2xl h-full min-h-screen mx-auto font-sans'
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby={titleId}
+        data-theme='dark'
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={SPRING}
+        className='fixed inset-x-0 bottom-0 z-(--z-sheet) mx-auto flex h-[calc(100dvh-54px)] w-full max-w-lg flex-col overflow-hidden rounded-t-(--radius-sheet) border-t border-(--color-border-strong) bg-(--color-bg-canvas) bg-(image:--gradient-sheet) shadow-(--shadow-sheet)'
       >
-        {/* HEADER ROW */}
-        <div className='flex justify-between items-center border-b border-white/5 pb-4 mt-grid-sm'>
-          <div>
-            <h3 className='text-sm font-bold uppercase tracking-widest text-white/90'>
-              Filter Matches
-            </h3>
-            <p className='text-[11px] text-surface-muted mt-0.5'>
-              Refine your schedule view
+        {/* Grabber */}
+        <div
+          aria-hidden='true'
+          className='mx-auto mt-2 h-1.25 w-9 shrink-0 rounded-full bg-(--color-border-strong)'
+        />
+
+        {/* Header */}
+        <div className='flex shrink-0 items-center gap-(--space-stack-sm) px-(--space-gutter) pt-3 pb-3'>
+          <div className='min-w-0 flex-1'>
+            <h2
+              id={titleId}
+              className='text-display text-(--color-text-primary)'
+            >
+              Filters
+            </h2>
+            <p className='text-meta text-(--color-text-secondary)'>
+              {activeCount > 0
+                ? `${activeCount} filter${activeCount === 1 ? '' : 's'} active`
+                : `Showing all ${matchCount} match${matchCount === 1 ? '' : 'es'}`}
             </p>
           </div>
+
           <button
-            onClick={onClose}
-            className='text-white/40 hover:text-white transition-colors p-2 bg-white/5 rounded-lg border border-white/5 shrink-0'
+            type='button'
+            onClick={() => setFilters(DEFAULT_FILTERS)}
+            disabled={activeCount === 0}
+            className='pressable text-control min-h-(--size-tap) px-(--space-stack-sm) text-(--color-text-primary) disabled:pointer-events-none disabled:text-(--color-text-disabled)'
           >
-            <X size={18} />
+            Reset
+          </button>
+
+          <button
+            ref={closeRef}
+            type='button'
+            onClick={onClose}
+            aria-label='Close filters'
+            className='tap-area min-w-(--size-tap) shrink-0 justify-center'
+          >
+            <span className='tap-visual grid size-9 place-items-center rounded-(--radius-control) bg-(--color-bg-subtle) text-(--color-icon-default) shadow-(--shadow-control) hover:text-(--color-text-primary)'>
+              <X {...ICON} aria-hidden='true' />
+            </span>
           </button>
         </div>
 
-        {/* FILTER CONTROL SECTIONS */}
-        <div className='flex flex-col gap-grid-md overflow-y-auto flex-1 pr-1 pb-4'>
-          {/* FILTER A: Age Group */}
-          <div className='flex flex-col gap-2'>
-            <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
-              Age Group
-            </label>
-            <div className='flex flex-wrap bg-white/5 p-1 rounded-lg border border-white/5 relative gap-1 sm:gap-0'>
-              {AGE_GROUP_OPTIONS.map((option) => {
-                const isSelected = filters.ageGroup === (option as AgeFilter);
-
+        {/* Body (scroll) */}
+        <div className='flex flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-(--space-gutter) pt-2 pb-6'>
+          {/* Team side — Figma: SegmentedControl (always exactly one) */}
+          <FilterGroup
+            label='Team side'
+            status={
+              filters.homeAway === 'all'
+                ? undefined
+                : labelsFor(TEAM_SIDE, [filters.homeAway])
+            }
+          >
+            <div
+              role='radiogroup'
+              aria-label='Team side'
+              className='flex w-full rounded-(--radius-control) bg-(--color-bg-subtle) px-(--space-stack-xs) shadow-(--shadow-recessed)'
+            >
+              {TEAM_SIDE.map((option) => {
+                const isSelected = filters.homeAway === option.value;
                 return (
                   <button
-                    key={option}
-                    onClick={() => toggleSingleFilter('ageGroup', option)}
+                    key={option.value}
+                    type='button'
+                    role='radio'
+                    aria-checked={isSelected}
+                    onClick={() => update(() => ({ homeAway: option.value }))}
                     className={cn(
-                      'relative flex-1 min-w-18.75 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
+                      'tap-area flex-1',
                       isSelected
-                        ? 'text-white'
-                        : 'text-white/40 hover:text-white/70',
+                        ? 'text-(--color-text-on-inverse)'
+                        : 'text-(--color-text-secondary) hover:text-(--color-text-primary)',
                     )}
                   >
-                    <span className='relative z-10'>{option}</span>
-                    {isSelected && (
-                      <motion.div
-                        layoutId='active-age-pill'
-                        className='absolute inset-0 bg-white/10 rounded-lg border border-white/10 z-0'
-                        transition={{
-                          type: 'spring',
-                          stiffness: 380,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* FILTER B: TEAM SIDE */}
-          <div className='flex flex-col gap-2'>
-            <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
-              Team Side
-            </label>
-            <div className='flex flex-wrap bg-white/5 p-1 rounded-lg border border-white/5 relative gap-1 sm:gap-0'>
-              {TEAM_SIDE_OPTIONS.map((option) => {
-                const isSelected =
-                  filters.homeAway === (option as HomeAwayFilter);
-
-                return (
-                  <button
-                    key={option}
-                    onClick={() => toggleSingleFilter('homeAway', option)}
-                    className={cn(
-                      'relative flex-1 min-w-18.75 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
-                      isSelected
-                        ? 'text-white'
-                        : 'text-white/40 hover:text-white/70',
-                    )}
-                  >
-                    <span className='relative z-10'>
-                      {option === 'all' ? 'Both' : option}
+                    {/* Track is 44px (the tap target); the segment reads as a 36px inset pill */}
+                    <span className='tap-visual text-control relative isolate flex h-9 w-full items-center justify-center rounded-[calc(var(--radius-control)-4px)]'>
+                      {isSelected && (
+                        <motion.span
+                          layoutId='team-side-pill'
+                          aria-hidden='true'
+                          transition={SPRING}
+                          className='absolute inset-0 -z-10 rounded-[calc(var(--radius-control)-4px)] bg-(--color-bg-inverse) shadow-(--shadow-control-selected)'
+                        />
+                      )}
+                      {option.label}
                     </span>
-                    {isSelected && (
-                      <motion.div
-                        layoutId='active-side-pill'
-                        className='absolute inset-0 bg-white/10 rounded-lg border border-white/10 z-0'
-                        transition={{
-                          type: 'spring',
-                          stiffness: 380,
-                          damping: 30,
-                        }}
-                      />
-                    )}
                   </button>
                 );
               })}
             </div>
-          </div>
+          </FilterGroup>
 
-          {/* FILTER C: URGENCY ALERTS */}
-          <div className='flex flex-col gap-2'>
-            <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
-              Urgency Alerts
-            </label>
-            <div className='flex flex-wrap gap-2'>
-              {URGENCY_OPTIONS.map((item) => {
-                const isSelected = filters.urgency.includes(item.id);
-                const IconComponent = item.icon;
+          {/* Age group — none selected = all ages */}
+          <FilterGroup
+            label='Age group'
+            status={
+              filters.ageGroup === 'all'
+                ? undefined
+                : labelsFor(AGE_GROUPS, [filters.ageGroup])
+            }
+          >
+            {AGE_GROUPS.map((o) => (
+              <FilterChip
+                key={o.value}
+                label={o.label}
+                selected={filters.ageGroup === o.value}
+                onClick={() => toggleOne('ageGroup', o.value)}
+              />
+            ))}
+          </FilterGroup>
 
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => toggleArrayFilter('urgency', item.id)}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg border transition-all outline-none',
-                      isSelected
-                        ? 'bg-white/10 text-white border-white/10 shadow-inner shadow-black/20'
-                        : 'bg-white/5 border-white/5 text-white/50 hover:bg-white/8 hover:text-white/80',
-                    )}
-                  >
-                    <IconComponent
-                      size={14}
-                      className={
-                        isSelected
-                          ? item.inactiveColor
-                          : 'text-white/30 transition-colors'
-                      }
-                    />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <FilterGroup
+            label='Time of day'
+            status={labelsFor(TIMES, filters.timeOfDay)}
+          >
+            {TIMES.map((o) => (
+              <FilterChip
+                key={o.value}
+                label={o.label}
+                icon={o.icon}
+                selected={filters.timeOfDay.includes(o.value)}
+                onClick={() => toggleMany('timeOfDay', o.value)}
+              />
+            ))}
+          </FilterGroup>
 
-          {/* FILTER D: TIME OF DAY */}
-          <div className='flex flex-col gap-2'>
-            <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
-              Time of Day
-            </label>
-            <div className='flex flex-wrap gap-2'>
-              {TIME_OPTIONS.map((item) => {
-                const isSelected = filters.timeOfDay.includes(item.id);
-                const IconComponent = item.icon;
+          <FilterGroup
+            label='Match status'
+            status={
+              filters.matchState === 'all'
+                ? undefined
+                : labelsFor(STATUSES, [filters.matchState])
+            }
+          >
+            {STATUSES.map((o) => (
+              <FilterChip
+                key={o.value}
+                label={o.label}
+                selected={filters.matchState === o.value}
+                onClick={() => toggleOne('matchState', o.value)}
+              />
+            ))}
+          </FilterGroup>
 
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => toggleArrayFilter('timeOfDay', item.id)}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2.5 h-20 text-[11px] font-bold uppercase tracking-wider rounded-lg border transition-all outline-none',
-                      isSelected
-                        ? 'bg-white/10 text-white border-white/10 shadow-inner shadow-black/20'
-                        : 'bg-white/5 border-white/5 text-white/50 hover:bg-white/8 hover:text-white/80',
-                    )}
-                  >
-                    <span
-                      className={
-                        isSelected ? 'text-brand-primary' : 'text-white/30'
-                      }
-                    >
-                      <IconComponent size={14} />
-                    </span>
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* Result — locked until Final (prevents impossible "Upcoming + Win") */}
+          <FilterGroup
+            label='Result'
+            status={
+              filters.resultsState
+                ? labelsFor(RESULTS, [filters.resultsState])
+                : undefined
+            }
+            helper={
+              resultsUnlocked ? undefined : 'Select Final to filter by result.'
+            }
+          >
+            {RESULTS.map((o) => (
+              <FilterChip
+                key={o.value}
+                label={o.label}
+                disabled={!resultsUnlocked}
+                selected={filters.resultsState === o.value}
+                onClick={() =>
+                  update((prev) => ({
+                    resultsState:
+                      prev.resultsState === o.value ? null : o.value,
+                  }))
+                }
+              />
+            ))}
+          </FilterGroup>
 
-          {/* FILTER E: MATCH STATE */}
-          <div className='flex flex-col gap-2'>
-            <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
-              Match Status
-            </label>
-            <div className='flex flex-wrap bg-white/5 p-1 rounded-lg border border-white/5 relative gap-1 sm:gap-0'>
-              {MATCH_STATUS_OPTIONS.map((option) => {
-                const isSelected =
-                  filters.matchState === (option as MatchStateFilter);
-
-                return (
-                  <button
-                    key={option}
-                    onClick={() => toggleSingleFilter('matchState', option)}
-                    className={cn(
-                      'relative flex-1 min-w-17.5 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
-                      isSelected
-                        ? 'text-white'
-                        : 'text-white/40 hover:text-white/70',
-                    )}
-                  >
-                    <span className='relative z-10'>{option}</span>
-                    {isSelected && (
-                      <motion.div
-                        layoutId='active-status-pill'
-                        className='absolute inset-0 bg-white/10 rounded-lg border border-white/10 z-0'
-                        transition={{
-                          type: 'spring',
-                          stiffness: 380,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* FILTER F: Results */}
-          <div className='flex flex-col gap-2'>
-            <label className='text-[10px] font-bold uppercase tracking-widest text-white/40'>
-              Game Results
-            </label>
-            <div className='flex flex-wrap bg-white/5 p-1 rounded-lg border border-white/5 relative gap-1 sm:gap-0'>
-              {RESULTS_OPTIONS.map((option) => {
-                const isSelected =
-                  filters.resultsState === (option as ResultsFilter);
-
-                return (
-                  <button
-                    key={option}
-                    onClick={() => toggleSingleFilter('resultsState', option)}
-                    className={cn(
-                      'relative flex-1 min-w-18.75 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10',
-                      isSelected
-                        ? 'text-white'
-                        : 'text-white/40 hover:text-white/70',
-                    )}
-                  >
-                    <span className='relative z-10'>{option}</span>
-                    {isSelected && (
-                      <motion.div
-                        layoutId='active-results-pill'
-                        className='absolute inset-0 bg-white/10 rounded-lg border border-white/10 z-0'
-                        transition={{
-                          type: 'spring',
-                          stiffness: 380,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <FilterGroup
+            label='Alerts'
+            status={labelsFor(ALERTS, filters.urgency)}
+          >
+            {ALERTS.map((o) => (
+              <FilterChip
+                key={o.value}
+                label={o.label}
+                icon={o.icon}
+                selected={filters.urgency.includes(o.value)}
+                onClick={() => toggleMany('urgency', o.value)}
+              />
+            ))}
+          </FilterGroup>
         </div>
 
-        {/* ACTION CONTROLS FOOTER */}
-        <div className='flex flex-col sm:flex-row gap-3 border-t border-white/5 pt-4 pb-4 mt-auto shrink-0'>
-          <Button
-            className='flex-1 w-full bg-white text-brand-navy hover:bg-white/90 font-bold py-3.5 rounded-lg uppercase tracking-wider text-xs'
-            onClick={onClose}
+        {/* Footer (sticky) — live count, zero-result prevention */}
+        <div className='flex shrink-0 flex-col gap-(--space-stack-sm) bg-(--color-bg-canvas) px-(--space-gutter) pt-3 pb-[max(env(safe-area-inset-bottom,0px),16px)] shadow-(--shadow-footer-lift)'>
+          <p role='status' className='empty:hidden'>
+            {!hasMatches && (
+              <span className='text-meta flex items-start gap-(--space-stack-sm) text-(--color-text-primary)'>
+                <TriangleAlert
+                  {...ICON}
+                  aria-hidden='true'
+                  className='mt-0.5 shrink-0 text-(--color-warning-on-surface)'
+                />
+                No matches this week fit these filters. Remove a filter to see
+                results.
+              </span>
+            )}
+          </p>
+
+          <button
+            type='button'
+            aria-disabled={!hasMatches}
+            onClick={() => hasMatches && onClose()}
+            className={cn(
+              'text-control flex min-h-(--size-tap) w-full items-center justify-center rounded-(--radius-control) py-(--space-stack-md)',
+              hasMatches
+                ? 'pressable bg-(--color-bg-inverse) text-(--color-text-on-inverse) shadow-(--shadow-control-selected)'
+                : 'cursor-not-allowed bg-(--color-bg-subtle) text-(--color-text-disabled)',
+            )}
           >
-            Apply Filters
-          </Button>
-          <Button
-            className='flex-1 w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 py-3.5 rounded-lg font-bold uppercase tracking-wider text-xs'
-            onClick={handleReset}
-          >
-            Reset
-          </Button>
+            {hasMatches
+              ? `Show ${matchCount} match${matchCount === 1 ? '' : 'es'}`
+              : 'No matches'}
+          </button>
         </div>
       </motion.div>
-    </>
+    </MotionConfig>
   );
 };
