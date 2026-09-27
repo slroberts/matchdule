@@ -8,7 +8,7 @@ import { Header } from '@/components/layouts/Header/Header';
 import { TeamTabs } from './TeamTabs';
 import { Alert } from '@/components/ui/Alert/Alert';
 import { processWeekSpacing } from '@/lib/matches/match-utils';
-import { getWeekData, getSeason } from '@/lib/dates/date-utils';
+import { getWeekData, getSeason, getTimePeriod } from '@/lib/dates/date-utils';
 import { FilterState, Match, TabOption, TimeOfDayOption } from '@/types/match';
 import {
   DEFAULT_FILTERS,
@@ -17,8 +17,8 @@ import {
   normalizeFilters,
 } from './FilterDrawer/FilterDrawer';
 import { StandingsView } from './StandingsView';
-import { TabBar } from './TabBar';
 import { ActiveFilters } from './ActiveFilters';
+import { TabBar } from './TabBar';
 
 interface ClientViewProps {
   allMatches: Match[];
@@ -44,25 +44,6 @@ const isTeamMatch = (match: Match, team: TabOption) => {
   return (
     match.homeTeam.utility === utility || match.awayTeam.utility === utility
   );
-};
-
-const getTimePeriod = (
-  timeString: string,
-): 'morning' | 'afternoon' | 'evening' | 'unknown' => {
-  if (!timeString || timeString.toUpperCase() === 'TBD') return 'unknown';
-
-  const upperTime = timeString.toUpperCase();
-  const isPM = upperTime.includes('PM');
-  const [hourStr] = upperTime.split(':');
-  let hour = parseInt(hourStr, 10);
-
-  if (isNaN(hour)) return 'unknown';
-  if (isPM && hour !== 12) hour += 12;
-  if (!isPM && hour === 12) hour = 0;
-
-  if (hour < 12) return 'morning';
-  if (hour < 17) return 'afternoon';
-  return 'evening';
 };
 
 /** Local YYYY-MM-DD for ?date= links (any day inside the target week) */
@@ -246,6 +227,12 @@ export const ClientView = ({
 
       {/* Bottom padding clears the floating TabBar + home indicator */}
       <main className='pt-(--space-stack-sm) pb-[calc(var(--size-tab-bar)+var(--safe-bottom)+24px)]'>
+        {/* Applied filters — Figma: Schedule / Filters active */}
+        {/* Always mounted in schedule view: its live region must survive "Clear all" */}
+        {viewMode === 'schedule' && (
+          <ActiveFilters filters={filters} setFilters={setFilters} />
+        )}
+
         {viewMode === 'schedule' && (hasConflict || hasTightGap || hasTBD) && (
           <div className='mx-auto mb-(--space-stack-md) flex w-full max-w-lg flex-col gap-(--space-stack-sm) px-(--space-gutter)'>
             {hasConflict && (
@@ -284,10 +271,6 @@ export const ClientView = ({
               />
             )}
           </div>
-        )}
-
-        {viewMode === 'schedule' && (
-          <ActiveFilters filters={filters} setFilters={setFilters} />
         )}
 
         {viewMode === 'schedule' ? (

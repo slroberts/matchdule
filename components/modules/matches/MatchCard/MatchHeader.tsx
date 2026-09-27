@@ -1,17 +1,13 @@
-import {
-  Calendar,
-  Clock,
-  Flag,
-  TriangleAlert,
-  type LucideIcon,
-} from 'lucide-react';
+import { Flag, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { getTimeOfDayAssets } from '@/lib/dates/date-utils';
 import { getStatusConfig } from '@/lib/matches/match-utils';
 import { cn } from '@/lib/utils';
 import { MatchStatus } from '@/types/match';
 
 /**
  * MatchHeader — Figma: MatchCard › Meta
- * [icon] [time · FILL] [status] ……… [warning badges] [Home|Away]
+ * [time-of-day icon] [time · FILL] [status] ……… [warning badges] [Home|Away]
+ * Icon = same set as the filter chips: Sun < 12 PM · Sunset 12–5 PM · Moon ≥ 5 PM · Clock TBD
  * Alert vocabulary (audit): "Conflict" = overlapping times · "Tight gap" = < 60 min between games
  */
 
@@ -82,7 +78,8 @@ const MatchHeader = ({
   const statusConfig = status === 'live' ? null : getStatusConfig(status);
   const when = isTBD ? 'Time TBD' : formatTime(time);
   const label = showDate ? `${formatDate(date)} · ${when}` : when;
-  const LeadIcon = isTBD ? Clock : Calendar;
+  // Same icon + buckets as the filter drawer's Morning/Afternoon/Evening chips
+  const { TimeIcon: LeadIcon } = getTimeOfDayAssets(isTBD ? 'TBD' : time);
 
   return (
     <div className='flex w-full flex-wrap items-center gap-(--space-stack-sm)'>
