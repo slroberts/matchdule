@@ -1,14 +1,24 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import { AppleSplashScreens } from '@/components/system/AppleSplashScreens';
-import '@/styles/globals.css';
+import '@/styles/globals.css'; // single entry: Tailwind + tokens + base + utilities
+
+/* Font variables consumed by the tokens: --font-sans / --font-display / --font-mono */
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: '#0a0e27',
-  viewportFit: 'cover',
+  // No maximumScale / userScalable: pinch-zoom must stay available (WCAG 1.4.4).
+  // Inputs avoid iOS focus-zoom by using ≥16px text, not by disabling zoom.
+  themeColor: '#03040A', // = --color-chrome-base → Safari status bar matches the header
+  viewportFit: 'cover', // header draws under the status bar; safe-area insets become real
 };
 
 export const metadata: Metadata = {
@@ -21,6 +31,7 @@ export const metadata: Metadata = {
     title: 'Matchdule',
   },
   other: {
+    // Next emits `mobile-web-app-capable`; older iOS versions only read the apple- prefix
     'apple-mobile-web-app-capable': 'yes',
   },
 };
@@ -31,11 +42,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang='en' className='bg-surface-base' suppressHydrationWarning>
+    <html
+      lang='en'
+      // No background class here — global.css paints <html> (dark above the header, light below)
+      className={`${inter.variable} ${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <AppleSplashScreens />
       </head>
-      <body className='antialiased min-h-screen'>
+      {/* global.css sets the canvas background, font smoothing and min-height: 100dvh */}
+      <body>
         {children}
 
         {/* Register the Service Worker for PWA offline caching and installation */}

@@ -512,6 +512,14 @@
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    /* Root canvas only shows in overscroll (rubber-band) areas and is what iOS samples
+       for its top-edge material. Dark top half = matches the header chrome (no white
+       flash/haze above it); light bottom half = matches the page below. */
+    background: linear-gradient(
+      to bottom,
+      var(--color-chrome-base) 50%,
+      var(--color-bg-canvas) 50%
+    );
   }
 
   body {
