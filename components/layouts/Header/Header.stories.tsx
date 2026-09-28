@@ -1,68 +1,59 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { fn } from 'storybook/test';
 import { Header } from './Header';
 
+/** Figma: AppHeader + WeekNavigator · Season / Snapshot header. Ranges use an en dash. */
 const meta: Meta<typeof Header> = {
-  title: 'Components/layouts/Header',
+  title: 'Layouts/Header',
   component: Header,
-  parameters: {
-    layout: 'fullscreen',
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
+  parameters: { layout: 'fullscreen' },
+  args: {
+    dateRange: 'Sep 21 – 27',
+    seasonLabel: 'Fall 2026',
+    isCurrentWeek: true,
+    prevWeekDate: '2026-09-14',
+    nextWeekDate: '2026-09-28',
+    hasPrev: true,
+    hasNext: true,
+    setIsFilterOpen: fn(),
+    activeFilterCount: 0,
   },
 };
-
 export default meta;
 type Story = StoryObj<typeof Header>;
 
-// The standard current week (can navigate both ways)
-export const CurrentWeek: Story = {
-  args: {
-    dateRange: 'Oct 19 - 25',
-    seasonLabel: 'Fall 2026',
-    isCurrentWeek: true,
-    prevWeekDate: '2026-10-12',
-    nextWeekDate: '2026-10-26',
-    hasPrev: true,
-    hasNext: true,
-  },
-};
-
-// A standard past/future week
+export const CurrentWeek: Story = {};
+/** Any other week → "↩ This week" action pill */
 export const OtherWeek: Story = {
-  args: {
-    dateRange: 'Oct 26 - Nov 1',
-    seasonLabel: 'Fall 2026',
-    isCurrentWeek: false,
-    prevWeekDate: '2026-10-19',
-    nextWeekDate: '2026-11-02',
-    hasPrev: true,
-    hasNext: true,
-  },
+  args: { dateRange: 'Oct 12 – 18', isCurrentWeek: false },
 };
-
-// Reached the absolute first match in the database
-export const FirstWeekBoundary: Story = {
+export const FiltersActive: Story = { args: { activeFilterCount: 3 } };
+export const FirstWeek: Story = {
   args: {
-    dateRange: 'Mar 23 - 29',
+    dateRange: 'Mar 23 – 29',
     seasonLabel: 'Spring 2026',
     isCurrentWeek: false,
-    prevWeekDate: '2026-03-16',
-    nextWeekDate: '2026-03-30',
-    hasPrev: false, // Disables the left arrow
-    hasNext: true,
+    hasPrev: false,
   },
 };
-
-// Reached the absolute last match in the database
-export const LastWeekBoundary: Story = {
+/** Season's final week — next arrow disabled */
+export const LastWeek: Story = {
+  args: { dateRange: 'Nov 9 – 15', isCurrentWeek: false, hasNext: false },
+};
+export const OffSeason: Story = {
   args: {
-    dateRange: 'May 25 - 31',
-    seasonLabel: 'Spring 2026',
+    dateRange: 'Aug 10 – 16',
+    seasonLabel: 'Off Season',
     isCurrentWeek: false,
-    prevWeekDate: '2026-05-18',
-    nextWeekDate: '2026-06-01',
-    hasPrev: true,
-    hasNext: false, // Disables the right arrow
+  },
+};
+/** Season tab: title + freshness, no week pager, no Filters */
+export const SeasonMode: Story = {
+  args: {
+    mode: 'season',
+    seasonHeader: {
+      title: 'Fall 2026',
+      subtitle: 'Results through Sun, Sep 27',
+    },
   },
 };

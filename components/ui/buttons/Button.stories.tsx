@@ -1,39 +1,28 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { fn } from 'storybook/test';
 import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
-  title: 'UI/Button', // How it appears in the sidebar
+  title: 'UI/Button',
   component: Button,
-  tags: ['autodocs'], // Generates automatic documentation
+  tags: ['autodocs'],
+  args: { onClick: fn() },
 };
-
 export default meta;
 type Story = StoryObj<typeof Button>;
 
 export const Primary: Story = {
-  args: {
-    children: 'Primary',
-    variant: 'primary',
-  },
+  args: { children: 'Show 12 matches', variant: 'primary' },
 };
-
 export const Secondary: Story = {
-  args: {
-    children: 'Secondary',
-    variant: 'secondary',
-  },
+  args: { children: 'Secondary', variant: 'secondary' },
 };
-
 export const Outline: Story = {
-  args: {
-    children: 'Outline',
-    variant: 'outline',
-  },
+  args: { children: 'Outline', variant: 'outline' },
 };
-
 export const Ghost: Story = {
-  args: {
-    children: 'Ghost',
-    variant: 'ghost',
-  },
+  args: { children: 'Clear all', variant: 'ghost' },
+};
+export const Disabled: Story = {
+  args: { children: 'No matches', variant: 'primary', disabled: true },
 };

@@ -1,88 +1,63 @@
-/* eslint-disable storybook/no-renderer-packages */
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { expect, userEvent, within } from 'storybook/test';
+import { Clock, Flag, TriangleAlert } from 'lucide-react';
 import { Alert } from './Alert';
-import { Flag, Clock, FoldHorizontal } from 'lucide-react';
 
+/**
+ * Week alert — a HEADLINE: dark card, the icon carries the tone (amber / red).
+ * Muted: steps back to a hairline outline, grey text, no expand. (Figma: AlertBanner)
+ */
 const meta: Meta<typeof Alert> = {
   title: 'UI/Alert',
   component: Alert,
-  parameters: {
-    // Centers the component and gives it breathing room
-    layout: 'padded',
-    // Subtle background to make the white text and shadow-sm pop
-    backgrounds: {
-      default: 'light',
-      values: [
-        { name: 'light', value: '#F8FAFC' },
-        { name: 'dark', value: '#0F172A' },
-      ],
-    },
-  },
-  // Auto-generates documentation based on your TypeScript interface
+  parameters: { layout: 'padded' },
   tags: ['autodocs'],
-  argTypes: {
-    variant: {
-      control: 'radio',
-      options: ['destructive', 'warning'],
-      description: 'Determines the gradient background and semantic intent.',
-    },
-    // Hide the icon from the controls panel since we pass JSX directly
-    icon: {
-      control: false,
-    },
-  },
+  argTypes: { icon: { control: false } },
 };
-
 export default meta;
 type Story = StoryObj<typeof Alert>;
 
-/* =====================================================================
-   STORIES
-   ===================================================================== */
+const ICON = { size: 16, strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
 
-export const DestructiveConflict: Story = {
-  args: {
-    variant: 'destructive',
-    icon: <Flag size={18} strokeWidth={2.5} />,
-    title: '1 Schedule Conflict',
-    description:
-      'You have overlapping matches. You cannot be in two places at once.',
-    details: ['B&G 2017 10:00 AM ↔ Soricha 2014 10:00 AM (overlap 90 min)'],
-  },
-};
-
-export const WarningTightGap: Story = {
+export const TightGap: Story = {
   args: {
     variant: 'warning',
-    icon: <FoldHorizontal size={18} strokeWidth={2.5} />,
-    title: '1 Schedule Overlap',
+    icon: <TriangleAlert {...ICON} />,
+    title: '1 tight gap this week',
     description:
-      'Matches are scheduled very close together. Pack snacks and plan travel accordingly.',
-    details: ['B&G 2017 9:00 AM → Soricha 2014 10:30 AM (0 min gap)'],
+      'Less than an hour between games. Plan travel and pack snacks.',
+    details: ['Soricha U9 9:45 AM → Soricha U13 12:00 PM (45 min gap)'],
   },
 };
 
-export const PendingTimeTBD: Story = {
-  args: {
-    variant: 'warning',
-    icon: <Clock size={18} strokeWidth={2.5} />,
-    title: '1 Schedule Note',
-    description: 'The exact kickoff time for these matches is currently TBD.',
-    details: ['B&G 2017 vs Rivals FC'],
-  },
-};
-
-export const MultiConflictList: Story = {
+export const Conflict: Story = {
   args: {
     variant: 'destructive',
-    icon: <Flag size={18} strokeWidth={2.5} />,
-    title: '3 Schedule Conflicts',
-    description:
-      'You have multiple overlapping matches this weekend. Please review the schedule carefully.',
-    details: [
-      'Soricha 2014 9:00 AM ↔ B&G 2017 9:30 AM (overlap 60 min)',
-      'B&G 2017 1:00 PM ↔ Matchdule FC 1:00 PM (overlap 90 min)',
-      'Soricha 2014 4:00 PM ↔ B&G 2017 4:15 PM (overlap 75 min)',
-    ],
+    icon: <Flag {...ICON} />,
+    title: '1 schedule conflict',
+    description: 'Two games overlap. Someone will need to cover one of them.',
+    details: ['B&G 10:00 AM ↔ Soricha U9 10:30 AM (overlap 60 min)'],
+  },
+};
+
+export const TimeTBD: Story = {
+  args: {
+    variant: 'warning',
+    icon: <Clock {...ICON} />,
+    title: '1 kickoff time TBD',
+    description: 'The league hasn’t posted a time yet.',
+    details: ['Soricha U13 vs Albion SC Brooklyn'],
+  },
+};
+
+/** Interaction test: Mute steps the alert back, Unmute restores it. */
+export const MuteAndUnmute: Story = {
+  args: TightGap.args,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: /mute/i }));
+    await expect(canvas.getByText(/muted/i)).toBeInTheDocument();
+    await userEvent.click(canvas.getByRole('button', { name: /unmute/i }));
+    await expect(canvas.queryByText(/· muted/i)).not.toBeInTheDocument();
   },
 };

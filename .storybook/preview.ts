@@ -1,24 +1,20 @@
+/**
+ * Stories opt in with `parameters: { now: '2026-11-14T15:00:00-05:00' }` (New York time).
+ * Everything that reads the clock (useMatchClock → VersusCard, rows, focus stack,
+ * DataFreshness) then renders the same state every time — in Storybook AND in the
+ * Vitest browser run.
+ */
+import MockDate from 'mockdate';
 import type { Preview } from '@storybook/nextjs-vite';
-import '../styles/globals.css';
+import '../styles/globals.css'; // ← tokens + text styles; without this every story is unstyled
 
 const preview: Preview = {
-  parameters: {
-    viewport: {
-      defaultViewport: 'mobile1', // Sets the default to iPhone-sized view
-    },
-    controls: {
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/i,
-      },
-    },
-
-    a11y: {
-      // 'todo' - show a11y violations in the test UI only
-      // 'error' - fail CI on a11y violations
-      // 'off' - skip a11y checks entirely
-      test: 'todo',
-    },
+  // …keep your existing parameters/decorators…
+  beforeEach: ({ parameters }) => {
+    if (parameters.now) {
+      MockDate.set(parameters.now as string);
+      return () => MockDate.reset();
+    }
   },
 };
 

@@ -1,57 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { fn } from 'storybook/test';
 import { MatchList } from './MatchList';
-import { Match } from '@/types/match';
 
+/**
+ * MatchList now renders the EMPTY states only — the list itself is CollapsibleMatchList
+ * (see Organisms/CollapsibleMatchList).
+ */
 const meta: Meta<typeof MatchList> = {
-  title: 'Organisms/MatchList',
+  title: 'Organisms/MatchList (empty states)',
   component: MatchList,
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'fullscreen' },
+  args: { matches: [] },
+  decorators: [
+    (Story) => (
+      <div className='page-canvas min-h-dvh py-8'>
+        <Story />
+      </div>
+    ),
+  ],
 };
-
 export default meta;
 type Story = StoryObj<typeof MatchList>;
 
-// --- HELPER FOR DYNAMIC TIMESTAMPS ---
-const now = Date.now();
-const MINUTE = 60 * 1000;
-
-const mockMatches: Match[] = [
-  {
-    id: '1',
-    homeTeam: { name: 'Soricha', utility: 'soricha', score: 0, result: null },
-    awayTeam: { name: 'Tigers', utility: 'away', score: 0, result: null },
-    time: '10:00 AM',
-    location: 'Field 4',
-    status: 'upcoming',
-    date: 'May 17, 2026',
-    timestamp: now + 120 * MINUTE, // 2 hours in the future (Upcoming status remains stable)
-  },
-  {
-    id: '2',
-    homeTeam: { name: 'B&G', utility: 'b-and-g', score: 2, result: null },
-    awayTeam: { name: 'Lions', utility: 'away', score: 1, result: null },
-    time: '1:30 PM',
-    location: 'Field 7',
-    status: 'upcoming', // Component clock will automatically flip this to 'live'
-    date: 'May 17, 2026',
-    timestamp: now - 30 * MINUTE, // Started 30 mins ago (Actively pulsing Live)
-  },
-  {
-    id: '3',
-    homeTeam: { name: 'Soricha', utility: 'soricha', score: 1, result: 'D' },
-    awayTeam: { name: 'Eagles', utility: 'away', score: 1, result: 'D' },
-    time: '4:00 PM',
-    location: 'Field 2',
-    status: 'final',
-    date: 'May 17, 2026',
-    timestamp: now - 200 * MINUTE, // Concluded 200 minutes ago (Shows Final layout)
-  },
-];
-
-export const Default: Story = {
-  args: {
-    matches: mockMatches,
-  },
+export const RestWeek: Story = {
+  args: { nextMatch: { href: '/?date=2026-09-13', label: 'Sun, Sep 13' } },
+};
+export const RestWeekNothingAhead: Story = {};
+export const NoFilterResults: Story = {
+  args: { hasActiveFilters: true, onClearFilters: fn() },
 };
