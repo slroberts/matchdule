@@ -23,8 +23,11 @@ const BADGE_ICON = {
 const BADGE =
   'text-label inline-flex shrink-0 items-center gap-(--space-stack-xs) whitespace-nowrap rounded-(--radius-full) px-(--space-stack-sm) py-(--space-stack-xs)';
 const BADGE_NEUTRAL = 'bg-(--color-bg-subtle) text-(--color-text-secondary)';
+/* Status = neutral pill + navy text; the icon carries the meaning (warning orange / danger red) */
 const BADGE_WARNING =
-  'bg-(--color-warning-surface) text-(--color-warning-on-surface)';
+  'bg-(--color-bg-subtle) text-(--color-text-primary) [&_svg]:text-(--color-warning-icon)';
+const BADGE_DANGER =
+  'bg-(--color-bg-subtle) text-(--color-text-primary) [&_svg]:text-(--color-danger-icon)';
 
 const formatDate = (date: string) => {
   try {
@@ -44,14 +47,16 @@ export const formatTime = (time: string) => {
   return m ? `${m[1]} ${m[2].toUpperCase()}M` : time;
 };
 
-const WarningBadge = ({
+const StatusBadge = ({
   icon: Icon,
   label,
+  tone = 'warning',
 }: {
   icon: LucideIcon;
   label: string;
+  tone?: 'warning' | 'danger';
 }) => (
-  <span className={cn(BADGE, BADGE_WARNING)}>
+  <span className={cn(BADGE, tone === 'danger' ? BADGE_DANGER : BADGE_WARNING)}>
     <Icon {...BADGE_ICON} aria-hidden='true' />
     {label}
   </span>
@@ -77,7 +82,7 @@ const MatchHeader = ({
   status: MatchStatus;
   isHomeGame: boolean;
   showDate?: boolean;
-  /** Game over, score not posted yet → "Awaiting score" instead of "Final" */
+  /** Game over, score not posted yet → "Pending" instead of "Final" */
   awaitingResult?: boolean;
   /** Extra control after the venue badge (e.g. the focus-stack collapse ⌃) */
   trailing?: ReactNode;
@@ -98,7 +103,7 @@ const MatchHeader = ({
           className={cn(
             'shrink-0',
             isTBD
-              ? 'text-(--color-warning-on-surface)'
+              ? 'text-(--color-warning-icon)'
               : 'text-(--color-icon-default)',
           )}
         />
@@ -125,8 +130,10 @@ const MatchHeader = ({
       </div>
 
       <div className='ml-auto flex shrink-0 items-center gap-(--space-stack-xs)'>
-        {isConflict && <WarningBadge icon={Flag} label='Conflict' />}
-        {isTightGap && <WarningBadge icon={TriangleAlert} label='Tight gap' />}
+        {isConflict && (
+          <StatusBadge icon={Flag} label='Conflict' tone='danger' />
+        )}
+        {isTightGap && <StatusBadge icon={TriangleAlert} label='Tight gap' />}
         <span className={cn(BADGE, BADGE_NEUTRAL)}>
           {isHomeGame ? 'Home' : 'Away'}
         </span>

@@ -52,10 +52,13 @@ const VARIANTS: Record<Variant, string> = {
   accent: 'bg-(--color-accent-surface) text-(--color-accent-on-surface)',
   /** @deprecated use `accent` — kept so existing call sites don't break */
   primary: 'bg-(--color-accent-surface) text-(--color-accent-on-surface)',
-  /* Tight gap, Time TBD */
-  warning: 'bg-(--color-warning-surface) text-(--color-warning-on-surface)',
+  /* Status badges = neutral pill + navy text; the ICON carries the meaning.
+     Tight gap, Time TBD, Pending */
+  warning:
+    'bg-(--color-bg-subtle) text-(--color-text-primary) [&_svg]:text-(--color-warning-icon)',
   /* Conflict */
-  destructive: 'bg-(--color-danger-surface) text-(--color-danger-on-surface)',
+  destructive:
+    'bg-(--color-bg-subtle) text-(--color-text-primary) [&_svg]:text-(--color-danger-icon)',
 };
 
 export const Badge = ({

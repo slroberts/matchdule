@@ -55,6 +55,7 @@
     --primitive-teal-700: #007a66;
     --primitive-teal-400: #2dd4bf;
     --primitive-amber-900: #78350f;
+    --primitive-amber-600: #d97706;
     --primitive-amber-500: #f5a800;
     --primitive-amber-300: #fcd34d;
     --primitive-amber-100: #fef3c7;
@@ -73,6 +74,7 @@
     --primitive-red-950: #450a0a;
     --primitive-teal-50: #e6f7f4;
     --primitive-teal-900: #0e3b36;
+    --primitive-orange-600: #ea580c;
 
     /* Brand assets (fixed; not themeable) */
     --brand-crest-from: #2f5bd3;
@@ -127,6 +129,12 @@
     /* danger */
     --color-danger-surface: var(--primitive-red-50);
     --color-danger-on-surface: var(--primitive-red-800);
+
+    /* warning */
+    --color-warning-icon: var(--primitive-amber-600);
+
+    /* danger */
+    --color-danger-icon: var(--primitive-red-600);
 
     /* accent */
     --color-accent-surface: var(--primitive-teal-50);
@@ -184,6 +192,12 @@
     --color-danger-surface: var(--primitive-red-950);
     --color-danger-on-surface: var(--primitive-red-300);
 
+    /* warning */
+    --color-warning-icon: var(--primitive-amber-500);
+
+    /* danger */
+    --color-danger-icon: var(--primitive-red-300);
+
     /* accent */
     --color-accent-surface: var(--primitive-teal-900);
     --color-accent-on-surface: var(--primitive-teal-400);
@@ -239,6 +253,12 @@
       /* danger */
       --color-danger-surface: var(--primitive-red-950);
       --color-danger-on-surface: var(--primitive-red-300);
+
+      /* warning */
+      --color-warning-icon: var(--primitive-amber-500);
+
+      /* danger */
+      --color-danger-icon: var(--primitive-red-300);
 
       /* accent */
       --color-accent-surface: var(--primitive-teal-900);

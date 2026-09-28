@@ -6,7 +6,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Match, MatchStatus } from '@/types/match';
-import { MATCH_PLAY_MINUTES } from './match-constants';
+import { MATCH_PLAY_MINUTES } from '@/lib/matches/match-constants';
 
 /* =====================================================================
    TYPES & INTERFACES
@@ -30,7 +30,7 @@ export const hasScores = (m: Pick<Match, 'homeTeam' | 'awayTeam'>) =>
 
 /**
  * The game is over but the league hasn't posted the score yet.
- * Shown as "Awaiting score" instead of FINAL with empty dashes.
+ * Shown as "Pending" (hourglass) instead of FINAL with empty dashes.
  */
 export const isAwaitingResult = (
   m: Pick<Match, 'homeTeam' | 'awayTeam'>,
@@ -50,11 +50,12 @@ export const getStatusConfig = (
   { awaitingResult = false }: { awaitingResult?: boolean } = {},
 ): StatusConfig | null => {
   if (status === 'final' && awaitingResult) {
+    // Not a problem, just not posted yet → neutral, gray hourglass
     return {
-      label: 'Awaiting score',
+      label: 'Pending',
       icon: Hourglass,
       className:
-        'bg-(--color-warning-surface) text-(--color-warning-on-surface)',
+        'bg-(--color-bg-subtle) text-(--color-text-primary) [&_svg]:text-(--color-icon-default)',
     };
   }
 
@@ -62,7 +63,8 @@ export const getStatusConfig = (
     live: {
       label: 'Live',
       icon: Radio,
-      className: 'bg-(--color-danger-surface) text-(--color-danger-on-surface)',
+      className:
+        'bg-(--color-bg-subtle) text-(--color-text-primary) [&_svg]:text-(--color-danger-icon)',
     },
     final: {
       label: 'Final',
@@ -72,7 +74,8 @@ export const getStatusConfig = (
     canceled: {
       label: 'Canceled',
       icon: XCircle,
-      className: 'bg-(--color-danger-surface) text-(--color-danger-on-surface)',
+      className:
+        'bg-(--color-bg-subtle) text-(--color-text-primary) [&_svg]:text-(--color-danger-icon)',
     },
   };
 

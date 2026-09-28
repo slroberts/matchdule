@@ -201,12 +201,13 @@ export const VersusCard = ({
               <span
                 className={cn(
                   'text-label font-bold',
+                  // Pending isn't a problem, just not posted yet → neutral
                   isLive
                     ? 'text-(--color-danger-on-surface)'
-                    : 'text-(--color-warning-on-surface)',
+                    : 'text-(--color-text-secondary)',
                 )}
               >
-                {isLive ? 'Live' : 'Awaiting score'}
+                {isLive ? 'Live' : 'Pending'}
               </span>
             )}
             <span
