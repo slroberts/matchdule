@@ -57,10 +57,11 @@ def cell_text(cell) -> str:
 
 
 def scrape_teams(teams):
-    """Returns {(event_id, team_id): rows} for teams that scraped successfully,
-    plus the list of teams that failed."""
+    """Returns ({(event_id, team_id): rows} for teams that scraped successfully,
+    the list of teams that failed, and whether GotSport served a CAPTCHA)."""
     results: dict[tuple[str, str], list[dict]] = {}
     failed: list[str] = []
+    blocked = False
 
     with Stealth().use_sync(sync_playwright()) as p:
         browser = p.chromium.launch(headless=True)
@@ -80,6 +81,16 @@ def scrape_teams(teams):
 
             try:
                 page.goto(url, wait_until="domcontentloaded", timeout=60_000)
+
+                # GotSport's bot check. Respect it: stop the WHOLE run immediately —
+                # don't wait out the timeout and don't try the remaining teams.
+                if "verify_captchas" in page.url:
+                    blocked = True
+                    failed.append(team_id)
+                    print(
+                        "🛑 GotSport is asking for CAPTCHA verification — stopping, not retrying.")
+                    break
+
                 page.wait_for_selector("tr", timeout=15_000)
                 page.mouse.wheel(0, 500)
                 page.wait_for_timeout(2_000)
@@ -121,7 +132,7 @@ def scrape_teams(teams):
                 print(f"❌ Error on {team_id}: {e}")
 
         browser.close()
-    return results, failed
+    return results, failed, blocked
 
 
 def dedupe(rows: list[dict]) -> list[dict]:
@@ -185,10 +196,20 @@ if __name__ == "__main__":
         print("❌ Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_KEY")
         sys.exit(1)
 
-    results, failed = scrape_teams(TEAMS)
+    results, failed, blocked = scrape_teams(TEAMS)
+    # Teams scraped BEFORE a CAPTCHA are still saved (and pruned only for themselves)
     synced = sync(results)
 
-    # Non-zero exit → the cron / GitHub Action shows a FAILED run, so someone notices
+    if blocked:
+        print(
+            "🛑 Stopped: GotSport served a CAPTCHA to this automated run. Don't re-run on a loop — "
+            "wait a few days, then try ONE manual run. The app keeps showing the last good data "
+            "and flags it as out of date after 24 h."
+        )
+        # distinct from ordinary failures (1) — easy to spot in the Actions log
+        sys.exit(2)
+
+    # Non-zero exit → the GitHub Action shows a FAILED run, so someone notices
     if failed or not synced:
         print(
             f"❌ Run finished with problems. Failed teams: {failed or 'none'} · synced: {synced}")
