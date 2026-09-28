@@ -12,8 +12,9 @@ describe('relativeTime ("Updated … ago")', () => {
     [1 * MIN, '1 min ago'],
     [12 * MIN, '12 min ago'],
     [59 * MIN, '59 min ago'],
-    [60 * MIN, '1 h ago'],
-    [3 * 60 * MIN, '3 h ago'],
+    [60 * MIN, '1 hour ago'], // singular
+    [90 * MIN, '2 hours ago'], // rounds to the nearest hour
+    [5 * 60 * MIN, '5 hours ago'],
     [24 * 60 * MIN, 'yesterday'],
     [4 * 24 * 60 * MIN, '4 days ago'],
   ])('%i ms ago → %j', (ms, label) => {
