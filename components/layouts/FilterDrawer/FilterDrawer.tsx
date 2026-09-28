@@ -575,7 +575,7 @@ export const FilterDrawer = ({
                 <TriangleAlert
                   {...ICON}
                   aria-hidden='true'
-                  className='mt-0.5 shrink-0 text-(--color-warning-on-surface)'
+                  className='mt-0.5 shrink-0 text-(--color-warning-icon)'
                 />
                 No matches this week fit these filters. Remove a filter to see
                 results.

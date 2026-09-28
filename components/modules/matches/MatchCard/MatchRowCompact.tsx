@@ -76,7 +76,7 @@ export const MatchRowCompact = ({
             <span className='text-score leading-none text-(--color-text-secondary)'>
               FT
             </span>
-            <span className='text-label mt-1 font-bold text-(--color-warning-on-surface)'>
+            <span className='text-label mt-1 font-bold text-(--color-text-secondary)'>
               Pending
             </span>
           </>
@@ -149,12 +149,12 @@ export const MatchRowCompact = ({
 
       {/* Urgency — icon + screen-reader text */}
       {match.isConflict ? (
-        <span className='shrink-0 text-(--color-danger-on-surface)'>
+        <span className='shrink-0 text-(--color-danger-icon)'>
           <Flag {...ICON} aria-hidden='true' />
           <span className='visually-hidden'>Conflict</span>
         </span>
       ) : match.isTightGap ? (
-        <span className='shrink-0 text-(--color-warning-on-surface)'>
+        <span className='shrink-0 text-(--color-warning-icon)'>
           <TriangleAlert {...ICON} aria-hidden='true' />
           <span className='visually-hidden'>Tight gap</span>
         </span>
