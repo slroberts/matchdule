@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Clock, Flag, TriangleAlert } from 'lucide-react';
-import { MatchList } from '@/components/modules/matches/MatchList';
+import { CollapsibleMatchList } from '@/components/modules/matches/CollapsibleMatchList';
 import { Header } from '@/components/layouts/Header/Header';
 import { TeamTabs } from './TeamTabs';
 import { Alert } from '@/components/ui/Alert/Alert';
@@ -122,11 +122,8 @@ export const ClientView = ({
     : undefined;
 
   // Main filtration engine
-  const displayedMatches = allMatches.filter((match) => {
-    const isThisWeek =
-      match.timestamp >= startOfMonday.getTime() &&
-      match.timestamp <= endOfSunday.getTime();
-    if (!isThisWeek) return false;
+  // Team + drawer filters, across ALL weeks (the focus stack looks ahead for the next game)
+  const matchesFilters = (match: Match) => {
     if (!isTeamMatch(match, currentTeam)) return false;
 
     const targetUtility = getUtilityFromTab(currentTeam);
@@ -192,7 +189,16 @@ export const ClientView = ({
     }
 
     return true;
-  });
+  };
+
+  const isThisWeek = (match: Match) =>
+    match.timestamp >= startOfMonday.getTime() &&
+    match.timestamp <= endOfSunday.getTime();
+
+  /** Every game that passes the team tab + filters (all weeks) */
+  const filteredPool = allMatches.filter(matchesFilters);
+  /** This week's slice of it */
+  const displayedMatches = filteredPool.filter(isThisWeek);
 
   const {
     matchesWithSpacingStatus,
@@ -275,8 +281,10 @@ export const ClientView = ({
         )}
 
         {viewMode === 'schedule' ? (
-          <MatchList
+          <CollapsibleMatchList
             matches={matchesWithSpacingStatus}
+            focusPool={filteredPool}
+            isCurrentWeek={weekInfo.isCurrentWeek}
             hasActiveFilters={activeFilterCount > 0}
             onClearFilters={() => setFilters(DEFAULT_FILTERS)}
             nextMatch={nextMatch}

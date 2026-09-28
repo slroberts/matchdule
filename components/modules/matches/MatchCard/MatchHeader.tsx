@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Flag, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { getTimeOfDayAssets } from '@/lib/dates/date-utils';
 import { getStatusConfig } from '@/lib/matches/match-utils';
@@ -66,6 +67,7 @@ const MatchHeader = ({
   isHomeGame,
   showDate = true,
   awaitingResult = false,
+  trailing,
 }: {
   isConflict?: boolean;
   isTightGap?: boolean;
@@ -77,6 +79,8 @@ const MatchHeader = ({
   showDate?: boolean;
   /** Game over, score not posted yet → "Awaiting score" instead of "Final" */
   awaitingResult?: boolean;
+  /** Extra control after the venue badge (e.g. the focus-stack collapse ⌃) */
+  trailing?: ReactNode;
 }) => {
   const statusConfig =
     status === 'live' ? null : getStatusConfig(status, { awaitingResult });
@@ -126,6 +130,7 @@ const MatchHeader = ({
         <span className={cn(BADGE, BADGE_NEUTRAL)}>
           {isHomeGame ? 'Home' : 'Away'}
         </span>
+        {trailing}
       </div>
     </div>
   );

@@ -18,3 +18,12 @@ export type CrestBrand = 'soricha' | 'opponent';
 
 export const getCrestBrand = (team: Pick<Team, 'utility'>): CrestBrand =>
   team.utility === 'soricha' ? 'soricha' : 'opponent';
+
+/** Short club label — matches the team tabs ("Soricha", "B&G"). Falls back to the display name. */
+const CLUB_LABELS: Partial<Record<Team['utility'], string>> = {
+  soricha: 'Soricha',
+  'b-and-g': 'B&G',
+};
+
+export const getClubLabel = (team: Pick<Team, 'utility'>, fallback: string) =>
+  CLUB_LABELS[team.utility] ?? fallback;
