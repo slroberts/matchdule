@@ -184,7 +184,7 @@ export const Header = ({
                       absoluteStrokeWidth
                       aria-hidden='true'
                     />
-                    Back to This week
+                    This week
                   </Badge>
                 </Link>
               )}
