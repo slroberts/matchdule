@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { MatchSkeleton } from '@/components/modules/matches/MatchSkeleton';
+import { ScheduleSkeleton } from '@/components/modules/matches/ScheduleSkeleton';
 import { getMatches } from '@/lib/matches/matches';
-import { getWeekData } from '@/lib/dates/date-utils';
+import { getSeason, getWeekData } from '@/lib/dates/date-utils';
 import { getPaginationBounds } from '@/lib/matches/match-utils';
 import { ClientView } from '@/components/layouts/ClientView';
 import { FilterState, INITIAL_FILTERS, TabOption, TABS } from '@/types/match';
@@ -14,7 +14,7 @@ export const revalidate = 0;
 type WeekInfo = ReturnType<typeof getWeekData>;
 
 export default async function HomePage(props: {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; view?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const weekInfo = getWeekData(searchParams.date);
@@ -40,7 +40,19 @@ export default async function HomePage(props: {
   // The data fetch lives INSIDE the boundary (in <Schedule>), so the skeleton streams
   // immediately while Supabase responds. (Awaiting it up here made the fallback unreachable.)
   return (
-    <Suspense key={weekInfo.dateRange} fallback={<MatchSkeleton />}>
+    <Suspense
+      key={weekInfo.dateRange}
+      fallback={
+        // Loading SHELL: the real week, team tabs (saved tab) and tab bar — only rows shimmer
+        <ScheduleSkeleton
+          dateRange={weekInfo.dateRange}
+          seasonLabel={getSeason(weekInfo.weekStart)}
+          isCurrentWeek={weekInfo.isCurrentWeek}
+          activeTeam={initialTeam}
+          view={searchParams.view === 'season' ? 'season' : 'schedule'}
+        />
+      }
+    >
       <Schedule
         weekInfo={weekInfo}
         initialTeam={initialTeam}
