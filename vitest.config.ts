@@ -8,9 +8,9 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
-    // We use workspace-style projects to separate Logic from Storybook
+    // Projects separate logic tests from Storybook tests
     projects: [
-      // 1. The Storybook Project (Existing)
+      // 1. Storybook (browser)
       {
         plugins: [
           storybookTest({ configDir: path.join(dirname, '.storybook') }),
@@ -25,16 +25,18 @@ export default defineConfig({
           },
         },
       },
-      // 2. The Unit Test Project (New!)
+      // 2. Unit (Node) — pure logic: lib/**, hooks/**
       {
         test: {
           name: 'unit',
-          include: ['**/*.test.ts'], // Only look in your helpers folder
-          environment: 'node', // Logic doesn't need a browser, so this is 10x faster
+          include: ['**/*.test.ts'],
+          exclude: ['node_modules/**', '.next/**', 'storybook-static/**'],
+          environment: 'node', // no browser needed for logic — much faster
         },
         resolve: {
           alias: {
-            '@': path.resolve(dirname, './src'),
+            // Same mapping as tsconfig "paths": "@/*" → "./*" (repo root — there is no src/)
+            '@': dirname,
           },
         },
       },

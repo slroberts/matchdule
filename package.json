@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "npm run test:ci && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest --project=unit",
     "test:storybook": "vitest --project=storybook",
+    "test": "TZ=America/New_York vitest --project=unit",
+    "test:ci": "TZ=America/New_York vitest run --project=unit && TZ=UTC vitest run --project=unit",
     "test:all": "vitest",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
@@ -54,6 +55,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^5",
     "vite": "^8.0.8",
+    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.4"
   }
 }

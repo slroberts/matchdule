@@ -1,107 +1,86 @@
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
-import { getTimeOfDayAssets, getWeekData } from './date-utils';
-import { Sun, Sunset } from 'lucide-react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Moon, Sun, Sunset, Clock } from 'lucide-react';
+import {
+  getSeason,
+  getTimeOfDayAssets,
+  getTimePeriod,
+  getWeekData,
+} from '@/lib/dates/date-utils';
+import { et } from '@/lib/test-utils/fixtures';
 
-describe('Date Utilities', () => {
-  describe('getTimeOfDayAssets', () => {
-    it('returns Sun and false for empty or missing times', () => {
-      const result = getTimeOfDayAssets('');
-      expect(result.isLateAfternoon).toBe(false);
-      expect(result.TimeIcon).toBe(Sun);
-    });
-
-    it('returns Sun and false for morning times', () => {
-      const result = getTimeOfDayAssets('9:30 AM');
-      expect(result.isLateAfternoon).toBe(false);
-      expect(result.TimeIcon).toBe(Sun);
-    });
-
-    it('returns Sun and false for early afternoon times (before 3 PM)', () => {
-      const result = getTimeOfDayAssets('1:15 PM');
-      expect(result.isLateAfternoon).toBe(false);
-      expect(result.TimeIcon).toBe(Sun);
-    });
-
-    it('returns Sun and false for exactly 12:00 PM (noon)', () => {
-      const result = getTimeOfDayAssets('12:00 PM');
-      expect(result.isLateAfternoon).toBe(false);
-      expect(result.TimeIcon).toBe(Sun);
-    });
-
-    it('returns Sunset and true for exactly 3:00 PM', () => {
-      const result = getTimeOfDayAssets('3:00 PM');
-      expect(result.isLateAfternoon).toBe(true);
-      expect(result.TimeIcon).toBe(Sunset);
-    });
-
-    it('returns Sunset and true for evening times', () => {
-      const result = getTimeOfDayAssets('7:45 PM');
-      expect(result.isLateAfternoon).toBe(true);
-      expect(result.TimeIcon).toBe(Sunset);
-    });
+describe('getTimePeriod — ONE definition for filter chips, card icons and filtering', () => {
+  it.each([
+    ['9:45 AM', 'morning'],
+    ['11:59 AM', 'morning'],
+    ['12:00 PM', 'afternoon'], // noon is afternoon
+    ['1:00 PM', 'afternoon'], // REGRESSION: used to show a sun but filter as afternoon
+    ['4:59 PM', 'afternoon'],
+    ['5:00 PM', 'evening'],
+    ['12:30 AM', 'morning'], // 00:30
+    ['1:00PM', 'afternoon'], // no space (source format)
+    ['1 pm', 'afternoon'],
+    ['4:30 p.m.', 'afternoon'],
+    ['TBD', 'unknown'],
+    ['', 'unknown'],
+    ['13:00 PM', 'unknown'], // invalid hour
+  ])('%j → %s', (time, period) => {
+    expect(getTimePeriod(time)).toBe(period);
   });
 
-  describe('getWeekData', () => {
-    beforeAll(() => {
-      vi.useFakeTimers();
-      // Freeze time to a strict UTC string representing May 6, 2026 at 12:00 PM EDT in New York.
-      // This ensures the America/New_York timezone offset logic is heavily tested.
-      vi.setSystemTime(new Date('2026-05-06T16:00:00Z'));
-    });
+  it('maps periods to the same icons as the filter chips', () => {
+    expect(getTimeOfDayAssets('9:00 AM').TimeIcon).toBe(Sun);
+    expect(getTimeOfDayAssets('1:00 PM').TimeIcon).toBe(Sunset);
+    expect(getTimeOfDayAssets('6:00 PM').TimeIcon).toBe(Moon);
+    expect(getTimeOfDayAssets('TBD').TimeIcon).toBe(Clock);
+  });
+});
 
-    afterAll(() => {
-      vi.useRealTimers();
-    });
+describe('getSeason (header label)', () => {
+  it.each([
+    [new Date(2026, 2, 15), 'Spring 2026'],
+    [new Date(2026, 4, 31), 'Spring 2026'],
+    [new Date(2026, 5, 1), 'Off Season'], // REGRESSION: June used to count as Spring
+    [new Date(2026, 7, 10), 'Off Season'],
+    [new Date(2026, 8, 13), 'Fall 2026'],
+    [new Date(2026, 10, 30), 'Fall 2026'],
+    [new Date(2026, 11, 20), 'Off Season'],
+  ])('%s → %j', (date, label) => {
+    expect(getSeason(date)).toBe(label);
+  });
+});
 
-    it('defaults to the current New York week when no argument is passed', () => {
-      // Target: May 6, 2026. Monday is May 4, Sunday is May 10.
-      const result = getWeekData();
-      expect(result.dateRange).toBe('May 4 - 10');
-      expect(result.isCurrentWeek).toBe(true);
-    });
+describe('getWeekData', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(et('2026-09-23T10:00')); // Wed Sep 23
+  });
+  afterEach(() => vi.useRealTimers());
 
-    it('calculates the correct date range for a future week', () => {
-      // Target: May 16, 2026 (Saturday). Monday is May 11, Sunday is May 17.
-      const result = getWeekData('2026-05-16');
-      expect(result.dateRange).toBe('May 11 - 17');
-      expect(result.isCurrentWeek).toBe(false);
-    });
+  it('builds a Monday–Sunday range with an en dash', () => {
+    expect(getWeekData('2026-09-23').dateRange).toBe('Sep 21 – 27');
+  });
 
-    it('calculates the correct date range for a week spanning two months', () => {
-      // Target: April 30, 2026 (Thursday). Monday is Apr 27, Sunday is May 3.
-      const result = getWeekData('2026-04-30');
-      expect(result.dateRange).toBe('Apr 27 - May 3');
-      expect(result.isCurrentWeek).toBe(false);
-    });
+  it('spans months', () => {
+    expect(getWeekData('2026-09-30').dateRange).toBe('Sep 28 – Oct 4');
+  });
 
-    it('inverts the T12:00:00 hack correctly to prevent UTC midnight shifts', () => {
-      // If pass "2026-05-04" without a time, native Date parsing in UTC environments
-      // often shifts it backwards to May 3rd at 8:00 PM EST.
-      // Function injects T12:00:00, forcing it to parse safely as May 4th.
-      const result = getWeekData('2026-05-04');
-      expect(result.weekStart.getDate()).toBe(4);
-      expect(result.weekStart.getMonth()).toBe(4); // 0-indexed, 4 is May
-    });
+  it('a Sunday belongs to the week that started the Monday before', () => {
+    expect(getWeekData('2026-09-27').dateRange).toBe('Sep 21 – 27');
+  });
 
-    it('safely formats prevWeekDate and nextWeekDate to YYYY-MM-DD without UTC shifts', () => {
-      const result = getWeekData('2026-05-06');
-      // Previous Monday should be April 27
-      expect(result.prevWeekDate).toBe('2026-04-27');
-      // Next Monday should be May 11
-      expect(result.nextWeekDate).toBe('2026-05-11');
-    });
+  it('knows the current week', () => {
+    expect(getWeekData('2026-09-25').isCurrentWeek).toBe(true);
+    expect(getWeekData('2026-09-30').isCurrentWeek).toBe(false);
+    expect(getWeekData().isCurrentWeek).toBe(true); // no date = today
+  });
 
-    it('calculates the ISO week number correctly', () => {
-      // May 6, 2026 falls in the 19th week of the year
-      const result = getWeekData('2026-05-06');
-      expect(result.weekNumber).toBe(19);
-    });
+  it('prev / next links point at Mondays, as YYYY-MM-DD', () => {
+    const w = getWeekData('2026-09-23');
+    expect(w.prevWeekDate).toBe('2026-09-14');
+    expect(w.nextWeekDate).toBe('2026-09-28');
+  });
 
-    it('defensively falls back to the current NY date if given garbage strings', () => {
-      const result = getWeekData('invalid-garbage-date');
-      // Should fall back to the mocked May 6, 2026 week
-      expect(result.dateRange).toBe('May 4 - 10');
-      expect(result.isCurrentWeek).toBe(true);
-    });
+  it('falls back to this week for garbage input', () => {
+    expect(getWeekData('not-a-date').dateRange).toBe('Sep 21 – 27');
   });
 });

@@ -1,6 +1,7 @@
 import { Match, MatchResult, TabOption, Team } from '@/types/match';
 import { cleanTeamName } from '@/lib/matches/match-utils';
 import { getAgeGroup, getClubLabel } from '@/lib/matches/team-meta';
+import { nyDateParts } from '@/lib/dates/ny-time';
 
 /**
  * Season stats for YOUR teams — the data behind the Standings snapshot.
@@ -43,10 +44,11 @@ const OUR_UTILITIES: Team['utility'][] = ['b-and-g', 'soricha'];
 const utilityForTab = (tab: TabOption): Team['utility'] | null =>
   tab === 'B&G' ? 'b-and-g' : tab === 'Soricha' ? 'soricha' : null;
 
-/** Aug–Dec = Fall, Jan–Jul = Spring (a spring season can start in winter) */
+/** Aug–Dec = Fall, Jan–Jul = Spring (a spring season can start in winter).
+ *  New York calendar — a 9:30 PM July 31 game is Spring, even on a UTC server. */
 export const seasonOf = (timestamp: number) => {
-  const d = new Date(timestamp);
-  return `${d.getMonth() >= 7 ? 'Fall' : 'Spring'} ${d.getFullYear()}`;
+  const { year, month } = nyDateParts(timestamp);
+  return `${month >= 8 ? 'Fall' : 'Spring'} ${year}`;
 };
 
 /** "Fall 2026" → "Spring 2027" · "Spring 2027" → "Fall 2027" */

@@ -35,7 +35,8 @@ const cleanVenue = (venue: string | null | undefined): string => {
   const cleaned = venue
     .split('-')[0]
     .trim()
-    .replace('FIELD', '')
+    // Only a standalone trailing "FIELD" / "FIELD 3" / "FIELD #3" — never inside "FIELDS"
+    .replace(/\bFIELD\b(\s*#?\d+)?\s*$/, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
   return cleaned === '' ? 'TBD' : tidyVenueCase(cleaned);

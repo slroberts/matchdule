@@ -1,216 +1,170 @@
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
-import { mapApiToMatch, parseCrossBrowserDate } from './match-mapper';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  mapApiToMatch,
+  parseCrossBrowserDate,
+} from '@/lib/matches/match-mapper';
+import { et } from '@/lib/test-utils/fixtures';
 
-// Helper to quickly generate raw match data for testing
-const createMockRawMatch = (
-  overrides: Partial<Parameters<typeof mapApiToMatch>[0]> = {},
-) => ({
-  team_queried: '3802474',
-  game_id: '123',
-  date_time: 'May 10, 2026 10:30AM',
-  home_team: 'Soricha Foot SFA',
-  score_or_status: '-',
-  away_team: 'FC United BX',
-  venue: 'Crotona Park',
-  ...overrides,
+/** Raw scraped row with defaults — override only what a test cares about */
+const raw = (over: Partial<Parameters<typeof mapApiToMatch>[0]> = {}) => ({
+  team_queried: 'Soricha',
+  game_id: 'g1',
+  date_time: 'Nov 14, 2026 1:00 PM',
+  home_team: 'Soricha Foot SFA EDP',
+  score_or_status: '',
+  away_team: 'Albion SC Brooklyn',
+  venue: 'Crotona Park Turf Field #2',
+  ...over,
 });
 
-describe('mapApiToMatch', () => {
-  // Lock the system time so our "past vs future" tests never randomly break in CI/CD
-  beforeAll(() => {
-    vi.useFakeTimers();
-    // We are freezing system time to: Sunday, May 3, 2026 at 12:00 PM (Noon)
-    vi.setSystemTime(new Date(2026, 4, 3, 12, 0, 0));
+describe('mapApiToMatch · dates & times (real messy source strings)', () => {
+  it.each([
+    ['Nov 14, 2026 1:00 PM', 'Nov 14, 2026', '1:00 PM'],
+    ['Nov 14 2026 1:00 PM Scheduled', 'Nov 14, 2026', '1:00 PM'], // status word after the date
+    ['Nov 14 2026 N 4:30PM', 'Nov 14, 2026', '4:30PM'], // stray token
+    ['Sat Nov 14 2026 1:00 PM EST', 'Nov 14, 2026', '1:00 PM'], // weekday + timezone
+    ['November 14, 2026 1:00 PM Rescheduled', 'Nov 14, 2026', '1:00 PM'], // long month
+    ['NOV 14 2026 1:00 pm', 'Nov 14, 2026', '1:00 PM'], // all caps / lowercase meridiem
+    ['Nov\u00A014,\u00A02026\u00A01:00\u00A0PM', 'Nov 14, 2026', '1:00 PM'], // non-breaking spaces
+    ['Oct 3, 2026 TBD', 'Oct 3, 2026', 'TBD'], // no time yet
+  ])('%j → date %j, time %j', (dateTime, date, time) => {
+    const m = mapApiToMatch(raw({ date_time: dateTime }));
+    expect(m.date).toBe(date);
+    expect(m.time).toBe(time);
   });
 
-  afterAll(() => {
+  it('computes the kickoff instant in New York time (EST in November)', () => {
+    const m = mapApiToMatch(
+      raw({ date_time: 'Nov 14 2026 1:00 PM Scheduled' }),
+    );
+    expect(m.timestamp).toBe(Date.UTC(2026, 10, 14, 18, 0)); // 1 PM EST = 18:00Z
+  });
+
+  it('computes the kickoff instant in New York time (EDT in October)', () => {
+    const m = mapApiToMatch(raw({ date_time: 'Oct 3, 2026 4:00 PM' }));
+    expect(m.timestamp).toBe(Date.UTC(2026, 9, 3, 20, 0)); // 4 PM EDT = 20:00Z
+  });
+
+  it('puts TBD games at the end of their day (23:59) so they sort last', () => {
+    const m = mapApiToMatch(raw({ date_time: 'Oct 3, 2026 TBD' }));
+    expect(m.timestamp).toBe(et('2026-10-03T23:59'));
+  });
+});
+
+describe('parseCrossBrowserDate', () => {
+  it('returns null for unparseable dates instead of throwing', () => {
+    expect(parseCrossBrowserDate('Scheduled', '1:00 PM')).toBeNull();
+    expect(parseCrossBrowserDate('Foo 14, 2026', '1:00 PM')).toBeNull();
+  });
+  it('handles 12 AM / 12 PM correctly', () => {
+    expect(parseCrossBrowserDate('Nov 14, 2026', '12:00 PM')?.getTime()).toBe(
+      et('2026-11-14T12:00'),
+    );
+    expect(parseCrossBrowserDate('Nov 14, 2026', '12:30 AM')?.getTime()).toBe(
+      et('2026-11-14T00:30'),
+    );
+  });
+});
+
+describe('mapApiToMatch · venues', () => {
+  it.each([
+    ["RANDALL'S ISLAND", "Randall's Island"], // all caps → title case, no capital after apostrophe
+    ["Randall'S Island", "Randall's Island"], // mixed case with the 'S bug
+    ['RED HOOK BALL FIELDS - FIELD 3', 'Red Hook Ball Fields'], // " - FIELD 3" suffix dropped
+    ['Crotona Park Turf Field #2', 'Crotona Park Turf Field #2'], // already fine → untouched
+    ['BRONX PARK EAST', 'Bronx Park East'],
+    ['', 'TBD'],
+    ['   ', 'TBD'],
+  ])('%j → %j', (venue, expected) => {
+    expect(mapApiToMatch(raw({ venue })).location).toBe(expected);
+  });
+});
+
+describe('mapApiToMatch · scores, results & status', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
     vi.useRealTimers();
   });
 
-  describe('Team Names & Utility Classification', () => {
-    it('deduplicates redundant club and team names', () => {
-      const raw = createMockRawMatch({ home_team: 'FC United BX FC United' });
-      const result = mapApiToMatch(raw);
-      expect(result.homeTeam.name).toBe('FC United BX');
-    });
-
-    it('removes trailing single-letter team identifiers (like "B")', () => {
-      const raw = createMockRawMatch({
-        home_team: 'B&G Soccer Academy B&G SOCCER B',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.homeTeam.name).toBe('B&G Soccer Academy');
-    });
-
-    it('gracefully handles missing team names', () => {
-      const raw = createMockRawMatch({ away_team: '' });
-      const result = mapApiToMatch(raw);
-      expect(result.awayTeam.name).toBe('Unknown Team');
-    });
-
-    it('correctly assigns branding utility based on keywords', () => {
-      const raw = createMockRawMatch({
-        home_team: 'B&G Soccer Academy',
-        away_team: 'Soricha Foot',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.homeTeam.utility).toBe('b-and-g');
-      expect(result.awayTeam.utility).toBe('soricha');
-    });
+  it('parses a posted score → final, with W/L from each side', () => {
+    vi.setSystemTime(et('2026-11-15T09:00'));
+    const m = mapApiToMatch(raw({ score_or_status: '3 - 1' }));
+    expect(m.status).toBe('final');
+    expect(m.homeTeam).toMatchObject({ score: 3, result: 'W' });
+    expect(m.awayTeam).toMatchObject({ score: 1, result: 'L' });
   });
 
-  describe('Date & Time Parsing (Regex)', () => {
-    it('handles double spaces between year and time', () => {
-      const raw = createMockRawMatch({ date_time: 'Apr 11, 2026  1:00PM' });
-      const result = mapApiToMatch(raw);
-      expect(result.date).toBe('Apr 11, 2026');
-      expect(result.time).toBe('1:00PM');
-    });
-
-    it('strips timezone and "Rescheduled" noise', () => {
-      const raw = createMockRawMatch({
-        date_time: 'Apr 11, 2026 7:00AM CDT CDT Rescheduled',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.date).toBe('Apr 11, 2026');
-      expect(result.time).toBe('7:00AM');
-    });
-
-    it('gracefully handles missing time, defaulting to TBD', () => {
-      const raw = createMockRawMatch({ date_time: 'May 30, 2026' });
-      const result = mapApiToMatch(raw);
-      expect(result.date).toBe('May 30, 2026');
-      expect(result.time).toBe('TBD');
-    });
+  it('parses a draw', () => {
+    const m = mapApiToMatch(raw({ score_or_status: '2-2' }));
+    expect(m.homeTeam.result).toBe('D');
+    expect(m.awayTeam.result).toBe('D');
   });
 
-  describe('Venue Sanitization', () => {
-    it('returns TBD for empty or null venue strings', () => {
-      const raw = createMockRawMatch({ venue: '   ' });
-      const result = mapApiToMatch(raw);
-      expect(result.location).toBe('TBD');
-    });
-
-    it('cleans up whitespace and removes extra "FIELD" text', () => {
-      const raw = createMockRawMatch({ venue: 'Van Cortlandt Park - FIELD 1' });
-      const result = mapApiToMatch(raw);
-      expect(result.location).toBe('Van Cortlandt Park');
-    });
+  it('marks cancelled games regardless of spelling', () => {
+    expect(mapApiToMatch(raw({ score_or_status: 'Cancelled' })).status).toBe(
+      'canceled',
+    );
+    expect(mapApiToMatch(raw({ score_or_status: 'CANCELED' })).status).toBe(
+      'canceled',
+    );
   });
 
-  describe('Explicit Scores and Status', () => {
-    it('parses valid scores and determines W/L/D results', () => {
-      const raw = createMockRawMatch({ score_or_status: '3 - 1' });
-      const result = mapApiToMatch(raw);
-      expect(result.status).toBe('final');
-      expect(result.homeTeam.score).toBe(3);
-      expect(result.awayTeam.score).toBe(1);
-      expect(result.homeTeam.result).toBe('W');
-      expect(result.awayTeam.result).toBe('L');
-    });
-
-    it('identifies canceled matches and ignores scores', () => {
-      const raw = createMockRawMatch({ score_or_status: 'Canceled - Weather' });
-      const result = mapApiToMatch(raw);
-      expect(result.status).toBe('canceled');
-      expect(result.homeTeam.score).toBeUndefined();
-    });
+  it('is upcoming before kickoff', () => {
+    vi.setSystemTime(et('2026-11-14T12:00'));
+    expect(mapApiToMatch(raw()).status).toBe('upcoming');
   });
 
-  describe('Time-Based Live, Upcoming, and Final Status Windows', () => {
-    // Remember: System time is frozen to May 3, 2026 12:00 PM (Noon)
-
-    it('calculates a valid numerical timestamp metric on returned matches', () => {
-      const raw = createMockRawMatch({ date_time: 'May 03, 2026 12:00PM' });
-      const result = mapApiToMatch(raw);
-      const expectedTimestamp = new Date(2026, 4, 3, 12, 0, 0).getTime();
-      expect(result.timestamp).toBe(expectedTimestamp);
-    });
-
-    it('marks active matches inside the 105-minute window as live', () => {
-      const raw = createMockRawMatch({
-        date_time: 'May 03, 2026 11:30AM', // Kickoff was 30 mins ago, match is actively playing
-        score_or_status: '-',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.status).toBe('live');
-    });
-
-    it('marks running games exactly at kickoff boundary as live', () => {
-      const raw = createMockRawMatch({
-        date_time: 'May 03, 2026 12:00PM', // Kickoff is exactly right now
-        score_or_status: '-',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.status).toBe('live');
-    });
-
-    it('marks games that completed their 105-minute loop as final', () => {
-      const raw = createMockRawMatch({
-        date_time: 'May 03, 2026 10:00AM', // Game started 2 hours ago (120 mins). It is over.
-        score_or_status: 'Hidden',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.status).toBe('final');
-    });
-
-    it('marks old historical games with hidden scores as final', () => {
-      const raw = createMockRawMatch({
-        date_time: 'May 02, 2026 1:00PM', // Yesterday
-        score_or_status: 'Hidden',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.status).toBe('final');
-      expect(result.homeTeam.score).toBeUndefined();
-    });
-
-    it('leaves future games with hidden scores as upcoming', () => {
-      const raw = createMockRawMatch({
-        date_time: 'May 04, 2026 1:00PM', // Tomorrow
-        score_or_status: '-',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.status).toBe('upcoming');
-    });
-
-    it('handles past games that had no time specified (TBD fallback)', () => {
-      const raw = createMockRawMatch({
-        date_time: 'May 01, 2026', // A few days ago, no time string parsed
-        score_or_status: '-',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.status).toBe('final');
-    });
-
-    it('leaves today’s games as upcoming if the time has not passed', () => {
-      const raw = createMockRawMatch({
-        date_time: 'May 03, 2026 5:00PM', // Later today at 5:00 PM
-        score_or_status: '-',
-      });
-      const result = mapApiToMatch(raw);
-      expect(result.status).toBe('upcoming');
-    });
+  it('is live between kickoff and kickoff + 105 min', () => {
+    vi.setSystemTime(et('2026-11-14T13:30'));
+    expect(mapApiToMatch(raw()).status).toBe('live');
   });
 
-  describe('Cross-Browser Date Engine Verification', () => {
-    it('successfully instantiates dates without parsing string engine dependencies', () => {
-      const dateInstance = parseCrossBrowserDate('May 3, 2026', '10:15 AM');
-      expect(dateInstance).not.toBeNull();
-      expect(dateInstance!.getFullYear()).toBe(2026);
-      expect(dateInstance!.getMonth()).toBe(4); // May is index 4
-      expect(dateInstance!.getDate()).toBe(3);
-      expect(dateInstance!.getHours()).toBe(10);
-      expect(dateInstance!.getMinutes()).toBe(15);
-    });
+  it('REGRESSION: a past game with NO score is final (shown as "Pending"), not upcoming', () => {
+    // Last spring's unscored games used to stay "upcoming" and hijack "Next up"
+    vi.setSystemTime(et('2026-09-28T10:00'));
+    const m = mapApiToMatch(
+      raw({ date_time: 'Apr 11, 2026 1:00 PM', score_or_status: '' }),
+    );
+    expect(m.status).toBe('final');
+    expect(m.homeTeam.score).toBeUndefined();
+    expect(m.homeTeam.result).toBeNull();
+  });
+});
 
-    it('handles PM hour conversions securely', () => {
-      const dateInstance = parseCrossBrowserDate('May 3, 2026', '3:45 PM');
-      expect(dateInstance!.getHours()).toBe(15); // 24-hour time conversion
-    });
+describe('mapApiToMatch · team identity', () => {
+  it.each([
+    ['Soricha Foot SFA EDP', 'soricha'],
+    ['SORICHA FOOT SFA /18', 'soricha'],
+    ['B&G Soccer Academy', 'b-and-g'],
+    ['B & G 2017 Boys Elite Blue', 'b-and-g'],
+    ['B-and-G Boys', 'b-and-g'],
+    ['BAG FC', 'b-and-g'],
+    ['Baggio United', 'away'], // REGRESSION: "bag" inside a word is NOT B&G
+    ['Albion SC Brooklyn', 'away'],
+  ])('%j → %j', (name, utility) => {
+    expect(mapApiToMatch(raw({ home_team: name })).homeTeam.utility).toBe(
+      utility,
+    );
+  });
 
-    it('returns null gracefully for structural compilation errors', () => {
-      const invalidInstance = parseCrossBrowserDate('NotADate 99', 'TBD');
-      expect(invalidInstance).toBeNull();
-    });
+  it('dedupes repeated words from the source', () => {
+    expect(
+      mapApiToMatch(raw({ away_team: 'Albion Albion SC - Brooklyn' })).awayTeam
+        .name,
+    ).toBe('Albion SC Brooklyn');
+  });
+});
+
+describe('mapApiToMatch · venue FIELD suffix (regression)', () => {
+  it.each([
+    ['RED HOOK BALL FIELDS', 'Red Hook Ball Fields'], // REGRESSION: "FIELDS" used to become "S"
+    ['CROTONA PARK FIELD 3', 'Crotona Park'],
+    ['CROTONA PARK FIELD #3', 'Crotona Park'],
+    ['CROTONA PARK FIELD', 'Crotona Park'],
+    ['FIELDSTON LODGE', 'Fieldston Lodge'], // "FIELD" as part of a word stays
+  ])('%j → %j', (venue, expected) => {
+    expect(mapApiToMatch(raw({ venue })).location).toBe(expected);
   });
 });
