@@ -1,35 +1,15 @@
-name: GotSport Scraper
+name: Daily GotSport Scraper
 
 on:
-  schedule:
-    # GitHub cron runs in UTC. Minutes are off the hour (:15 / :30) because
-    # top-of-hour schedules are the most delayed on GitHub's shared runners.
-    #
-    # Baseline — every 6 hours, every day (reschedules, new games):
-    #   2:30 · 8:30 · 14:30 · 20:30 ET in summer (1:30 · 7:30 · 13:30 · 19:30 in winter)
-    - cron: '30 */6 * * *'
-    # Game days — hourly while games are played and scores get posted,
-    # Sat & Sun ~8 AM–11 PM ET. The UTC hours cover BOTH EDT (UTC−4) and EST (UTC−5),
-    # so no edits are needed when the clocks change.
-    - cron: '15 12-23 * * 6,0' # Sat/Sun daytime ET  (12:15–23:15 UTC)
-    - cron: '15 0-3 * * 0,1' # Sat/Sun evening ET  (00:15–03:15 UTC = next UTC day)
-  # "Run workflow" button — scrape on demand (e.g. right after a known reschedule)
+    schedule:
+    - cron: '30 11 * * *' # ~7:30 AM ET — overnight changes
+    - cron: '30 1 * * *'  # ~9:30 PM ET — same-evening scores (after late games)
+  # This lets you click a button to run it manually anytime
   workflow_dispatch:
-
-# Never run two scrapes at once (both would upsert/prune the same rows).
-# A new run waits for the current one instead of cancelling it mid-write.
-concurrency:
-  group: gotsport-scraper
-  cancel-in-progress: false
-
-# Least privilege: the job only needs to read the repo
-permissions:
-  contents: read
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 15 # a hung browser can't burn an hour of minutes
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -45,39 +25,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: pip # reuse downloaded packages between runs
-          cache-dependency-path: scraper/requirements.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Cache Chromium (~150 MB) — keyed on the Playwright version, so it
-      # refreshes automatically when Playwright is upgraded
-      - name: Get Playwright version
-        id: pw
-        run: echo "version=$(pip show playwright | awk '/^Version:/ {print $2}')" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Playwright browsers
-        id: pw-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
-
-      - name: Install Playwright browser
-        if: steps.pw-cache.outputs.cache-hit != 'true'
+      - name: Install Playwright Browsers
         run: playwright install --with-deps chromium
 
-      - name: Install Playwright system deps (cached browser)
-        if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: playwright install-deps chromium
-
-      - name: Run scraper
+      - name: Run main.py
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        # Exits non-zero when a team fails or the write fails → the run shows ❌
-        # and GitHub emails you (Settings → Notifications → Actions).
         run: python main.py
