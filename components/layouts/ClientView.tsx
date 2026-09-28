@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Clock, Flag, TriangleAlert } from 'lucide-react';
 import { CollapsibleMatchList } from '@/components/modules/matches/CollapsibleMatchList';
@@ -9,6 +9,7 @@ import { TeamTabs } from './TeamTabs';
 import { Alert } from '@/components/ui/Alert/Alert';
 import { processWeekSpacing } from '@/lib/matches/match-utils';
 import { getWeekData, getSeason, getTimePeriod } from '@/lib/dates/date-utils';
+import { getSeasonStats, seasonOf } from '@/lib/matches/season-stats';
 import { FilterState, Match, TabOption, TimeOfDayOption } from '@/types/match';
 import {
   DEFAULT_FILTERS,
@@ -72,6 +73,36 @@ export const ClientView = ({
   const currentSeason = getSeason(weekInfo.weekStart);
   // Active tab lives in the URL (?view=season): back button + shareable, no refetch
   const { view, season, go, hrefFor } = useViewMode();
+
+  // ── Season header (Season tab): the shown season + how fresh its results are.
+  //    Same selection rule as StandingsView: URL season, else the newest with results.
+  const seasonHeader = useMemo(() => {
+    const seasons = getSeasonStats(allMatches, currentTeam);
+    const shown = seasons.find((s) => s.season === season) ?? seasons[0];
+    if (!shown) return undefined;
+    const lastResult = allMatches.reduce(
+      (latest, m) =>
+        m.status === 'final' &&
+        m.homeTeam.score !== undefined &&
+        m.awayTeam.score !== undefined &&
+        isTeamMatch(m, currentTeam) &&
+        seasonOf(m.timestamp) === shown.season
+          ? Math.max(latest, m.timestamp)
+          : latest,
+      0,
+    );
+    const through = lastResult
+      ? new Intl.DateTimeFormat('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        }).format(new Date(lastResult))
+      : null;
+    return {
+      title: shown.season,
+      subtitle: through ? `Results through ${through}` : undefined,
+    };
+  }, [allMatches, currentTeam, season]);
 
   // Persist filters (effect updates an external system — the cookie — which is the correct use)
   useEffect(() => {
@@ -216,6 +247,8 @@ export const ClientView = ({
           Sits on the dark <body>, so the iOS status-bar edge samples dark, never the canvas. */}
       <div className='sticky top-0 z-(--z-header) flex w-full flex-col'>
         <Header
+          mode={view === 'season' ? 'season' : 'week'}
+          seasonHeader={seasonHeader}
           dateRange={weekInfo.dateRange}
           seasonLabel={currentSeason}
           isCurrentWeek={weekInfo.isCurrentWeek}

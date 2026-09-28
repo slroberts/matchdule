@@ -1,4 +1,5 @@
 import { Match, MatchStatus, MatchResult, Team } from '@/types/match';
+import { MATCH_LENGTH_MS } from '@/lib/matches/match-constants';
 
 interface RawScrapedMatch {
   team_queried: string;
@@ -14,16 +15,19 @@ interface RawScrapedMatch {
 const safeScore = (score: string | null | undefined): number | undefined => {
   if (!score || score.trim() === '') return undefined;
   const parsed = parseInt(score.trim(), 10);
-  return isNaN(parsed) ? undefined : parsed;
+  return Number.isNaN(parsed) ? undefined : parsed;
 };
 
 /** "RANDALL'S ISLAND" → "Randall's Island"; mixed-case names keep their casing ('S → 's only) */
-const tidyVenueCase = (s: string) =>
+const tidyVenueCase = (s: string): string =>
   /[a-z]/.test(s)
     ? s.replace(/'S\b/g, "'s")
     : s
         .toLowerCase()
-        .replace(/(^|[\s\-\/(])([a-z])/g, (_, sep, c) => sep + c.toUpperCase());
+        .replace(
+          /(^|[\s\-/(])([a-z])/g,
+          (_match: string, sep: string, c: string) => sep + c.toUpperCase(),
+        );
 
 // Helper: Venue Sanitization
 const cleanVenue = (venue: string | null | undefined): string => {
@@ -87,25 +91,21 @@ export const parseCrossBrowserDate = (
     const dateParts = dateStr.replace(/,/g, '').split(' ').filter(Boolean);
     if (dateParts.length < 3) return null;
 
-    const monthName = dateParts[0].toLowerCase().substring(0, 3);
+    const monthIndex = months[dateParts[0].toLowerCase().substring(0, 3)];
     const day = parseInt(dateParts[1], 10);
     const year = parseInt(dateParts[2], 10);
-    const monthIndex = months[monthName];
-
-    if (monthIndex === undefined || isNaN(day) || isNaN(year)) return null;
+    if (monthIndex === undefined || Number.isNaN(day) || Number.isNaN(year))
+      return null;
 
     let hours = 12;
     let minutes = 0;
 
     if (timeStr && timeStr !== 'TBD') {
-      const timeRegex = /(\d{1,2}):(\d{2})\s*(AM|PM)/i;
-      const timeParts = timeStr.match(timeRegex);
-
+      const timeParts = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
       if (timeParts) {
         const [, hrStr, minStr, ampm] = timeParts;
         hours = parseInt(hrStr, 10);
         minutes = parseInt(minStr, 10);
-
         if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
         if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
       }
@@ -114,27 +114,19 @@ export const parseCrossBrowserDate = (
       minutes = 59;
     }
 
-    // ---------------------------------------------------------
-    // VERCEL FIX: Dynamic Eastern Time Offset Calculation
-    // ---------------------------------------------------------
-    // Create a dummy UTC date for the target game day
+    // VERCEL FIX: dynamic Eastern offset (EDT vs EST) for this specific date
     const targetDateUTC = new Date(Date.UTC(year, monthIndex, day));
-
-    // Ask the native Intl API how New York formats this specific date
     const nyFormat = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
       timeZoneName: 'short',
     }).format(targetDateUTC);
-
-    // Extract whether New York is in EDT or EST for this match
     const offset = nyFormat.includes('EDT') ? '-04:00' : '-05:00';
 
-    // Build the final ISO string with the dynamic offset attached
     const pad = (n: number) => n.toString().padStart(2, '0');
-    const isoString = `${year}-${pad(monthIndex + 1)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00${offset}`;
-
-    return new Date(isoString);
-  } catch (e) {
+    return new Date(
+      `${year}-${pad(monthIndex + 1)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00${offset}`,
+    );
+  } catch {
     return null;
   }
 };
@@ -149,7 +141,6 @@ const cleanTeamName = (rawName: string | undefined | null): string => {
 
   for (const word of words) {
     const lowercaseWord = word.toLowerCase();
-
     if (word.length > 1 && !seenWords.has(lowercaseWord)) {
       seenWords.add(lowercaseWord);
       cleanedWords.push(word);
@@ -157,6 +148,21 @@ const cleanTeamName = (rawName: string | undefined | null): string => {
   }
 
   return cleanedWords.length > 0 ? cleanedWords.join(' ') : rawName;
+};
+
+/** Our clubs. Word-boundary matches, so an opponent merely containing "bag" isn't B&G. */
+const getTeamUtility = (name: string | undefined | null): Team['utility'] => {
+  if (!name) return 'away';
+  if (/soricha/i.test(name)) return 'soricha';
+  if (/\bb\s*&\s*g\b|\bb-and-g\b|\bbag\b/i.test(name)) return 'b-and-g';
+  return 'away';
+};
+
+const getResult = (sA?: number, sB?: number): MatchResult => {
+  if (sA === undefined || sB === undefined) return null;
+  if (sA > sB) return 'W';
+  if (sA < sB) return 'L';
+  return 'D';
 };
 
 export function mapApiToMatch(raw: RawScrapedMatch): Match {
@@ -176,49 +182,20 @@ export function mapApiToMatch(raw: RawScrapedMatch): Match {
     const [homeRaw, awayRaw] = raw.score_or_status.split('-');
     homeScore = safeScore(homeRaw);
     awayScore = safeScore(awayRaw);
-
-    if (homeScore !== undefined && awayScore !== undefined) {
-      status = 'final';
-    }
+    if (homeScore !== undefined && awayScore !== undefined) status = 'final';
   }
 
-  // Generate the unified target date single execution instance
   const matchDate = parseCrossBrowserDate(formattedDate, formattedTime);
   const timestamp = matchDate ? matchDate.getTime() : 0;
 
-  // --- Time-based live status evaluation loop ---
+  // ── Time-based status: the clock decides whether the GAME is over.
+  //    A missing score is a display state ("Pending" via isAwaitingResult), NOT "upcoming" —
+  //    otherwise last season's unscored games keep showing up as "Next up".
   if (status === 'upcoming' && timestamp !== 0) {
     const now = Date.now();
-    const gameEndMs = timestamp + 105 * 60000; // Kickoff + 105 minutes
-
-    if (now >= timestamp && now <= gameEndMs) {
-      status = 'live';
-    } else if (now > gameEndMs) {
-      // SAFEGUARD: Only auto-finalize if we actually have scores parsed.
-      // If there's no score, it's a future game or pending kickoff.
-      if (homeScore !== undefined && awayScore !== undefined) {
-        status = 'final';
-      } else {
-        status = 'upcoming';
-      }
-    }
+    if (now > timestamp + MATCH_LENGTH_MS) status = 'final';
+    else if (now >= timestamp) status = 'live';
   }
-
-  const getTeamUtility = (name: string | undefined | null): Team['utility'] => {
-    if (!name) return 'away';
-    const n = name.toLowerCase();
-    if (n.includes('soricha')) return 'soricha';
-    if (n.includes('bag') || n.includes('b-and-g') || n.includes('b&g'))
-      return 'b-and-g';
-    return 'away';
-  };
-
-  const getResult = (sA?: number, sB?: number): MatchResult => {
-    if (sA === undefined || sB === undefined) return null;
-    if (sA > sB) return 'W';
-    if (sA < sB) return 'L';
-    return 'D';
-  };
 
   return {
     id: raw.game_id,

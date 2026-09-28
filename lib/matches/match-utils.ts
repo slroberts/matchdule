@@ -134,6 +134,9 @@ const ACRONYMS = new Set([
 ]);
 
 const smartCaseWord = (word: string) => {
+  // Stray caps inside a word ("CIty", "BRooklyn") → "City", "Brooklyn"
+  if (/^[A-Z]{2,}[a-z]{2,}$/.test(word))
+    return word.charAt(0) + word.slice(1).toLowerCase();
   const isAllCaps = /^[A-Z][A-Z'&.\-]*$/.test(word);
   if (!isAllCaps) return word;
   if (ACRONYMS.has(word) || word.length < 4 || !/[AEIOUY]/.test(word))
@@ -176,19 +179,19 @@ export function getPaginationBounds(
   weekEnd: Date,
   weekStart: Date,
 ) {
-  if (allMatches.length === 0) return { hasPrev: false, hasNext: false };
+  // Timestamps, not the raw date text — "Nov 14 2026 Scheduled" parses to Invalid Date
+  const times = allMatches.map((m) => m.timestamp).filter((t) => t > 0);
+  if (times.length === 0) return { hasPrev: false, hasNext: false };
 
-  const firstMatchDate = new Date(allMatches[0].date).getTime();
-  const lastMatchDate = new Date(
-    allMatches[allMatches.length - 1].date,
-  ).getTime();
+  const first = Math.min(...times);
+  const last = Math.max(...times);
 
   const endOfSunday = new Date(weekEnd);
   endOfSunday.setHours(23, 59, 59, 999);
 
   return {
-    hasPrev: weekStart.getTime() > firstMatchDate,
-    hasNext: endOfSunday.getTime() < lastMatchDate,
+    hasPrev: weekStart.getTime() > first,
+    hasNext: endOfSunday.getTime() < last,
   };
 }
 

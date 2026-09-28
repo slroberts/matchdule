@@ -35,8 +35,8 @@ export const WdlBar = (counts: Counts) => {
 
 export const WdlLegend = ({ w, d, l }: Counts) => (
   <p className='text-control flex flex-wrap gap-x-3 font-bold'>
-    <span className='text-(--color-text-win)'>{w} Won</span>
-    <span className='text-(--color-text-secondary)'>{d} Drawn</span>
-    <span className='text-(--color-danger-on-surface)'>{l} Lost</span>
+    <span className='text-(--color-text-win)'>{w} won</span>
+    <span className='text-(--color-text-secondary)'>{d} drawn</span>
+    <span className='text-(--color-danger-on-surface)'>{l} lost</span>
   </p>
 );

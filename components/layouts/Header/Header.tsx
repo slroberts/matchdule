@@ -11,17 +11,21 @@ import MatchduleLogo from '@/public/matchdule-logo.svg';
 import { Badge } from '@/components/ui/Badge/Badge';
 
 /**
- * Header — Figma: Organisms › AppHeader + WeekNavigator
- * Requires global.css (tokens + text-*, tap-area/tap-visual, surface-chrome).
+ * Header — Figma: Organisms › AppHeader + WeekNavigator · Screens › Season / Snapshot
  * data-theme="dark" = Dark island: every token inside resolves to Dark mode.
  *
- * Context labels (FILTERS · FALL 2026 · THIS WEEK · BACK TO THIS WEEK) all use `text-label`
- * (11/12px, caps, tracked). Class strings are plain — no cn()/tailwind-merge in the way —
- * so the text styles can't be stripped. Keep source strings sentence case; caps are CSS.
+ * mode="week"   (Schedule) — week pager, context row (FALL 2026 · THIS WEEK pill), Filters
+ * mode="season" (Season)   — season title + "Results through …"; no week pager, no Filters
+ *                            (the Season tab doesn't use them). Same 72px row height in both
+ *                            modes, so switching tabs never shifts the page.
  */
 
 interface HeaderProps {
-  dateRange: string; // en dash, e.g. "Sep 21 – 27"
+  mode?: 'week' | 'season';
+  /** Season mode: { title: "Fall 2026", subtitle: "Results through Sun, Sep 27" } */
+  seasonHeader?: { title: string; subtitle?: string };
+
+  dateRange: string; // en dash from getWeekData, e.g. "Sep 21 – 27"
   seasonLabel: string; // sentence case, e.g. "Fall 2026"
   isCurrentWeek: boolean;
   prevWeekDate: string;
@@ -70,6 +74,8 @@ const WeekNavButton = ({
 };
 
 export const Header = ({
+  mode = 'week',
+  seasonHeader,
   dateRange,
   seasonLabel,
   isCurrentWeek = false,
@@ -81,6 +87,7 @@ export const Header = ({
   activeFilterCount,
 }: HeaderProps) => {
   const hasActiveFilters = activeFilterCount > 0;
+  const isSeason = mode === 'season';
 
   return (
     <header
@@ -99,106 +106,119 @@ export const Header = ({
             priority
           />
 
-          {/* FILTERS — text-label (caps); count bubble matches */}
-          <button
-            type='button'
-            onClick={() => setIsFilterOpen(true)}
-            aria-label={
-              hasActiveFilters
-                ? `Filters, ${activeFilterCount} active`
-                : 'Filters'
-            }
-            className={`pressable text-label inline-flex min-h-(--size-tap) shrink-0 items-center gap-(--space-stack-sm) whitespace-nowrap rounded-(--radius-control) px-(--space-stack-sm) py-(--space-stack-xs) ${
-              hasActiveFilters
-                ? 'text-(--color-text-primary)'
-                : 'text-(--color-text-secondary) hover:text-(--color-text-primary)'
-            }`}
-          >
-            <SlidersHorizontal
-              size={16}
-              {...STROKE}
-              aria-hidden='true'
-              className={
+          {/* FILTERS — schedule only; the Season tab doesn't use filters */}
+          {!isSeason && (
+            <button
+              type='button'
+              onClick={() => setIsFilterOpen(true)}
+              aria-label={
                 hasActiveFilters
-                  ? 'text-(--color-icon-accent)'
-                  : 'text-(--color-icon-default)'
+                  ? `Filters, ${activeFilterCount} active`
+                  : 'Filters'
               }
-            />
-            <span>Filters</span>
-            {hasActiveFilters && (
-              <span
+              className={`pressable text-label inline-flex min-h-(--size-tap) shrink-0 items-center gap-(--space-stack-sm) whitespace-nowrap rounded-(--radius-control) px-(--space-stack-sm) py-(--space-stack-xs) ${
+                hasActiveFilters
+                  ? 'text-(--color-text-primary)'
+                  : 'text-(--color-text-secondary) hover:text-(--color-text-primary)'
+              }`}
+            >
+              <SlidersHorizontal
+                size={16}
+                {...STROKE}
                 aria-hidden='true'
-                className='text-label grid h-5 min-w-5 place-items-center rounded-full bg-(--color-bg-accent) px-1 tracking-normal tabular-nums text-(--color-text-on-accent)'
-              >
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+                className={
+                  hasActiveFilters
+                    ? 'text-(--color-icon-accent)'
+                    : 'text-(--color-icon-default)'
+                }
+              />
+              <span>Filters</span>
+              {hasActiveFilters && (
+                <span
+                  aria-hidden='true'
+                  className='text-label grid h-5 min-w-5 place-items-center rounded-full bg-(--color-bg-accent) px-1 tracking-normal tabular-nums text-(--color-text-on-accent)'
+                >
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
-        {/* ── WeekNavigator: h 72 · px gutter · py stack-sm ─────────────── */}
-        <nav
-          aria-label='Week'
-          className='flex h-18 items-center gap-(--space-stack-sm) px-(--space-gutter) py-(--space-stack-sm)'
-        >
-          <WeekNavButton
-            href={`/?date=${prevWeekDate}`}
-            disabled={!hasPrev}
-            label='Previous week'
-          >
-            <ChevronLeft size={16} {...STROKE} aria-hidden='true' />
-          </WeekNavButton>
-
-          <div className='flex min-w-0 flex-1 flex-col items-center gap-(--space-stack-xs) overflow-hidden'>
-            <h2 className='text-score whitespace-nowrap text-(--color-text-primary)'>
-              {/* TODO: format with an en dash upstream; this guards the display meanwhile */}
-              {dateRange.replace(' - ', ' – ')}
+        {isSeason ? (
+          /* ── Season title: same 72px row as the week pager, so tabs don't shift ── */
+          <div className='flex h-18 items-end justify-between gap-(--space-stack-md) px-(--space-gutter) pb-3'>
+            <h2 className='text-display truncate text-(--color-text-primary)'>
+              {seasonHeader?.title ?? seasonLabel}
             </h2>
-
-            {/* FALL 2026 + one xs pill slot: status (this week) or action (any other week).
-    Same shape/height/position in both states, so the row never jumps. */}
-            <div className='flex h-6 items-center gap-(--space-stack-sm)'>
-              <span className='text-label whitespace-nowrap text-(--color-text-secondary)'>
-                {seasonLabel}
+            {seasonHeader?.subtitle && (
+              <span className='text-meta shrink-0 pb-0.5 text-(--color-text-secondary)'>
+                {seasonHeader.subtitle}
               </span>
+            )}
+          </div>
+        ) : (
+          /* ── WeekNavigator: h 72 · px gutter · py stack-sm ─────────────── */
+          <nav
+            aria-label='Week'
+            className='flex h-18 items-center gap-(--space-stack-sm) px-(--space-gutter) py-(--space-stack-sm)'
+          >
+            <WeekNavButton
+              href={`/?date=${prevWeekDate}`}
+              disabled={!hasPrev}
+              label='Previous week'
+            >
+              <ChevronLeft size={16} {...STROKE} aria-hidden='true' />
+            </WeekNavButton>
 
-              {isCurrentWeek ? (
-                /* Status — filled accent: "you are here" */
-                <Badge variant='accent' size='xs'>
-                  This week
-                </Badge>
-              ) : (
-                /* Action — neutral pill + return arrow. 44px tap area; -my-2.5 keeps the row 24px tall.
-       Visible "This week" is inside the accessible name "Back to this week" (WCAG 2.5.3). */
-                <Link
-                  href='/'
-                  aria-label='Back to this week'
-                  className='tap-area -my-2.5'
-                >
-                  <Badge
-                    size='xs'
-                    className='tap-visual text-(--color-accent-on-surface) hover:bg-(--color-accent-surface)'
-                  >
-                    <Undo2
-                      strokeWidth={2}
-                      absoluteStrokeWidth
-                      aria-hidden='true'
-                    />
+            <div className='flex min-w-0 flex-1 flex-col items-center gap-(--space-stack-xs) overflow-hidden'>
+              <h2 className='text-score whitespace-nowrap text-(--color-text-primary)'>
+                {dateRange}
+              </h2>
+
+              {/* FALL 2026 + one xs pill slot: status (this week) or action (any other week) */}
+              <div className='flex h-6 items-center gap-(--space-stack-sm)'>
+                <span className='text-label whitespace-nowrap text-(--color-text-secondary)'>
+                  {seasonLabel}
+                </span>
+
+                {isCurrentWeek ? (
+                  <Badge variant='accent' size='xs'>
                     This week
                   </Badge>
-                </Link>
-              )}
+                ) : (
+                  /* Action pill: 44px tap area; -my-2.5 keeps the row 24px tall.
+                     Visible "This week" is inside the accessible name (WCAG 2.5.3). */
+                  <Link
+                    href='/'
+                    aria-label='Back to this week'
+                    className='tap-area -my-2.5'
+                  >
+                    <Badge
+                      size='xs'
+                      className='tap-visual text-(--color-accent-on-surface) hover:bg-(--color-accent-surface)'
+                    >
+                      <Undo2
+                        strokeWidth={2}
+                        absoluteStrokeWidth
+                        aria-hidden='true'
+                      />
+                      This week
+                    </Badge>
+                  </Link>
+                )}
+              </div>
             </div>
-          </div>
 
-          <WeekNavButton
-            href={`/?date=${nextWeekDate}`}
-            disabled={!hasNext}
-            label='Next week'
-          >
-            <ChevronRight size={16} {...STROKE} aria-hidden='true' />
-          </WeekNavButton>
-        </nav>
+            <WeekNavButton
+              href={`/?date=${nextWeekDate}`}
+              disabled={!hasNext}
+              label='Next week'
+            >
+              <ChevronRight size={16} {...STROKE} aria-hidden='true' />
+            </WeekNavButton>
+          </nav>
+        )}
       </div>
     </header>
   );
