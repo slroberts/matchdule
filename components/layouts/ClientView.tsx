@@ -19,6 +19,7 @@ import {
 import { StandingsView } from './StandingsView';
 import { ActiveFilters } from './ActiveFilters';
 import { TabBar } from './TabBar';
+import { useViewMode } from '@/hooks/use-view-mode';
 
 interface ClientViewProps {
   allMatches: Match[];
@@ -69,9 +70,8 @@ export const ClientView = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentTeam, setCurrentTeam] = useState<TabOption>(initialTeam);
   const currentSeason = getSeason(weekInfo.weekStart);
-  const [viewMode, setViewMode] = useState<'schedule' | 'standings'>(
-    'schedule',
-  );
+  // Active tab lives in the URL (?view=season): back button + shareable, no refetch
+  const { view, season, go, hrefFor } = useViewMode();
 
   // Persist filters (effect updates an external system — the cookie — which is the correct use)
   useEffect(() => {
@@ -236,11 +236,11 @@ export const ClientView = ({
       <main className='page-canvas flex-1 pt-(--space-stack-sm) pb-[calc(var(--size-tab-bar)+var(--safe-bottom)+24px)]'>
         {/* Applied filters — Figma: Schedule / Filters active */}
         {/* Always mounted in schedule view: its live region must survive "Clear all" */}
-        {viewMode === 'schedule' && (
+        {view === 'schedule' && (
           <ActiveFilters filters={filters} setFilters={setFilters} />
         )}
 
-        {viewMode === 'schedule' && (hasConflict || hasTightGap || hasTBD) && (
+        {view === 'schedule' && (hasConflict || hasTightGap || hasTBD) && (
           <div className='mx-auto mb-(--space-stack-md) flex w-full max-w-lg flex-col gap-(--space-stack-sm) px-(--space-gutter)'>
             {hasConflict && (
               <Alert
@@ -280,21 +280,31 @@ export const ClientView = ({
           </div>
         )}
 
-        {viewMode === 'schedule' ? (
+        {view === 'schedule' ? (
           <CollapsibleMatchList
             matches={matchesWithSpacingStatus}
             focusPool={filteredPool}
             isCurrentWeek={weekInfo.isCurrentWeek}
+            weekStart={startOfMonday.getTime()}
+            weekEnd={endOfSunday.getTime()}
+            seasonHrefFor={(s) => hrefFor('season', s)}
+            onViewSeason={(s) => go('season', s)}
             hasActiveFilters={activeFilterCount > 0}
             onClearFilters={() => setFilters(DEFAULT_FILTERS)}
             nextMatch={nextMatch}
           />
         ) : (
-          <StandingsView activeTeam={currentTeam} matches={allMatches} />
+          <StandingsView
+            activeTeam={currentTeam}
+            matches={allMatches}
+            selectedSeason={season}
+            seasonHrefFor={(s) => hrefFor('season', s)}
+            onSelectSeason={(s) => go('season', s)}
+          />
         )}
       </main>
 
-      <TabBar viewMode={viewMode} setViewMode={setViewMode} />
+      <TabBar view={view} hrefFor={hrefFor} onSelect={go} />
 
       <AnimatePresence>
         {isFilterOpen && (

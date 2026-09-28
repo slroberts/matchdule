@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
@@ -13,6 +13,12 @@ import { MatchCard } from './MatchCard/MatchCard';
 import { VersusCard } from './MatchCard/VersusCard';
 import { MatchRowCompact } from './MatchCard/MatchRowCompact';
 import { formatTime } from './MatchCard/MatchHeader';
+import { SeasonWrapCard } from './MatchCard/SeasonWrapCard';
+import {
+  getSeasonStats,
+  nextSeasonName,
+  seasonOf,
+} from '@/lib/matches/season-stats';
 
 /**
  * CollapsibleMatchList — the "focus stack"
@@ -22,6 +28,10 @@ import { formatTime } from './MatchCard/MatchHeader';
  *     (from focusPool = all weeks, same team tab + filters) — it's highlighted on
  *     whichever week contains it; every other week is all collapsed
  *   • current week finished → a "Next up" link at the bottom jumps to that week
+ *   • …unless that next game is in a NEW season (or none is scheduled) → SeasonWrapCard
+ *     (also replaces the rest-week empty state in weeks BETWEEN seasons — relative to the
+ *     viewed week, so browsing back to a past season's end shows its wrap too)
+ *   • the season's final week shows a "Final week of …" marker until its games are done
  *
  * WHEN it moves (full time = kickoff + 105 min):
  *   • never under the user's eyes — if the highlight is on screen, the old one is
@@ -38,8 +48,14 @@ interface Props {
   matches: Match[];
   /** Same filters, ALL weeks — used to find the next game even if it's in a later week */
   focusPool?: Match[];
-  /** Shows the "Next up" link when this (real) week has nothing left to play */
+  /** Shows the "Next up" link / season wrap when this (real) week has nothing left to play */
   isCurrentWeek?: boolean;
+  /** The viewed week's bounds (ms) — the season wrap is relative to THIS week, not today */
+  weekStart?: number;
+  weekEnd?: number;
+  /** "View season recap" → that season in the Season tab (real link + in-place switch) */
+  seasonHrefFor?: (season: string) => string;
+  onViewSeason?: (season: string) => void;
   className?: string;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
@@ -48,32 +64,41 @@ interface Props {
 
 const SPRING = { type: 'spring', stiffness: 400, damping: 35 } as const;
 
-const formatDay = (date: string) => {
-  try {
-    return new Intl.DateTimeFormat('en-US', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(date));
-  } catch {
-    return date;
-  }
-};
-
-const groupByDay = (matches: Match[]) => {
-  const groups = new Map<string, Match[]>();
-  for (const match of matches) {
-    const day = groups.get(match.date) ?? [];
-    day.push(match);
-    groups.set(match.date, day);
-  }
-  return [...groups.entries()];
-};
+const byTime = (a: Match, b: Match) => a.timestamp - b.timestamp;
 
 /** Local YYYY-MM-DD for ?date= links (any day inside the target week) */
 const toDateParam = (timestamp: number) => {
   const d = new Date(timestamp);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/**
+ * Day grouping is keyed by the game's TIMESTAMP (local calendar day), never the raw
+ * date text — source strings can carry junk ("Nov 14 2026 Scheduled"), which used to
+ * split one day into two groups and print the raw text as the header.
+ */
+const dayKey = (m: Match) => (m.timestamp ? toDateParam(m.timestamp) : m.date);
+
+const formatDay = (m: Match) => {
+  const d = m.timestamp ? new Date(m.timestamp) : new Date(m.date);
+  return Number.isNaN(d.getTime())
+    ? m.date
+    : new Intl.DateTimeFormat('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+      }).format(d);
+};
+
+const groupByDay = (matches: Match[]) => {
+  const groups = new Map<string, Match[]>();
+  for (const match of matches) {
+    const key = dayKey(match);
+    const day = groups.get(key) ?? [];
+    day.push(match);
+    groups.set(key, day);
+  }
+  return [...groups.entries()];
 };
 
 const shortDay = (timestamp: number) =>
@@ -94,6 +119,10 @@ export const CollapsibleMatchList = ({
   matches,
   focusPool,
   isCurrentWeek = false,
+  weekStart,
+  weekEnd,
+  seasonHrefFor,
+  onViewSeason,
   className,
   ...emptyStateProps
 }: Props) => {
@@ -104,10 +133,31 @@ export const CollapsibleMatchList = ({
   /** Last card the user toggled — its new control receives keyboard focus */
   const [lastToggled, setLastToggled] = useState<string | null>(null);
 
-  // ── Computed focus (pure) ────────────────────────────────────────────
-  const byTime = (a: Match, b: Match) => a.timestamp - b.timestamp;
-  const sorted = [...matches].sort(byTime);
-  const pool = [...(focusPool ?? matches)].sort(byTime);
+  // ── Data that does NOT depend on the clock — memoized so the 30s tick stays cheap.
+  //    (ClientView only re-renders on its own state changes, so these references are
+  //    stable across ticks.)
+  const sorted = useMemo(() => [...matches].sort(byTime), [matches]);
+  const pool = useMemo(
+    () => [...(focusPool ?? matches)].sort(byTime),
+    [focusPool, matches],
+  );
+  /** Season → stats (only seasons with results) */
+  const statsBySeason = useMemo(
+    () =>
+      new Map(getSeasonStats(pool, 'All Teams').map((st) => [st.season, st])),
+    [pool],
+  );
+  /** Season → timestamp of its final game (scored or not) */
+  const seasonLastGame = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of pool) {
+      const season = seasonOf(m.timestamp);
+      map.set(season, Math.max(map.get(season) ?? 0, m.timestamp));
+    }
+    return map;
+  }, [pool]);
+
+  // ── Computed focus (depends on the clock) ────────────────────────────
   const statusOf = (m: Match) => deriveStatus(m, now);
   const live = pool.filter((m) => statusOf(m) === 'live');
   const next = pool.find((m) => statusOf(m) === 'upcoming');
@@ -153,8 +203,74 @@ export const CollapsibleMatchList = ({
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
-  if (matches.length === 0)
-    return <MatchList matches={[]} {...emptyStateProps} />;
+  // ── Season wrap — relative to the VIEWED week (works for history, not just today):
+  //    • the week holds a season's FINAL game → wrap for that season (once played)
+  //    • the week is EMPTY and sits between two seasons → wrap for the season before it
+  //    • an empty mid-season (bye) week stays "Rest week"
+  //    Look-ahead = the first game after this week, when it's in a new season.
+  const weekDone = !sorted.some((m) => {
+    const st = statusOf(m);
+    return st === 'upcoming' || st === 'live';
+  });
+  const lastInWeek = sorted[sorted.length - 1];
+  const isFinalWeek =
+    !!lastInWeek &&
+    seasonLastGame.get(seasonOf(lastInWeek.timestamp)) === lastInWeek.timestamp;
+  const prevGame =
+    sorted.length === 0 && weekStart !== undefined
+      ? [...pool].reverse().find((m) => m.timestamp < weekStart)
+      : undefined;
+  const endingSeason = isFinalWeek
+    ? seasonOf(lastInWeek.timestamp)
+    : prevGame
+      ? seasonOf(prevGame.timestamp)
+      : null;
+  const firstAfter =
+    weekEnd !== undefined ? pool.find((m) => m.timestamp > weekEnd) : undefined;
+  const betweenSeasons =
+    !!endingSeason &&
+    (!firstAfter || seasonOf(firstAfter.timestamp) !== endingSeason);
+  const endingStats = endingSeason
+    ? statsBySeason.get(endingSeason)
+    : undefined;
+  const offSeason = now !== null && weekDone && betweenSeasons && !!endingStats;
+
+  const wrap = offSeason && endingStats && (
+    <SeasonWrapCard
+      season={endingStats.season}
+      totals={endingStats.totals}
+      upcomingSeason={nextSeasonName(endingStats.season)}
+      next={
+        firstAfter
+          ? {
+              label: `${seasonOf(firstAfter.timestamp)} starts`,
+              when: `${shortDay(firstAfter.timestamp)} · ${firstAfter.time === 'TBD' ? 'Time TBD' : formatTime(firstAfter.time)}`,
+              href: `/?date=${toDateParam(firstAfter.timestamp)}`,
+            }
+          : undefined
+      }
+      seasonHref={seasonHrefFor?.(endingStats.season)}
+      onViewSeason={
+        onViewSeason ? () => onViewSeason(endingStats.season) : undefined
+      }
+    />
+  );
+
+  if (matches.length === 0) {
+    // Off-season week → season wrap instead of "Rest week"
+    return wrap ? (
+      <div
+        className={cn(
+          'mx-auto flex w-full max-w-lg flex-col px-(--space-gutter)',
+          className,
+        )}
+      >
+        {wrap}
+      </div>
+    ) : (
+      <MatchList matches={[]} {...emptyStateProps} />
+    );
+  }
 
   const isFocus = (id: string) => focusIds.has(id);
   const isExpanded = (id: string) => overrides[id] ?? isFocus(id);
@@ -183,6 +299,22 @@ export const CollapsibleMatchList = ({
           className,
         )}
       >
+        {/* Final week of the season, before its games are done — the wrap card takes over after.
+            A centered marker (not another left-aligned label) so it doesn't compete with day headers. */}
+        {isFinalWeek && !offSeason && (
+          <p className='text-label flex items-center gap-3 text-(--color-text-secondary)'>
+            <span
+              aria-hidden='true'
+              className='h-px flex-1 bg-(--color-border-default)'
+            />
+            Final week of {seasonOf(lastInWeek.timestamp)}
+            <span
+              aria-hidden='true'
+              className='h-px flex-1 bg-(--color-border-default)'
+            />
+          </p>
+        )}
+
         {groupByDay(sorted).map(([day, dayMatches]) => {
           const headingId = `day-${day.replace(/\W+/g, '-')}`;
           return (
@@ -195,7 +327,7 @@ export const CollapsibleMatchList = ({
                 id={headingId}
                 className='text-label text-(--color-text-secondary)'
               >
-                {formatDay(day)}
+                {formatDay(dayMatches[0])}
               </h3>
 
               <ul className='flex flex-col gap-(--space-stack-sm)'>
@@ -266,31 +398,38 @@ export const CollapsibleMatchList = ({
           );
         })}
 
+        {/* Season over → wrap card (celebrate + look ahead) instead of a far-future "Next up" */}
+        {wrap}
+
         {/* This week is done → point to the next game (it's highlighted on its own week) */}
-        {isCurrentWeek && !focusMatch && next && !visible.has(next.id) && (
-          /* Dark Versus split — previews the highlight it leads to (Figma: NextUpLink) */
-          <Link
-            href={`/?date=${toDateParam(next.timestamp)}`}
-            data-theme='dark'
-            className='pressable flex min-h-16 items-center gap-(--space-stack-md) rounded-[16px] bg-(image:--gradient-versus) px-(--space-card-pad) py-3 shadow-[0_10px_24px_-10px_rgb(11_15_36/0.35)]'
-          >
-            <span className='flex min-w-0 flex-1 flex-col gap-1'>
-              <span className='text-label text-(--color-text-accent)'>
-                Next up
+        {isCurrentWeek &&
+          !offSeason &&
+          !focusMatch &&
+          next &&
+          !visible.has(next.id) && (
+            /* Dark Versus split — previews the highlight it leads to (Figma: NextUpLink) */
+            <Link
+              href={`/?date=${toDateParam(next.timestamp)}`}
+              data-theme='dark'
+              className='pressable flex min-h-16 items-center gap-(--space-stack-md) rounded-2xl bg-(image:--gradient-versus) px-(--space-card-pad) py-3 shadow-[0_10px_24px_-10px_rgb(11_15_36/0.35)]'
+            >
+              <span className='flex min-w-0 flex-1 flex-col gap-1'>
+                <span className='text-label text-(--color-text-accent)'>
+                  Next up
+                </span>
+                <span className='text-control truncate text-(--color-text-primary)'>
+                  {shortDay(next.timestamp)} · {describe(next)}
+                </span>
               </span>
-              <span className='text-control truncate text-(--color-text-primary)'>
-                {shortDay(next.timestamp)} · {describe(next)}
-              </span>
-            </span>
-            <ChevronRight
-              size={16}
-              strokeWidth={1.5}
-              absoluteStrokeWidth
-              aria-hidden='true'
-              className='shrink-0 text-(--color-icon-default)'
-            />
-          </Link>
-        )}
+              <ChevronRight
+                size={16}
+                strokeWidth={1.5}
+                absoluteStrokeWidth
+                aria-hidden='true'
+                className='shrink-0 text-(--color-icon-default)'
+              />
+            </Link>
+          )}
       </div>
     </MotionConfig>
   );

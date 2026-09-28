@@ -44,9 +44,15 @@ const utilityForTab = (tab: TabOption): Team['utility'] | null =>
   tab === 'B&G' ? 'b-and-g' : tab === 'Soricha' ? 'soricha' : null;
 
 /** Aug–Dec = Fall, Jan–Jul = Spring (a spring season can start in winter) */
-const seasonOf = (timestamp: number) => {
+export const seasonOf = (timestamp: number) => {
   const d = new Date(timestamp);
   return `${d.getMonth() >= 7 ? 'Fall' : 'Spring'} ${d.getFullYear()}`;
+};
+
+/** "Fall 2026" → "Spring 2027" · "Spring 2027" → "Fall 2027" */
+export const nextSeasonName = (season: string) => {
+  const [term, year] = season.split(' ');
+  return term === 'Fall' ? `Spring ${Number(year) + 1}` : `Fall ${year}`;
 };
 
 const ageFor = (name: string) =>

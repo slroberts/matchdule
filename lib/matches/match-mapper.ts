@@ -17,6 +17,14 @@ const safeScore = (score: string | null | undefined): number | undefined => {
   return isNaN(parsed) ? undefined : parsed;
 };
 
+/** "RANDALL'S ISLAND" → "Randall's Island"; mixed-case names keep their casing ('S → 's only) */
+const tidyVenueCase = (s: string) =>
+  /[a-z]/.test(s)
+    ? s.replace(/'S\b/g, "'s")
+    : s
+        .toLowerCase()
+        .replace(/(^|[\s\-\/(])([a-z])/g, (_, sep, c) => sep + c.toUpperCase());
+
 // Helper: Venue Sanitization
 const cleanVenue = (venue: string | null | undefined): string => {
   if (!venue || venue.trim() === '') return 'TBD';
@@ -24,35 +32,33 @@ const cleanVenue = (venue: string | null | undefined): string => {
     .split('-')[0]
     .trim()
     .replace('FIELD', '')
-    .replace('  ', ' ')
+    .replace(/\s{2,}/g, ' ')
     .trim();
-  return cleaned === '' ? 'TBD' : cleaned;
+  return cleaned === '' ? 'TBD' : tidyVenueCase(cleaned);
 };
 
 // Helper: Date & Time Parsing
+// Extracts ONLY "Mon DD, YYYY" — ignores status words ("Scheduled", "Rescheduled"),
+// timezones and stray letters, so match.date is always clean.
 const parseDateTime = (rawDateTime: string) => {
   const normalized = rawDateTime
     .replace(/\u00A0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
   const timeMatch = normalized.match(/\d{1,2}:\d{2}\s?[AP]M/i);
+  const time = timeMatch ? timeMatch[0].toUpperCase() : 'TBD';
 
-  let time = 'TBD';
-  let date = normalized;
-
-  if (timeMatch) {
-    time = timeMatch[0].toUpperCase();
-    date = normalized.replace(timeMatch[0], '');
-  }
-
-  date = date
-    .replace(/CDT|EST|EDT|Rescheduled/gi, '')
-    .replace(/,/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  // Add comma back before the 4-digit year
-  date = date.replace(/ (\d{4})$/, ', $1');
+  const dateMatch = normalized.match(
+    /\b([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})\b/,
+  );
+  const month = dateMatch
+    ? dateMatch[1].charAt(0).toUpperCase() +
+      dateMatch[1].slice(1, 3).toLowerCase()
+    : '';
+  const date = dateMatch
+    ? `${month} ${dateMatch[2]}, ${dateMatch[3]}`
+    : normalized;
 
   return { date, time };
 };
