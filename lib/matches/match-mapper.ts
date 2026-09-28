@@ -33,7 +33,8 @@ const tidyVenueCase = (s: string): string =>
 const cleanVenue = (venue: string | null | undefined): string => {
   if (!venue || venue.trim() === '') return 'TBD';
   const cleaned = venue
-    .split('-')[0]
+    // Drop a " - Field 3" style suffix, but keep hyphens INSIDE names ("Bedford-Stuyvesant Park")
+    .split(/\s+-\s+/)[0]
     .trim()
     // Only a standalone trailing "FIELD" / "FIELD 3" / "FIELD #3" — never inside "FIELDS"
     .replace(/\bFIELD\b(\s*#?\d+)?\s*$/, '')

@@ -7,55 +7,71 @@ import { getPaginationBounds } from '@/lib/matches/match-utils';
 import { ClientView } from '@/components/layouts/ClientView';
 import { FilterState, INITIAL_FILTERS, TabOption, TABS } from '@/types/match';
 
+// Always read fresh data: reschedules must show up on the next visit
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+type WeekInfo = ReturnType<typeof getWeekData>;
 
 export default async function HomePage(props: {
   searchParams: Promise<{ date?: string }>;
 }) {
-  // Parse the URL
   const searchParams = await props.searchParams;
   const weekInfo = getWeekData(searchParams.date);
 
-  // Read the cookie securely on the server
   const cookieStore = await cookies();
   const savedTeamCookie = cookieStore.get('matchdule_selected_team')?.value;
   const savedFiltersCookie = cookieStore.get('matchdule_filters');
 
-  // Validate the cookie
   const initialTeam: TabOption =
     savedTeamCookie && (TABS as readonly string[]).includes(savedTeamCookie)
       ? (savedTeamCookie as TabOption)
       : 'All Teams';
 
   let initialFilters: FilterState = INITIAL_FILTERS;
-
   if (savedFiltersCookie?.value) {
     try {
-      // Decode the URL-safe string back into standard JSON, then parse it
       initialFilters = JSON.parse(decodeURIComponent(savedFiltersCookie.value));
-    } catch (error) {
+    } catch {
       console.error('Failed to parse initial filters cookie, using defaults.');
     }
   }
 
-  // Fetch all matches (Server-side)
-  const allMatches = await getMatches();
+  // The data fetch lives INSIDE the boundary (in <Schedule>), so the skeleton streams
+  // immediately while Supabase responds. (Awaiting it up here made the fallback unreachable.)
+  return (
+    <Suspense key={weekInfo.dateRange} fallback={<MatchSkeleton />}>
+      <Schedule
+        weekInfo={weekInfo}
+        initialTeam={initialTeam}
+        initialFilters={initialFilters}
+      />
+    </Suspense>
+  );
+}
 
-  // Calculate "Game Week" Number dynamically
+async function Schedule({
+  weekInfo,
+  initialTeam,
+  initialFilters,
+}: {
+  weekInfo: WeekInfo;
+  initialTeam: TabOption;
+  initialFilters: FilterState;
+}) {
+  const result = await getMatches();
+  const allMatches = result.matches;
+
+  // "Game week" number from the first game's kickoff (timestamp — never the raw date text)
   let gameWeekNumber = 1;
   if (allMatches.length > 0) {
-    const firstMatchDate = new Date(allMatches[0].date);
-    const firstMatchWeek = getWeekData(firstMatchDate);
-
-    const msPerWeek = 1000 * 60 * 60 * 24 * 7;
+    const firstMatchWeek = getWeekData(new Date(allMatches[0].timestamp));
+    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
     const diffMs =
       weekInfo.weekStart.getTime() - firstMatchWeek.weekStart.getTime();
-
     gameWeekNumber = Math.max(1, Math.floor(diffMs / msPerWeek) + 1);
   }
 
-  // Calculate Dynamic Pagination Bounds based on DB dates
   const { hasPrev, hasNext } = getPaginationBounds(
     allMatches,
     weekInfo.weekEnd,
@@ -63,17 +79,16 @@ export default async function HomePage(props: {
   );
 
   return (
-    // The Suspense boundary catches the loading state while the server fetches
-    <Suspense key={weekInfo.dateRange} fallback={<MatchSkeleton />}>
-      <ClientView
-        allMatches={allMatches}
-        weekInfo={weekInfo}
-        gameWeekNumber={gameWeekNumber}
-        hasPrev={hasPrev}
-        hasNext={hasNext}
-        initialTeam={initialTeam}
-        initialFilters={initialFilters}
-      />
-    </Suspense>
+    <ClientView
+      allMatches={allMatches}
+      weekInfo={weekInfo}
+      gameWeekNumber={gameWeekNumber}
+      hasPrev={hasPrev}
+      hasNext={hasNext}
+      initialTeam={initialTeam}
+      initialFilters={initialFilters}
+      loadFailed={!result.ok}
+      updatedAt={result.updatedAt}
+    />
   );
 }

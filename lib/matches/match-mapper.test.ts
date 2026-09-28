@@ -168,3 +168,13 @@ describe('mapApiToMatch · venue FIELD suffix (regression)', () => {
     expect(mapApiToMatch(raw({ venue })).location).toBe(expected);
   });
 });
+
+describe('mapApiToMatch · hyphenated venue names (regression)', () => {
+  it.each([
+    ['BEDFORD-STUYVESANT PARK', 'Bedford-Stuyvesant Park'], // a hyphen INSIDE the name stays
+    ['Bedford-Stuyvesant Park - Field 3', 'Bedford-Stuyvesant Park'], // " - suffix" still dropped
+    ['WARDS ISLAND - FIELD 12', 'Wards Island'],
+  ])('%j → %j', (venue, expected) => {
+    expect(mapApiToMatch(raw({ venue })).location).toBe(expected);
+  });
+});

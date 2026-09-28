@@ -10,6 +10,7 @@ import { Alert } from '@/components/ui/Alert/Alert';
 import { processWeekSpacing } from '@/lib/matches/match-utils';
 import { getWeekData, getSeason, getTimePeriod } from '@/lib/dates/date-utils';
 import { getSeasonStats, seasonOf } from '@/lib/matches/season-stats';
+import { formatNY } from '@/lib/dates/ny-time';
 import { FilterState, Match, TabOption, TimeOfDayOption } from '@/types/match';
 import {
   DEFAULT_FILTERS,
@@ -20,6 +21,8 @@ import {
 import { StandingsView } from './StandingsView';
 import { ActiveFilters } from './ActiveFilters';
 import { TabBar } from './TabBar';
+import { LoadError } from '@/components/modules/matches/LoadError';
+import { DataFreshness } from '@/components/modules/matches/DataFreshness';
 import { useViewMode } from '@/hooks/use-view-mode';
 
 interface ClientViewProps {
@@ -30,6 +33,10 @@ interface ClientViewProps {
   hasNext: boolean;
   initialTeam: TabOption;
   initialFilters: FilterState;
+  /** The schedule couldn't be fetched → error state with "Try again" (never "Rest week") */
+  loadFailed?: boolean;
+  /** Last scraper write (ms) → "Updated 12 min ago" */
+  updatedAt?: number | null;
 }
 
 const INTERNAL_UTILITIES = ['b-and-g', 'soricha'];
@@ -63,6 +70,8 @@ export const ClientView = ({
   weekInfo,
   initialTeam,
   initialFilters,
+  loadFailed = false,
+  updatedAt = null,
 }: ClientViewProps) => {
   // normalizeFilters repairs cookies saved with the old resultsState: 'all' bug
   const [filters, setFilters] = useState<FilterState>(() =>
@@ -92,11 +101,11 @@ export const ClientView = ({
       0,
     );
     const through = lastResult
-      ? new Intl.DateTimeFormat('en-US', {
+      ? formatNY(lastResult, {
           weekday: 'short',
           month: 'short',
           day: 'numeric',
-        }).format(new Date(lastResult))
+        })
       : null;
     return {
       title: shown.season,
@@ -313,19 +322,28 @@ export const ClientView = ({
           </div>
         )}
 
-        {view === 'schedule' ? (
-          <CollapsibleMatchList
-            matches={matchesWithSpacingStatus}
-            focusPool={filteredPool}
-            isCurrentWeek={weekInfo.isCurrentWeek}
-            weekStart={startOfMonday.getTime()}
-            weekEnd={endOfSunday.getTime()}
-            seasonHrefFor={(s) => hrefFor('season', s)}
-            onViewSeason={(s) => go('season', s)}
-            hasActiveFilters={activeFilterCount > 0}
-            onClearFilters={() => setFilters(DEFAULT_FILTERS)}
-            nextMatch={nextMatch}
-          />
+        {loadFailed ? (
+          /* Fetch failed → honest error + retry, on both tabs */
+          <LoadError />
+        ) : view === 'schedule' ? (
+          <>
+            <CollapsibleMatchList
+              matches={matchesWithSpacingStatus}
+              focusPool={filteredPool}
+              isCurrentWeek={weekInfo.isCurrentWeek}
+              weekStart={startOfMonday.getTime()}
+              weekEnd={endOfSunday.getTime()}
+              seasonHrefFor={(s) => hrefFor('season', s)}
+              onViewSeason={(s) => go('season', s)}
+              hasActiveFilters={activeFilterCount > 0}
+              onClearFilters={() => setFilters(DEFAULT_FILTERS)}
+              nextMatch={nextMatch}
+            />
+            {/* How fresh the data is (last scraper write) — quiet unless it's > 24 h old */}
+            <div className='mx-auto w-full max-w-lg px-(--space-gutter)'>
+              <DataFreshness updatedAt={updatedAt} />
+            </div>
+          </>
         ) : (
           <StandingsView
             activeTeam={currentTeam}

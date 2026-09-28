@@ -1,123 +1,105 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getMatches } from './matches';
-import { createClient } from '@supabase/supabase-js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// MOCK THE DEPENDENCIES
+/**
+ * getMatches must NEVER throw: a failure becomes { ok: false } so the page shows
+ * "Couldn't load the schedule · Try again" instead of crashing or faking "Rest week".
+ */
+
+const select = vi.fn();
 vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(),
+  createClient: () => ({ from: () => ({ select }) }),
 }));
 
-// Mock Next.js unstable_cache completely so it simply runs our function directly during tests
-vi.mock('next/cache', () => ({
-  unstable_cache: (fn: any) => fn,
-}));
+const row = (over: Record<string, unknown> = {}) => ({
+  team_queried: 'Soricha',
+  game_id: 'g1',
+  date_time: 'Nov 14, 2026 1:00 PM',
+  home_team: 'Soricha Foot SFA EDP',
+  score_or_status: '',
+  away_team: 'Albion SC Brooklyn',
+  venue: 'Crotona Park',
+  ...over,
+});
 
 describe('getMatches', () => {
-  const mockSelect = vi.fn();
-  const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
-
-  const originalEnv = process.env;
-
   beforeEach(() => {
-    vi.clearAllMocks();
-
-    process.env = { ...originalEnv };
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://mock.supabase.co';
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'mock-key';
-
-    vi.mocked(createClient).mockReturnValue({
-      from: mockFrom,
-    } as any);
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'pk_test');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    select.mockReset();
   });
-
   afterEach(() => {
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
-  it('successfully fetches and sorts matches chronologically via calculated primitive timestamps', async () => {
-    const mockDbData = [
-      {
-        game_id: '1',
-        date_time: 'May 30, 2026 10:00AM',
-        home_team: 'Team A',
-        away_team: 'Team X',
-        score_or_status: '-',
-        venue: 'Field 1',
-      },
-      {
-        game_id: '2',
-        date_time: 'Mar 29, 2026 10:30AM',
-        home_team: 'Team B',
-        away_team: 'Team Y',
-        score_or_status: '-',
-        venue: 'Field 2',
-      },
-    ];
-    mockSelect.mockResolvedValueOnce({ data: mockDbData, error: null });
+  const load = async () => (await import('@/lib/matches/matches')).getMatches();
 
-    // Act
-    const result = await getMatches();
-
-    // Assert: Check Supabase client initialization constraints
-    expect(createClient).toHaveBeenCalledWith(
-      'https://mock.supabase.co',
-      'mock-key',
-    );
-    expect(mockFrom).toHaveBeenCalledWith('matches');
-    expect(mockSelect).toHaveBeenCalledWith('*');
-
-    // Assert: Verify primitive timestamp numerical sorting (March must precede May)
-    expect(result).toHaveLength(2);
-    expect(result[0].id).toBe('2'); // Mar 29
-    expect(result[1].id).toBe('1'); // May 30
-    expect(result[0].date).toBe('Mar 29, 2026');
-    expect(result[0].timestamp).toBeGreaterThan(0);
-  });
-
-  it('handles same-day matches by correctly evaluating chronological time offsets', async () => {
-    const mockDbData = [
-      {
-        date_time: 'Apr 11, 2026 1:00PM',
-        game_id: 'A',
-        home_team: 'T1',
-        away_team: 'T3',
-        score_or_status: '-',
-        venue: 'V',
-      },
-      {
-        date_time: 'Apr 11, 2026 9:00AM',
-        game_id: 'B',
-        home_team: 'T2',
-        away_team: 'T4',
-        score_or_status: '-',
-        venue: 'V',
-      },
-    ];
-    mockSelect.mockResolvedValueOnce({ data: mockDbData, error: null });
-
-    const result = await getMatches();
-
-    // Assert: 9:00AM (B) must sort natively before 1:00PM (A) based on timestamp integer checks
-    expect(result[0].id).toBe('B');
-    expect(result[1].id).toBe('A');
-    expect(result[1].timestamp).toBeGreaterThan(result[0].timestamp);
-  });
-
-  it('returns an empty array gracefully if data payload returns null', async () => {
-    mockSelect.mockResolvedValueOnce({ data: null, error: null });
-
-    const result = await getMatches();
-
-    expect(result).toEqual([]);
-  });
-
-  it('throws an unhandled error instance if the database connection fails', async () => {
-    mockSelect.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'relation "matches" does not exist' },
+  it('returns matches sorted by kickoff + the latest data timestamp', async () => {
+    select.mockResolvedValue({
+      data: [
+        row({
+          game_id: 'late',
+          date_time: 'Nov 14, 2026 4:30 PM',
+          updated_at: '2026-09-28T14:00:00Z',
+        }),
+        row({
+          game_id: 'early',
+          date_time: 'Nov 14, 2026 1:00 PM',
+          updated_at: '2026-09-28T15:30:00Z',
+        }),
+      ],
+      error: null,
     });
+    const r = await load();
+    expect(r.ok).toBe(true);
+    expect(r.matches.map((m) => m.id)).toEqual(['early', 'late']);
+    expect(r.updatedAt).toBe(Date.parse('2026-09-28T15:30:00Z'));
+  });
 
-    await expect(getMatches()).rejects.toThrow('Database connection failed');
+  it('prefers scraped_at over updated_at', async () => {
+    select.mockResolvedValue({
+      data: [
+        row({
+          scraped_at: '2026-09-28T16:00:00Z',
+          updated_at: '2026-09-01T00:00:00Z',
+        }),
+      ],
+      error: null,
+    });
+    expect((await load()).updatedAt).toBe(Date.parse('2026-09-28T16:00:00Z'));
+  });
+
+  it('ignores created_at (first insert ≠ last scrape) → updatedAt null, the line hides', async () => {
+    select.mockResolvedValue({
+      data: [row({ created_at: '2026-08-01T00:00:00Z' })],
+      error: null,
+    });
+    expect((await load()).updatedAt).toBeNull();
+  });
+
+  it('a database error → { ok: false, reason: "database" }, logged, NOT thrown', async () => {
+    select.mockResolvedValue({
+      data: null,
+      error: { message: 'JWT expired', code: 'PGRST301' },
+    });
+    const r = await load();
+    expect(r).toMatchObject({ ok: false, reason: 'database', matches: [] });
+    expect(console.error).toHaveBeenCalled();
+  });
+
+  it('a network crash → { ok: false, reason: "unexpected" }, NOT thrown', async () => {
+    select.mockRejectedValue(new Error('fetch failed'));
+    expect(await load()).toMatchObject({ ok: false, reason: 'unexpected' });
+  });
+
+  it('missing env vars → { ok: false, reason: "config" }', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    expect(await load()).toMatchObject({ ok: false, reason: 'config' });
+  });
+
+  it('an empty table is a successful, empty schedule (not an error)', async () => {
+    select.mockResolvedValue({ data: [], error: null });
+    expect(await load()).toMatchObject({ ok: true, matches: [] });
   });
 });
