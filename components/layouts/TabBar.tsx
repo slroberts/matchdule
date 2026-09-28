@@ -20,7 +20,7 @@ interface TabBarProps {
 
 const ITEMS: { value: ViewMode; label: string; Icon: LucideIcon }[] = [
   { value: 'schedule', label: 'Schedule', Icon: Calendar },
-  { value: 'standings', label: 'Standings', Icon: Trophy },
+  { value: 'standings', label: 'Season', Icon: Trophy },
 ];
 
 export const TabBar = ({ viewMode, setViewMode }: TabBarProps) => (
