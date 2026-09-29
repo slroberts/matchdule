@@ -26,7 +26,7 @@ Matchdule isn't just a frontend — it's a complete scheduling system:
 4. **Scheduling engine:** The Next.js App Router loads the data server-side and runs it through a custom engine that calculates exact overlaps, turnaround gaps, live status, and season stats.
 5. **Honest about freshness:** The sync time powers an "Updated 12 min ago" line in the app, which turns into a warning if the data is more than a day old.
 
-> **A note on the sync job:** It runs from GitHub Actions and **stops immediately if the source site serves a bot check** instead of trying to get around it. Scheduled runs are currently paused while I work on a sanctioned data source; the app keeps serving the last good data and tells parents when it's out of date.
+> **Sync schedule:** The job runs on GitHub Actions twice a day on weekdays (~7:30 AM and ~9:30 PM ET) and three times on game days (~5 AM, ~6 PM and ~9:30 PM ET on weekends) — early enough to catch overnight reschedules and late enough to pick up same-day scores. If the source site challenges a run, the job **stops without retrying and writes nothing**; the app keeps serving the last good data and tells parents when it's more than a day old.
 
 ## ✨ Features
 

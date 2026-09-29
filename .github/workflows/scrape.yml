@@ -2,8 +2,10 @@ name: GotSport Scraper
 
 on:
   schedule:
-    - cron: '30 11 * * *' # ~7:30 AM ET  — overnight changes
-    - cron: '30 1 * * *'  # ~9:30 PM ET  — same-evening scores, after late games
+    - cron: '30 11 * * 1-5' # ~7:30 AM ET Mon–Fri — overnight changes
+    - cron: '0 9 * * 6,0' # ~5:00 AM ET Sat & Sun — reschedules before morning games
+    - cron: '0 22 * * 6,0' # ~6:00 PM ET Sat & Sun — early scores from afternoon games
+    - cron: '30 1 * * *' # ~9:30 PM ET daily — after late games
   workflow_dispatch:
 
 # Never run two scrapes at once (both would upsert/prune the same rows).
