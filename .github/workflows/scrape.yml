@@ -1,20 +1,9 @@
 name: GotSport Scraper
 
 on:
-  # ─────────────────────────────────────────────────────────────────────────
-  # SCHEDULE PAUSED — GotSport is serving a CAPTCHA to automated requests.
-  # Manual runs only for now ("Run workflow" button).
-  #
-  # To resume: wait a few days, confirm ONE manual run succeeds, then restore
-  # this gentle schedule (same load as the original twice-a-day setup):
-  #
-  #   schedule:
-  #     - cron: '30 11 * * *' # ~7:30 AM ET  — overnight changes
-  #     - cron: '30 1 * * *'  # ~9:30 PM ET  — same-evening scores, after late games
-  #
-  # If even that hits the CAPTCHA, stop automated scraping and use a
-  # sanctioned source (club/league export or a GotSport calendar feed).
-  # ─────────────────────────────────────────────────────────────────────────
+  schedule:
+    - cron: '30 11 * * *' # ~7:30 AM ET  — overnight changes
+    - cron: '30 1 * * *'  # ~9:30 PM ET  — same-evening scores, after late games
   workflow_dispatch:
 
 # Never run two scrapes at once (both would upsert/prune the same rows).

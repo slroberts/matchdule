@@ -6,7 +6,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright_stealth import Stealth
+
 from supabase import Client, create_client
 
 script_dir = Path(__file__).resolve().parent
@@ -84,7 +86,10 @@ def scrape_teams(teams):
 
                 # GotSport's bot check. Respect it: stop the WHOLE run immediately —
                 # don't wait out the timeout and don't try the remaining teams.
-                if "verify_captchas" in page.url:
+                try:
+                    page.wait_for_url(
+                        lambda u: "verify_captchas" not in u, timeout=60_000)
+                except PlaywrightTimeoutError:
                     blocked = True
                     failed.append(team_id)
                     print(
