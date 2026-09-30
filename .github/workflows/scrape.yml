@@ -3,7 +3,6 @@ name: GotSport Scraper
 on:
   schedule:
     - cron: '0 9 * * *' # ~5:00 AM ET daily — overnight changes, before morning games
-    - cron: '0 22 * * 6,0' # ~6:00 PM ET Sat & Sun — early scores from afternoon games
     - cron: '30 1 * * *' # ~9:30 PM ET daily — after late games
   workflow_dispatch:
 
