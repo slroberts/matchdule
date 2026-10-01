@@ -3,6 +3,8 @@ import { CalendarOff, FilterX } from 'lucide-react';
 import { Match } from '@/types/match';
 import { MatchCard } from './MatchCard/MatchCard';
 import { cn } from '@/lib/utils';
+import { Button, buttonClasses } from '@/components/ui/buttons/Button';
+import { EmptyState } from '@/components/ui/EmptyState/EmptyState';
 
 /**
  * MatchList — Figma: Screens › Schedule
@@ -51,7 +53,7 @@ export const MatchList = ({
 }: MatchListProps) => {
   if (matches.length === 0) {
     return (
-      <EmptyState
+      <ScheduleEmpty
         hasActiveFilters={hasActiveFilters}
         onClearFilters={onClearFilters}
         nextMatch={nextMatch}
@@ -105,12 +107,8 @@ export const MatchList = ({
   );
 };
 
-/* Figma: Molecules › Button (Type=Primary) */
-const PRIMARY_ACTION =
-  'pressable text-control inline-flex min-h-(--size-tap) items-center justify-center rounded-(--radius-control) bg-(--color-bg-inverse) px-(--space-stack-md) py-(--space-stack-md) text-(--color-text-on-inverse) shadow-(--shadow-control-selected)';
-
 /** Figma: Molecules › EmptyState — what happened, why, and what to do next */
-const EmptyState = ({
+const ScheduleEmpty = ({
   hasActiveFilters,
   onClearFilters,
   nextMatch,
@@ -118,45 +116,23 @@ const EmptyState = ({
   hasActiveFilters: boolean;
   onClearFilters?: () => void;
   nextMatch?: { href: string; label: string };
-}) => {
-  const Icon = hasActiveFilters ? FilterX : CalendarOff;
-
-  return (
-    <div className='mx-auto flex w-full max-w-lg flex-col items-center gap-(--space-stack-md) px-(--space-card-pad) py-8 text-center stagger-fade'>
-      <div className='grid size-18 place-items-center rounded-full bg-(--color-bg-surface) text-(--color-icon-default) shadow-(--shadow-raised)'>
-        <Icon
-          size={28}
-          strokeWidth={1.5}
-          absoluteStrokeWidth
-          aria-hidden='true'
-        />
-      </div>
-
-      <h3 className='text-score text-(--color-text-primary)'>
-        {hasActiveFilters ? 'No matches fit these filters' : 'Rest week'}
-      </h3>
-
-      <p className='text-meta max-w-70 text-(--color-text-secondary)'>
-        {hasActiveFilters
-          ? "None of this week's matches fit your filters. Remove one or clear them to see more."
-          : 'No matches scheduled this week.'}
-      </p>
-
-      {hasActiveFilters && onClearFilters && (
-        <button
-          type='button'
-          onClick={onClearFilters}
-          className={PRIMARY_ACTION}
-        >
-          Clear filters
-        </button>
-      )}
-
-      {!hasActiveFilters && nextMatch && (
-        <Link href={nextMatch.href} className={PRIMARY_ACTION}>
+}) => (
+  <EmptyState
+    icon={hasActiveFilters ? FilterX : CalendarOff}
+    title={hasActiveFilters ? 'No matches fit these filters' : 'Rest week'}
+    body={
+      hasActiveFilters
+        ? "None of this week's matches fit your filters. Remove one or clear them to see more."
+        : 'No matches scheduled this week.'
+    }
+    action={
+      hasActiveFilters && onClearFilters ? (
+        <Button onClick={onClearFilters}>Clear filters</Button>
+      ) : !hasActiveFilters && nextMatch ? (
+        <Link href={nextMatch.href} className={buttonClasses()}>
           Go to {nextMatch.label}
         </Link>
-      )}
-    </div>
-  );
-};
+      ) : undefined
+    }
+  />
+);

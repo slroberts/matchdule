@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge/Badge';
 import { Crest } from '@/components/ui/Crest/Crest';
 import { DirectionsButton } from '@/components/ui/buttons/DirectionsButton';
 import { ShareButton } from '@/components/ui/buttons/ShareButton';
+import { CalendarButton } from '@/components/ui/buttons/CalendarButton';
 import { formatTime } from './MatchHeader';
 
 /**
@@ -328,11 +329,12 @@ export const VersusCard = ({
         </div>
       )}
 
-      {/* Footer: Directions until the final whistle · Share always (share the result) */}
+      {/* Footer: Directions until the final whistle · Calendar before kickoff · Share always */}
       <div
         className={cn('flex gap-(--space-stack-sm)', isFinal && 'justify-end')}
       >
         {!isFinal && <DirectionsButton location={match.location} />}
+        {isUpcoming && <CalendarButton match={match} />}
         <ShareButton match={match} />
       </div>
     </article>

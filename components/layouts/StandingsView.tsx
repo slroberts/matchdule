@@ -1,4 +1,5 @@
 import { Trophy } from 'lucide-react';
+import { EmptyState } from '@/components/ui/EmptyState/EmptyState';
 import { Match, TabOption } from '@/types/match';
 import { getSeasonStats } from '@/lib/matches/season-stats';
 import { SeasonSummary } from '@/components/modules/standings/SeasonSummary';
@@ -33,23 +34,16 @@ export const StandingsView = ({
 
   if (seasons.length === 0) {
     return (
-      <div className='stagger-fade mx-auto flex w-full max-w-lg flex-col items-center gap-(--space-stack-md) px-(--space-card-pad) py-8 text-center'>
-        <div className='grid size-18 place-items-center rounded-full bg-(--color-bg-surface) text-(--color-icon-default) shadow-(--shadow-raised)'>
-          <Trophy
-            size={28}
-            strokeWidth={1.5}
-            absoluteStrokeWidth
-            aria-hidden='true'
-          />
-        </div>
-        <h3 className='text-score text-(--color-text-primary)'>
-          No results yet
-        </h3>
-        <p className='text-meta max-w-70 text-(--color-text-secondary)'>
-          Your teams&rsquo; records will show up here after their first final
-          whistle.
-        </p>
-      </div>
+      <EmptyState
+        icon={Trophy}
+        title='No results yet'
+        body={
+          <>
+            Your teams&rsquo; records will show up here after their first final
+            whistle.
+          </>
+        }
+      />
     );
   }
 

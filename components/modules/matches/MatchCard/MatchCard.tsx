@@ -7,6 +7,7 @@ import { useMatchStatus } from '@/hooks/use-match-status';
 import { isAwaitingResult } from '@/lib/matches/match-utils';
 import { ShareButton } from '@/components/ui/buttons/ShareButton';
 import { DirectionsButton } from '@/components/ui/buttons/DirectionsButton';
+import { CalendarButton } from '@/components/ui/buttons/CalendarButton';
 import { MatchHeader, MatchTeamRow } from '.';
 import { formatTime } from './MatchHeader';
 
@@ -98,9 +99,10 @@ export const MatchCard = ({
         />
       </div>
 
-      {/* Footer: gap stack-sm */}
+      {/* Footer: gap stack-sm · Calendar only before kickoff */}
       <div className='flex items-stretch gap-(--space-stack-sm)'>
         <DirectionsButton location={match.location} />
+        {currentStatus === 'upcoming' && <CalendarButton match={match} />}
         <ShareButton match={match} />
       </div>
     </article>
