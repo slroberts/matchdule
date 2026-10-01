@@ -1,15 +1,9 @@
-import withSerwistInit from '@serwist/next';
-
-const withSerwist = withSerwistInit({
-  swSrc: 'app/sw.ts',
-  swDest: 'public/sw.js',
-  disable: process.env.NODE_ENV === 'development', // Disables aggressive caching while in dev mode
-});
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   turbopack: {},
 };
 
-export default withSerwist(nextConfig);
+// Service worker is built separately by `serwist build` (serwist.config.mjs) after
+// `next build` — Serwist's configurator mode, which works with Turbopack.
+export default nextConfig;

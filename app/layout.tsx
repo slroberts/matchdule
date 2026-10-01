@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
+import { SerwistProvider } from '@serwist/next/react';
 import { AppleSplashScreens } from '@/components/system/AppleSplashScreens';
 import '@/styles/globals.css'; // single entry: Tailwind + tokens + base + utilities
 
@@ -53,20 +54,16 @@ export default function RootLayout({
       </head>
       {/* global.css sets the canvas background, font smoothing and min-height: 100dvh */}
       <body>
-        {children}
-
-        {/* Register the Service Worker for PWA offline caching and installation */}
-        {/* <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
-                });
-              }
-            `,
-          }}
-        /> */}
+        {/* Offline support: registers /sw.js (built by `serwist build`, see serwist.config.mjs).
+            Off in dev so a cached worker never hides your code changes.
+            reloadOnOnline: when signal returns, the page refreshes with live data. */}
+        <SerwistProvider
+          swUrl='/sw.js'
+          disable={process.env.NODE_ENV === 'development'}
+          reloadOnOnline
+        >
+          {children}
+        </SerwistProvider>
       </body>
     </html>
   );
