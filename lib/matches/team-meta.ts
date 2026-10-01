@@ -2,7 +2,7 @@ import { Team } from '@/types/match';
 
 /**
  * Team presentation helpers shared by MatchTeamRow, MatchRowCompact and VersusCard.
- * TODO: move age group onto the Team data — mirrors the previous hard-coded name checks.
+ * TODO(scraper): age group should come from the data, not this list — add an `age` field per team in scraper/main.py's team config and a column in Supabase, then read it in mapApiToMatch. Until then, a new team needs a row in AGE_GROUPS below.
  */
 
 const AGE_GROUPS: [nameIncludes: string, age: string][] = [
