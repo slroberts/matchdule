@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import {
   DEFAULT_FILTERS,
   FilterDrawer,
@@ -149,4 +150,29 @@ export const ZeroResults: Story = {
 /** Starts closed — tests the open animation, focus move to Close, and Escape/scrim to dismiss. */
 export const ClosedByDefault: Story = {
   render: () => <FilterDrawerWrapper defaultOpen={false} />,
+  play: async ({ canvasElement }) => {
+    const open = within(canvasElement).getByRole('button', {
+      name: 'Open filters',
+    });
+
+    // Opens with focus on Close
+    await userEvent.click(open);
+    const sheet = await screen.findByRole('dialog', { name: 'Filters' });
+    await waitFor(() =>
+      expect(
+        within(sheet).getByRole('button', { name: 'Close filters' }),
+      ).toHaveFocus(),
+    );
+
+    // Escape closes; focus returns once the exit animation finishes
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(open).toHaveFocus());
+
+    // Tapping the scrim closes too
+    await userEvent.click(open);
+    await screen.findByRole('dialog', { name: 'Filters' });
+    await userEvent.click(document.querySelector('[data-sheet-scrim]')!);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  },
 };

@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  useEffect,
   useId,
   useRef,
   type Dispatch,
@@ -21,6 +20,10 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  BottomSheet,
+  SHEET_CLOSE_CLASSES,
+} from '@/components/ui/BottomSheet/BottomSheet';
 import { FilterState, TimeOfDayOption } from '@/types/match';
 
 /**
@@ -299,29 +302,7 @@ export const FilterDrawer = ({
 }: FilterDrawerProps) => {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  // Dialog behavior: lock page scroll, focus Close, Escape closes, restore focus on exit.
-  useEffect(() => {
-    const previousFocus = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    closeRef.current?.focus();
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCloseRef.current();
-    };
-    document.addEventListener('keydown', onKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', onKeyDown);
-      previousFocus?.focus();
-    };
-  }, []);
+  // Dialog behavior (scroll lock, focus Close, Escape/scrim, focus restore) lives in BottomSheet
 
   const activeCount = getActiveFilterCount(filters);
   const resultsUnlocked = filters.matchState === 'final';
@@ -354,35 +335,12 @@ export const FilterDrawer = ({
 
   return (
     <MotionConfig reducedMotion='user'>
-      {/* Scrim */}
-      <motion.div
-        aria-hidden='true'
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={onClose}
-        className='fixed inset-0 z-(--z-scrim) bg-[rgb(5_8_20/0.6)]'
-      />
-
-      {/* Sheet */}
-      <motion.div
-        role='dialog'
-        aria-modal='true'
-        aria-labelledby={titleId}
-        data-theme='dark'
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={SPRING}
-        className='fixed inset-x-0 bottom-0 z-(--z-sheet) mx-auto flex h-[calc(100dvh-54px)] w-full max-w-lg flex-col overflow-hidden rounded-t-(--radius-sheet) border-t border-(--color-border-strong) bg-(--color-bg-canvas) bg-(image:--gradient-sheet) shadow-(--shadow-sheet)'
+      <BottomSheet
+        labelledBy={titleId}
+        onClose={onClose}
+        initialFocusRef={closeRef}
+        className='h-[calc(100dvh-54px)]'
       >
-        {/* Grabber */}
-        <div
-          aria-hidden='true'
-          className='mx-auto mt-2 h-1.25 w-9 shrink-0 rounded-full bg-(--color-border-strong)'
-        />
-
         {/* Header */}
         <div className='flex shrink-0 items-center gap-(--space-stack-sm) px-(--space-gutter) pt-3 pb-3'>
           <div className='min-w-0 flex-1'>
@@ -413,9 +371,9 @@ export const FilterDrawer = ({
             type='button'
             onClick={onClose}
             aria-label='Close filters'
-            className='tap-area min-w-(--size-tap) shrink-0 justify-center'
+            className={SHEET_CLOSE_CLASSES.button}
           >
-            <span className='tap-visual grid size-9 place-items-center rounded-(--radius-control) bg-(--color-bg-subtle) text-(--color-icon-default) shadow-(--shadow-control) hover:text-(--color-text-primary)'>
+            <span className={SHEET_CLOSE_CLASSES.visual}>
               <X {...ICON} aria-hidden='true' />
             </span>
           </button>
@@ -599,7 +557,7 @@ export const FilterDrawer = ({
               : 'No matches'}
           </button>
         </div>
-      </motion.div>
+      </BottomSheet>
     </MotionConfig>
   );
 };
