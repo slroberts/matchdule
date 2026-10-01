@@ -44,6 +44,26 @@ const DISABLED =
   'disabled:cursor-not-allowed disabled:bg-(--color-bg-subtle) disabled:text-(--color-text-disabled) disabled:shadow-none disabled:ring-0 ' +
   'aria-disabled:cursor-not-allowed aria-disabled:bg-(--color-bg-subtle) aria-disabled:text-(--color-text-disabled) aria-disabled:shadow-none aria-disabled:ring-0';
 
+/**
+ * Button classes without the element — for links that should LOOK like a button
+ * (e.g. <Link className={buttonClasses()}>). Never wrap a <Button> in a <Link>:
+ * nested interactive elements are invalid HTML and announce twice to screen readers.
+ */
+export const buttonClasses = ({
+  variant = 'primary',
+  size = 'md',
+  className,
+}: { variant?: Variant; size?: Size; className?: string } = {}) =>
+  cn(
+    'pressable text-control inline-flex min-h-(--size-tap) items-center justify-center gap-(--space-stack-sm) rounded-(--radius-control)',
+    'transition-[background-color,color,box-shadow] duration-(--duration-fade)',
+    '[&_svg]:size-4 [&_svg]:shrink-0',
+    VARIANTS[variant],
+    SIZES[size],
+    DISABLED,
+    className,
+  );
+
 export const Button = ({
   children,
   variant = 'primary',
@@ -54,15 +74,7 @@ export const Button = ({
 }: ButtonProps) => (
   <button
     type={type}
-    className={cn(
-      'pressable text-control inline-flex min-h-(--size-tap) items-center justify-center gap-(--space-stack-sm) rounded-(--radius-control)',
-      'transition-[background-color,color,box-shadow] duration-(--duration-fade)',
-      '[&_svg]:size-4 [&_svg]:shrink-0',
-      VARIANTS[variant],
-      SIZES[size],
-      DISABLED,
-      className,
-    )}
+    className={buttonClasses({ variant, size, className })}
     {...props}
   >
     {children}

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import Link from 'next/link';
 import { fn } from 'storybook/test';
-import { Button } from './Button';
+import { Button, buttonClasses } from './Button';
 
 const meta: Meta<typeof Button> = {
   title: 'UI/Button',
@@ -25,4 +26,13 @@ export const Ghost: Story = {
 };
 export const Disabled: Story = {
   args: { children: 'No matches', variant: 'primary', disabled: true },
+};
+
+/** Navigation that looks like a button: style the Link itself — never <Link><Button/></Link>. */
+export const AsLink: Story = {
+  render: () => (
+    <Link href='/' className={buttonClasses()}>
+      Back to schedule
+    </Link>
+  ),
 };
