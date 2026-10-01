@@ -1,4 +1,4 @@
-playwright-stealth
-playwright
-supabase
-python-dotenv
+playwright>=1.47,<2
+playwright-stealth>=2.0,<3
+supabase>=2.0,<3
+python-dotenv>=1.0,<2

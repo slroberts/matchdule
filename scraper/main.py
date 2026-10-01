@@ -84,18 +84,6 @@ def scrape_teams(teams):
             try:
                 page.goto(url, wait_until="domcontentloaded", timeout=60_000)
 
-                # GotSport's bot check. Respect it: stop the WHOLE run immediately —
-                # don't wait out the timeout and don't try the remaining teams.
-                try:
-                    page.wait_for_url(
-                        lambda u: "verify_captchas" not in u, timeout=60_000)
-                except PlaywrightTimeoutError:
-                    blocked = True
-                    failed.append(team_id)
-                    print(
-                        "🛑 GotSport is asking for CAPTCHA verification — stopping, not retrying.")
-                    break
-
                 page.wait_for_selector("tr", timeout=15_000)
                 page.mouse.wheel(0, 500)
                 page.wait_for_timeout(2_000)
