@@ -12,6 +12,11 @@ import { formatShortName } from '@/lib/matches/match-utils';
 
 const ICON = { size: 16, strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
 
+/* The browser allows ONE share sheet per page at a time — a second navigator.share()
+   (double-tap, or another card's Share while the sheet is open) throws InvalidStateError.
+   Module-level, not per-button, because the limit is page-wide. */
+let isSharing = false;
+
 export const ShareButton = ({ match }: { match: Match }) => {
   const [copied, setCopied] = useState(false);
 
@@ -27,11 +32,17 @@ export const ShareButton = ({ match }: { match: Match }) => {
       navigator.share &&
       (!navigator.canShare || navigator.canShare(shareData))
     ) {
+      if (isSharing) return; // a share sheet is already open — ignore the extra tap
+      isSharing = true;
       try {
         await navigator.share(shareData);
       } catch (error) {
-        if ((error as Error).name !== 'AbortError')
+        // AbortError = user dismissed the sheet; InvalidStateError = overlapping call. Both are expected.
+        const name = (error as Error).name;
+        if (name !== 'AbortError' && name !== 'InvalidStateError')
           console.error('Error sharing:', error);
+      } finally {
+        isSharing = false;
       }
       return;
     }
