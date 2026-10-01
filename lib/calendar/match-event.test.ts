@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { match, soricha, soricha9, team } from '@/lib/test-utils/fixtures';
+import { bg, match, soricha, soricha9, team } from '@/lib/test-utils/fixtures';
 import {
+  buildFeedIcs,
   buildMatchIcs,
+  feedKey,
+  feedLabel,
   getMatchEvent,
   googleCalendarUrl,
   icsFilename,
@@ -117,5 +120,50 @@ describe('googleCalendarUrl', () => {
       googleCalendarUrl(match({ at: '2026-10-03T23:59', time: 'TBD' })),
     );
     expect(url.searchParams.get('dates')).toBe('20261003/20261004');
+  });
+});
+
+describe('team feed', () => {
+  const u13 = match({ id: 'a', homeTeam: soricha() });
+  const u9 = match({
+    id: 'b',
+    homeTeam: team({ name: 'Metro' }),
+    awayTeam: soricha9(),
+  });
+  const bgGame = match({ id: 'c', homeTeam: bg() });
+  const canceled = match({ id: 'd', homeTeam: soricha(), status: 'canceled' });
+  const all = [u13, u9, bgGame, canceled];
+
+  it('keys each tracked team, home or away', () => {
+    expect(feedKey(u13)).toBe('soricha-u13');
+    expect(feedKey(u9)).toBe('soricha-u9');
+    expect(feedKey(bgGame)).toBe('b-and-g');
+    expect(feedLabel(u9)).toBe('Soricha U9');
+  });
+
+  it("includes only that team's games, named for the team", () => {
+    const { ics, count } = buildFeedIcs(all, 'soricha-u13', NOW);
+    expect(count).toBe(2);
+    expect(ics).toContain('UID:a@matchdule');
+    expect(ics).not.toContain('UID:b@matchdule');
+    expect(ics).toContain('X-WR-CALNAME:Matchdule · Soricha U13');
+    expect(ics.match(/BEGIN:VEVENT/g)).toHaveLength(2);
+  });
+
+  it('marks canceled games so calendars cross them out', () => {
+    const { ics } = buildFeedIcs(all, 'soricha-u13', NOW);
+    const canceledEvent = ics.slice(ics.indexOf('UID:d@matchdule'));
+    expect(
+      canceledEvent.slice(0, canceledEvent.indexOf('END:VEVENT')),
+    ).toContain('STATUS:CANCELLED');
+  });
+
+  it('asks calendar apps to refresh every 6 hours', () => {
+    const { ics } = buildFeedIcs(all, 'b-and-g', NOW);
+    expect(ics).toContain('REFRESH-INTERVAL;VALUE=DURATION:PT6H');
+  });
+
+  it('returns zero games for an unknown team', () => {
+    expect(buildFeedIcs(all, 'nope', NOW).count).toBe(0);
   });
 });

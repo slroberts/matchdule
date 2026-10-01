@@ -120,14 +120,9 @@ const fold = (line: string) => {
   return parts.join('\r\n ');
 };
 
-export const buildMatchIcs = (match: Match, now = Date.now()) => {
+const vevent = (match: Match, now: number) => {
   const e = getMatchEvent(match);
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Matchdule//Schedule//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
+  return [
     'BEGIN:VEVENT',
     `UID:${e.uid}`,
     `DTSTAMP:${toUtcStamp(now)}`,
@@ -137,11 +132,28 @@ export const buildMatchIcs = (match: Match, now = Date.now()) => {
     `SUMMARY:${escapeText(e.title)}`,
     ...(e.location ? [`LOCATION:${escapeText(e.location)}`] : []),
     `DESCRIPTION:${escapeText(e.description)}`,
+    // Subscribed calendars cross out a canceled game instead of silently keeping it
+    ...(match.status === 'canceled' ? ['STATUS:CANCELLED'] : []),
     'END:VEVENT',
-    'END:VCALENDAR',
   ];
-  return lines.map(fold).join('\r\n') + '\r\n';
 };
+
+const calendar = (body: string[], extra: string[] = []) =>
+  [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Matchdule//Schedule//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    ...extra,
+    ...body,
+    'END:VCALENDAR',
+  ]
+    .map(fold)
+    .join('\r\n') + '\r\n';
+
+export const buildMatchIcs = (match: Match, now = Date.now()) =>
+  calendar(vevent(match, now));
 
 /** "soricha-u13-vs-albion-sc-brooklyn.ics" */
 export const icsFilename = (match: Match) =>
@@ -167,4 +179,51 @@ export const googleCalendarUrl = (match: Match) => {
   });
   if (e.location) params.set('location', e.location);
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
+/* ── Team feed (Subscribe) ───────────────────────────────────────────────── */
+
+/** The tracked club team in a match (the side that isn't `utility: 'away'`) */
+const clubOf = (match: Match) =>
+  match.homeTeam.utility && match.homeTeam.utility !== 'away'
+    ? match.homeTeam
+    : match.awayTeam;
+
+/** Stable feed key per tracked team: "soricha-u9", "soricha-u13", "b-and-g" */
+export const feedKey = (match: Match) => {
+  const club = clubOf(match);
+  const age = getAgeGroup(club.name);
+  return `${club.utility}${age ? `-${age.toLowerCase()}` : ''}`;
+};
+
+/** Human label for the same team: "Soricha U9", "B&G" */
+export const feedLabel = (match: Match) => {
+  const club = clubOf(match);
+  const age = getAgeGroup(club.name);
+  return `${getClubLabel(club, cleanTeamName(club.name))}${age ? ` ${age}` : ''}`;
+};
+
+/**
+ * Every game for one team, as a subscribable calendar. Finals stay (season history),
+ * canceled games are marked CANCELLED. Refresh hints ask apps to re-check every 6 h.
+ */
+export const buildFeedIcs = (
+  matches: Match[],
+  key: string,
+  now = Date.now(),
+) => {
+  const games = matches.filter((m) => feedKey(m) === key);
+  const name = games[0] ? `Matchdule · ${feedLabel(games[0])}` : 'Matchdule';
+  return {
+    count: games.length,
+    ics: calendar(
+      games.flatMap((m) => vevent(m, now)),
+      [
+        `X-WR-CALNAME:${escapeText(name)}`,
+        'X-WR-TIMEZONE:America/New_York',
+        'REFRESH-INTERVAL;VALUE=DURATION:PT6H',
+        'X-PUBLISHED-TTL:PT6H',
+      ],
+    ),
+  };
 };

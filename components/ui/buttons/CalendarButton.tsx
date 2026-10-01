@@ -1,9 +1,19 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
-import { CalendarPlus, Download, ExternalLink } from 'lucide-react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { CalendarPlus, Download, ExternalLink, Rss } from 'lucide-react';
 import type { Match } from '@/types/match';
-import { googleCalendarUrl } from '@/lib/calendar/match-event';
+import {
+  feedKey,
+  feedLabel,
+  googleCalendarUrl,
+} from '@/lib/calendar/match-event';
 
 /**
  * CalendarButton — Figma: MatchCard / VersusCard › Footer › Calendar (44×44) + Organisms › CalendarMenu
@@ -13,13 +23,24 @@ import { googleCalendarUrl } from '@/lib/calendar/match-event';
  * from the browser, and the menu renders in the top layer — VersusCard is `overflow-hidden`,
  * which would clip an absolutely-positioned dropdown.
  *
- * "Subscribe to all [team] games" (Figma) ships with the per-team feed endpoint — not yet.
+ * Subscribe → /api/calendar/feed/:team.ics. Apple devices get webcal:// (native Subscribe
+ * dialog); everything else gets Google Calendar's "add by URL" with the feed prefilled.
  */
 
 const ICON = { size: 16, strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
 const MENU_WIDTH = 300;
 const EDGE = 16; // keep clear of screen edges (320px screens → 288px menu)
 const GAP = 8; // space between button and menu
+
+const noopSubscribe = () => () => {};
+
+/** webcal:// opens Calendar's Subscribe dialog on Apple devices; elsewhere use Google's "add by URL" */
+const subscribeUrl = (match: Match) => {
+  const feed = `webcal://${window.location.host}/api/calendar/feed/${feedKey(match)}.ics`;
+  return /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)
+    ? feed
+    : `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(feed)}`;
+};
 
 const ITEM =
   'pressable flex min-h-(--size-tap) items-start gap-3 px-4 py-2.5 text-left hover:bg-(--color-bg-subtle)';
@@ -30,6 +51,12 @@ export const CalendarButton = ({ match }: { match: Match }) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  // Browser-only value: undefined on the server, the device-appropriate link on the client
+  const subscribeHref = useSyncExternalStore(
+    noopSubscribe,
+    () => subscribeUrl(match),
+    () => undefined,
+  );
 
   // Place the menu next to the button when it opens (above if it fits, else below)
   useEffect(() => {
@@ -148,6 +175,38 @@ export const CalendarButton = ({ match }: { match: Match }) => {
             </span>
           </span>
         </a>
+
+        {subscribeHref && (
+          <>
+            <div
+              role='separator'
+              className='my-1.5 h-px bg-(--color-border-default)'
+            />
+            <a
+              href={subscribeHref}
+              target={
+                subscribeHref.startsWith('webcal:') ? undefined : '_blank'
+              }
+              rel='noopener noreferrer'
+              onClick={close}
+              className={ITEM}
+            >
+              <Rss
+                {...ICON}
+                aria-hidden='true'
+                className='mt-0.5 shrink-0 text-(--color-icon-accent)'
+              />
+              <span className='flex min-w-0 flex-col gap-0.5'>
+                <span className='text-control text-(--color-text-accent)'>
+                  Subscribe to all {feedLabel(match)} games
+                </span>
+                <span className='text-meta text-(--color-text-secondary)'>
+                  New games and changes appear automatically
+                </span>
+              </span>
+            </a>
+          </>
+        )}
       </div>
     </>
   );
