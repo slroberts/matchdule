@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Flag } from 'lucide-react';
 import { buttonClasses } from '@/components/ui/buttons/Button';
 import { EmptyState } from '@/components/ui/EmptyState/EmptyState';
+import { SystemShell } from '@/components/layouts/SystemShell';
 
 /**
  * 404 — Figma: Screens › 05 · System & empty states › System / Not found
@@ -10,7 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState/EmptyState';
  */
 export default function NotFound() {
   return (
-    <main className='flex min-h-[75vh] items-center'>
+    <SystemShell>
       <EmptyState
         as='h1'
         icon={Flag}
@@ -22,6 +23,6 @@ export default function NotFound() {
           </Link>
         }
       />
-    </main>
+    </SystemShell>
   );
 }

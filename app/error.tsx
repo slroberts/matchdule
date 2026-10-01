@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { LoadError } from '@/components/modules/matches/LoadError';
+import { SystemShell } from '@/components/layouts/SystemShell';
 
 /**
  * Route error boundary — Figma: Screens › Schedule / Load error
@@ -21,8 +22,8 @@ export default function ErrorState({
   }, [error]);
 
   return (
-    <main className='flex min-h-[60vh] items-center'>
+    <SystemShell>
       <LoadError onRetry={reset} />
-    </main>
+    </SystemShell>
   );
 }
