@@ -25,7 +25,8 @@ export const ShareButton = ({ match }: { match: Match }) => {
     const awayTeam = formatShortName(match.awayTeam.name);
     const text = `⚽ ${homeTeam} vs ${awayTeam}\n📅 ${match.date} @ ${match.time}\n📍 ${match.location}`;
     const url = window.location.href;
-    const shareData = { title: 'Matchdule', text, url };
+    // Title names the game — it's what the receiving app shows first
+    const shareData = { title: `${homeTeam} vs ${awayTeam}`, text, url };
 
     // canShare is missing in some browsers — guard before calling it
     if (

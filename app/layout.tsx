@@ -22,10 +22,30 @@ export const viewport: Viewport = {
   viewportFit: 'cover', // header draws under the status bar; safe-area insets become real
 };
 
+const DESCRIPTION =
+  'Youth soccer schedules for parents — the next game at a glance, conflicts and tight gaps flagged, every team’s season in seconds.';
+
+/*
+ * Link previews (Messages, Slack, iOS share sheet) are built from this metadata.
+ * Images use Next file conventions: app/opengraph-image.png + app/twitter-image.png
+ * (with .alt.txt), app/apple-icon.png. The manifest comes from app/manifest.ts.
+ */
 export const metadata: Metadata = {
+  metadataBase: new URL('https://matchdule.vercel.app'), // absolute URLs for preview images
   title: 'Matchdule',
-  description: 'Soccer Schedule Tracker',
-  manifest: '/manifest.json',
+  description: DESCRIPTION,
+  openGraph: {
+    type: 'website',
+    siteName: 'Matchdule',
+    title: 'Matchdule',
+    description: DESCRIPTION,
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Matchdule',
+    description: DESCRIPTION,
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
