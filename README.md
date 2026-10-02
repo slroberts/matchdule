@@ -3,7 +3,9 @@
 [![CI](https://github.com/slroberts/matchdule/actions/workflows/ci.yml/badge.svg)](https://github.com/slroberts/matchdule/actions/workflows/ci.yml)
 [![Live app](https://img.shields.io/badge/live-matchdule.vercel.app-0B0F24)](https://matchdule.vercel.app)
 
-A phone-first schedule app for youth soccer parents. Matchdule pulls league schedules into a cloud database and turns them into a UI that answers the questions parents actually ask: **Where do I need to be next? Can I make both games? How is the season going?** It flags overlapping games, tight turnarounds, and missing kickoff times before they become a problem — and keeps working at the field when the signal doesn't.
+**Your kid's soccer schedule, right from the sideline.**
+
+Matchdule pulls league schedules into a cloud database and turns them into a UI that answers the questions parents actually ask: **Where do I need to be next? Can I make both games? How is the season going?** It flags overlapping games, tight turnarounds, and missing kickoff times before they become a problem — and keeps working at the field when the signal doesn't.
 
 **[Open the app →](https://matchdule.vercel.app)**
 
