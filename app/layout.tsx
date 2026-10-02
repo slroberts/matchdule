@@ -22,8 +22,9 @@ export const viewport: Viewport = {
   viewportFit: 'cover', // header draws under the status bar; safe-area insets become real
 };
 
+const TITLE = 'Matchdule — Youth soccer schedules for parents';
 const DESCRIPTION =
-  'Youth soccer schedules for parents — the next game at a glance, conflicts and tight gaps flagged, every team’s season in seconds.';
+  'The next game at a glance, conflicts and tight gaps flagged, and every team’s season in seconds.';
 
 /*
  * Link previews (Messages, Slack, iOS share sheet) are built from this metadata.
@@ -32,18 +33,18 @@ const DESCRIPTION =
  */
 export const metadata: Metadata = {
   metadataBase: new URL('https://matchdule.vercel.app'), // absolute URLs for preview images
-  title: 'Matchdule',
+  title: TITLE,
   description: DESCRIPTION,
   openGraph: {
     type: 'website',
     siteName: 'Matchdule',
-    title: 'Matchdule',
+    title: TITLE,
     description: DESCRIPTION,
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Matchdule',
+    title: TITLE,
     description: DESCRIPTION,
   },
   appleWebApp: {
