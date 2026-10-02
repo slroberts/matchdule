@@ -1,4 +1,11 @@
-# <img src="public/matchdule-logo.svg" alt="Matchdule logo" width="220">
+# <p align="center">
+
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/matchdule-logo.svg">
+    <source media="(prefers-color-scheme: light)" srcset="public/matchdule-logo-dark.svg">
+    <img alt="Matchdule" src="public/matchdule-logo-dark.svg" width="220">
+  </picture>
+</p>
 
 [![CI](https://github.com/slroberts/matchdule/actions/workflows/ci.yml/badge.svg)](https://github.com/slroberts/matchdule/actions/workflows/ci.yml)
 [![Live app](https://img.shields.io/badge/live-matchdule.vercel.app-0B0F24)](https://matchdule.vercel.app)
