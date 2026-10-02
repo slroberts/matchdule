@@ -313,6 +313,8 @@
     --space-stack-xs: 4px;
     --space-stack-sm: 8px;
     --space-stack-md: 12px;
+
+    --space-chip-x: 16px; /* filter chip horizontal padding — short labels (U9) stay a pill, not a circle */
     --radius-card: 20px;
     --radius-control: 12px;
     --radius-full: 999px;
@@ -333,6 +335,8 @@
       --space-stack-xs: 4px;
       --space-stack-sm: 8px;
       --space-stack-md: 16px;
+
+      --space-chip-x: 16px; /* filter chip horizontal padding — short labels (U9) stay a pill, not a circle */
       --radius-card: 24px;
       --radius-control: 12px;
       --radius-full: 999px;
@@ -351,6 +355,8 @@
     --space-stack-xs: 4px;
     --space-stack-sm: 8px;
     --space-stack-md: 16px;
+
+    --space-chip-x: 16px; /* filter chip horizontal padding — short labels (U9) stay a pill, not a circle */
     --radius-card: 24px;
     --radius-control: 12px;
     --radius-full: 999px;

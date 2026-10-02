@@ -32,13 +32,19 @@ export const TeamSnapshot = ({ team }: { team: TeamSeasonStats }) => {
         <Crest brand={getCrestBrand(team)} />
         <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
           <div className='flex min-w-0 items-center gap-(--space-stack-sm)'>
+            {/* Age is part of the heading for screen readers — two "Soricha" headings
+                were indistinguishable in a heading list (WCAG 2.4.6). The visible
+                badge is hidden from AT so it isn't read twice. */}
             <h3 className='text-title truncate text-(--color-text-primary)'>
               {team.label}
+              {team.age && <span className='visually-hidden'> {team.age}</span>}
             </h3>
             {team.age && (
-              <Badge variant='inverse' size='xs'>
-                {team.age}
-              </Badge>
+              <span aria-hidden='true' className='flex shrink-0'>
+                <Badge variant='inverse' size='xs'>
+                  {team.age}
+                </Badge>
+              </span>
             )}
           </div>
           <span className='text-meta text-(--color-text-secondary)'>

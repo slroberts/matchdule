@@ -268,10 +268,15 @@ export const ClientView = ({
           setIsFilterOpen={setIsFilterOpen}
           activeFilterCount={activeFilterCount}
         />
-        {/* Opaque canvas so cards don't show through the tabs while scrolling */}
-        <div className='bg-(--color-bg-canvas) pt-(--space-stack-sm)'>
+        {/* Opaque canvas so cards don't show through the tabs while scrolling.
+            A labelled region (not nav — the tabs filter, they don't navigate) so
+            landmark users can jump straight to the team switcher. */}
+        <section
+          aria-label='Choose team'
+          className='bg-(--color-bg-canvas) pt-(--space-stack-sm)'
+        >
           <TeamTabs activeTeam={currentTeam} onTeamChange={handleTeamChange} />
-        </div>
+        </section>
       </div>
 
       {/* Bottom padding clears the floating TabBar + home indicator */}

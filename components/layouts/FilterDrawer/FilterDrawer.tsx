@@ -209,12 +209,12 @@ const FilterChip = ({
     aria-pressed={selected}
     disabled={disabled}
     onClick={onClick}
-    className='tap-area'
+    className='tap-area min-w-(--size-tap) justify-center'
   >
-    {/* 36px visual chip inside the 44px tap area */}
+    {/* 36px visual chip inside the 44 × ≥44px tap area (short labels like "U9") */}
     <span
       className={cn(
-        'tap-visual text-control inline-flex h-9 items-center gap-1.5 rounded-(--radius-full) px-(--space-stack-md)',
+        'tap-visual text-control inline-flex h-9 items-center gap-1.5 rounded-(--radius-full) px-(--space-chip-x)',
         disabled
           ? 'bg-(--color-bg-subtle) text-(--color-text-disabled)'
           : selected

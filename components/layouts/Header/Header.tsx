@@ -94,6 +94,10 @@ export const Header = ({
       data-theme='dark'
       className='surface-chrome w-full pt-[env(safe-area-inset-top,0px)] pb-2'
     >
+      {/* Page heading for screen readers: first in reading order (before the week-range
+          H2) and inside the banner landmark, so the outline reads H1 → H2 → H3
+          (WCAG 1.3.1 / 2.4.6). The logo is the visual equivalent. */}
+      <h1 className='visually-hidden'>{isSeason ? 'Season' : 'Schedule'}</h1>
       <div className='mx-auto w-full max-w-lg'>
         {/* ── AppHeader: h 56 · pl gutter · pr stack-sm ─────────────────── */}
         <div className='flex h-(--size-app-header) flex-row flex-nowrap items-center justify-between pl-(--space-gutter) pr-(--space-stack-sm)'>
