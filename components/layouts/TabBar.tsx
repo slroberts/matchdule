@@ -9,7 +9,7 @@ import type { ViewMode } from '@/hooks/use-view-mode';
  * TabBar — Figma: Organisms › TabBar + TabItem (Selected=true|false)
  * Tabs are real links (/?view=season) so they can be long-pressed, copied and shared,
  * but clicks switch via history.pushState — instant, no data refetch, back button works.
- * Frosted: .glass (surface @ 82% + backdrop blur 24). Content scrolls beneath it —
+ * Frosted: .glass (surface @ 94% + backdrop blur 24). Content scrolls beneath it —
  * give the scroll container padding-bottom: calc(var(--size-tab-bar) + var(--safe-bottom)).
  */
 

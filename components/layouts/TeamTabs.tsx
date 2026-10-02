@@ -32,13 +32,31 @@ const PILL_SPRING = { type: 'spring', stiffness: 400, damping: 35 } as const;
 
 export const TeamTabs = ({ activeTeam, onTeamChange }: TeamTabsProps) => {
   const tabRefs = useRef<Map<TabOption, HTMLButtonElement>>(new Map());
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // Keep the selected tab visible when the row overflows (many teams / long names)
+  // Keep the selected tab visible when the row overflows (many teams / long names).
+  // Scroll the ROW, not the tab: element.scrollIntoView() also moves the browser's
+  // sequential-focus starting point, so the next Tab skipped Filters and the week
+  // navigation and landed in the schedule (WCAG 2.4.3 Focus Order).
   useEffect(() => {
-    tabRefs.current.get(activeTeam)?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'nearest',
+    const list = listRef.current;
+    const tab = tabRefs.current.get(activeTeam);
+    if (!list || !tab) return;
+    const pad = parseFloat(getComputedStyle(list).paddingLeft) || 0;
+    const start =
+      tab.getBoundingClientRect().left -
+      list.getBoundingClientRect().left +
+      list.scrollLeft;
+    const left = start - pad;
+    const right = start + tab.offsetWidth + pad - list.clientWidth;
+    const target =
+      list.scrollLeft > left ? left : list.scrollLeft < right ? right : null;
+    if (target === null) return; // already fully visible
+    list.scrollTo({
+      left: target,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth',
     });
   }, [activeTeam]);
 
@@ -72,6 +90,7 @@ export const TeamTabs = ({ activeTeam, onTeamChange }: TeamTabsProps) => {
   return (
     <MotionConfig reducedMotion='user'>
       <div
+        ref={listRef}
         role='tablist'
         aria-label='Teams'
         className='scroll-x mx-auto w-full max-w-lg px-(--space-gutter)'
