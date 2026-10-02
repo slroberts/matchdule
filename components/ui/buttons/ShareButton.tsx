@@ -4,10 +4,15 @@ import { useState } from 'react';
 import { Check, Share2 } from 'lucide-react';
 import { Match } from '@/types/match';
 import { formatShortName } from '@/lib/matches/match-utils';
+import { nyDateKey } from '@/lib/dates/ny-time';
 
 /**
  * ShareButton — Figma: MatchCard › Footer › Share (44×44, bg subtle, radius control)
  * Fixed size in both states (no layout shift); "copied" is announced via a live region.
+ *
+ * Shares the game details + a link to that game's week. The link goes INSIDE `text`
+ * (no separate `url` field): several share targets — Messages on Mac, Copy — keep only
+ * the url when both are given and silently drop the details.
  */
 
 const ICON = { size: 16, strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
@@ -23,10 +28,11 @@ export const ShareButton = ({ match }: { match: Match }) => {
   const handleShare = async () => {
     const homeTeam = formatShortName(match.homeTeam.name);
     const awayTeam = formatShortName(match.awayTeam.name);
-    const text = `⚽ ${homeTeam} vs ${awayTeam}\n📅 ${match.date} @ ${match.time}\n📍 ${match.location}`;
-    const url = window.location.href;
+    // Opens the schedule on the week of this game
+    const url = `${window.location.origin}/?date=${nyDateKey(match.timestamp)}`;
+    const text = `⚽ ${homeTeam} vs ${awayTeam}\n📅 ${match.date} @ ${match.time}\n📍 ${match.location}\n${url}`;
     // Title names the game — it's what the receiving app shows first
-    const shareData = { title: `${homeTeam} vs ${awayTeam}`, text, url };
+    const shareData = { title: `${homeTeam} vs ${awayTeam}`, text };
 
     // canShare is missing in some browsers — guard before calling it
     if (
@@ -49,7 +55,7 @@ export const ShareButton = ({ match }: { match: Match }) => {
     }
 
     try {
-      await navigator.clipboard.writeText(`${text}\n\nLink: ${url}`);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
