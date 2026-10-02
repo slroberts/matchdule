@@ -3,7 +3,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/matchdule-logo.svg">
     <source media="(prefers-color-scheme: light)" srcset="public/matchdule-logo-dark.svg">
-    <img alt="Matchdule" src="public/matchdule-logo-dark.svg" width="220">
+    <img alt="Matchdule" src="public/matchdule-logo-dark.svg" width="200">
   </picture>
 </p>
 
