@@ -11,10 +11,12 @@ A phone-first schedule app for youth soccer parents. Matchdule pulls league sche
 
 ## 📱 Screens
 
-|                                               Schedule                                               |                                          Season                                           |                                   Filters                                    |
-| :--------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
-| <img src="docs/screenshots/schedule.png" width="240" alt="Schedule with the next game highlighted">  | <img src="docs/screenshots/season.png" width="240" alt="Season snapshot with team cards"> |   <img src="docs/screenshots/filters.png" width="240" alt="Filter sheet">    |
-| The next game is a dark "Versus" card with a countdown; everything else collapses to scannable rows. |     Each team's season at a glance: points, a W/D/L bar, form, and achievement flags.     | A bottom sheet that prevents zero-result combinations before you apply them. |
+<img src="docs/screenshots/readme-screens.png" alt="Schedule, Season, Filters and Add to calendar screens">
+
+- **Schedule** — the next game is a dark "Versus" card with a countdown; everything else collapses to scannable rows.
+- **Season** — each team's season at a glance: points, a W/D/L bar, form, and achievement flags.
+- **Filters** — a bottom sheet that prevents zero-result combinations before you apply them.
+- **Add to calendar** — one tap adds a game to Apple, Outlook or Google Calendar, or subscribes to every game for a team.
 
 ## 🏗 Architecture & Data Pipeline
 
