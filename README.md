@@ -1,4 +1,4 @@
-# <p align="center">
+<p align="center">
 
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/matchdule-logo.svg">
@@ -11,6 +11,8 @@
 [![Live app](https://img.shields.io/badge/live-matchdule.vercel.app-0B0F24)](https://matchdule.vercel.app)
 
 **Your kid's soccer schedule, right from the sideline.**
+
+I built Matchdule for my family. I got tired of looking up the schedule or waiting for the coach to post it.
 
 Matchdule pulls league schedules into a cloud database and turns them into a UI that answers the questions parents actually ask: **Where do I need to be next? Can I make both games? How is the season going?** It flags overlapping games, tight turnarounds, and missing kickoff times before they become a problem — and keeps working at the field when the signal doesn't.
 
