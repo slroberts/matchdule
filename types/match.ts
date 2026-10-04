@@ -27,6 +27,8 @@ export interface Match {
   location: string;
   date: string;
   status: MatchStatus;
+  /** League's own wording when a game is called off ("Rained out", "Postponed") */
+  statusNote?: string;
   timestamp: number;
   isConflict?: boolean;
   isTightGap?: boolean;

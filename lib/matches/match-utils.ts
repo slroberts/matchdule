@@ -47,7 +47,10 @@ export const isAwaitingResult = (
  */
 export const getStatusConfig = (
   status: MatchStatus,
-  { awaitingResult = false }: { awaitingResult?: boolean } = {},
+  {
+    awaitingResult = false,
+    note,
+  }: { awaitingResult?: boolean; note?: string } = {},
 ): StatusConfig | null => {
   if (status === 'final' && awaitingResult) {
     // Not a problem, just not posted yet → neutral, gray hourglass
@@ -72,7 +75,7 @@ export const getStatusConfig = (
       className: 'bg-(--color-bg-subtle) text-(--color-text-secondary)',
     },
     canceled: {
-      label: 'Canceled',
+      label: note ?? 'Canceled',
       icon: XCircle,
       className:
         'bg-(--color-bg-subtle) text-(--color-text-primary) [&_svg]:text-(--color-danger-icon)',

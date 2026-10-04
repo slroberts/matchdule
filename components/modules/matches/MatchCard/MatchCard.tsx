@@ -80,6 +80,7 @@ export const MatchCard = ({
         isHomeGame={isHomeGame}
         showDate={showDate}
         awaitingResult={isAwaitingResult(match, currentStatus)}
+        statusNote={match.statusNote}
         trailing={collapse}
       />
 

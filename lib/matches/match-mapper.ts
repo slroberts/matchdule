@@ -11,6 +11,13 @@ interface RawScrapedMatch {
   venue: string;
 }
 
+/** Called-off games. GotSport uses several words; "Rescheduled"/"Scheduled" are NOT here. */
+const CALLED_OFF_RE = /cancel|rain|postpon|abandon|weather|lightning|suspend/i;
+
+/** "RAINED OUT" / "Rained Out" → "Rained out" (caps come from the text-label style) */
+const sentenceCase = (s: string) =>
+  s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
 // Helper: Safe Score Parsing
 const safeScore = (score: string | null | undefined): number | undefined => {
   if (!score || score.trim() === '') return undefined;
@@ -175,11 +182,13 @@ export function mapApiToMatch(raw: RawScrapedMatch): Match {
   let homeScore: number | undefined;
   let awayScore: number | undefined;
   let status: MatchStatus = 'upcoming';
+  let statusNote: string | undefined;
 
-  const lowerStatus = (raw.score_or_status || '').toLowerCase();
+  const rawStatus = (raw.score_or_status || '').trim();
 
-  if (lowerStatus.includes('cancel')) {
+  if (CALLED_OFF_RE.test(rawStatus)) {
     status = 'canceled';
+    statusNote = sentenceCase(rawStatus.replace(/\s+/g, ' '));
   } else if (raw.score_or_status && raw.score_or_status.includes('-')) {
     const [homeRaw, awayRaw] = raw.score_or_status.split('-');
     homeScore = safeScore(homeRaw);
@@ -217,6 +226,7 @@ export function mapApiToMatch(raw: RawScrapedMatch): Match {
     time: formattedTime,
     location: cleanVenue(raw.venue),
     status,
+    ...(statusNote && { statusNote }),
     timestamp,
   };
 }

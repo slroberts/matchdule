@@ -72,6 +72,7 @@ const MatchHeader = ({
   isHomeGame,
   showDate = true,
   awaitingResult = false,
+  statusNote,
   trailing,
 }: {
   isConflict?: boolean;
@@ -84,11 +85,15 @@ const MatchHeader = ({
   showDate?: boolean;
   /** Game over, score not posted yet → "Pending" instead of "Final" */
   awaitingResult?: boolean;
+  /** Called-off reason ("Rained out") — replaces the generic "Canceled" label */
+  statusNote?: string;
   /** Extra control after the venue badge (e.g. the focus-stack collapse ⌃) */
   trailing?: ReactNode;
 }) => {
   const statusConfig =
-    status === 'live' ? null : getStatusConfig(status, { awaitingResult });
+    status === 'live'
+      ? null
+      : getStatusConfig(status, { awaitingResult, note: statusNote });
   const when = isTBD ? 'Time TBD' : formatTime(time);
   const label = showDate ? `${formatDate(date)} · ${when}` : when;
   // Same icon + buckets as the filter drawer's Morning/Afternoon/Evening chips

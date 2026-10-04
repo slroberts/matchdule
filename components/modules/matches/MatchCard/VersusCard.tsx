@@ -125,6 +125,7 @@ export const VersusCard = ({
   const isFinal = status === 'final';
   const isLive = status === 'live';
   const isUpcoming = status === 'upcoming';
+  const isCanceled = status === 'canceled';
   const scored = hasScores(match);
   /* Live before the first score update, or finished before the league posts it */
   const showVs = isUpcoming || !scored;
@@ -156,7 +157,7 @@ export const VersusCard = ({
     <article
       id={id}
       data-theme='dark'
-      aria-label={`${isUpcoming ? 'Next match' : isLive ? 'Live match' : 'Result'}: ${clubName} vs ${oppName}`}
+      aria-label={`${isCanceled ? (match.statusNote ?? 'Canceled') : isUpcoming ? 'Next match' : isLive ? 'Live match' : 'Result'}: ${clubName} vs ${oppName}`}
       className={cn(
         'flex flex-col gap-4.5 overflow-hidden rounded-(--radius-card) bg-(image:--gradient-versus) px-(--space-card-pad) pt-5.5 pb-(--space-card-pad)',
         'shadow-[0_16px_40px_-12px_rgb(11_15_36/0.45)]',
@@ -203,12 +204,16 @@ export const VersusCard = ({
                 className={cn(
                   'text-label font-bold',
                   // Pending isn't a problem, just not posted yet → neutral
-                  isLive
+                  isLive || isCanceled
                     ? 'text-(--color-danger-on-surface)'
                     : 'text-(--color-text-secondary)',
                 )}
               >
-                {isLive ? 'Live' : 'Pending'}
+                {isCanceled
+                  ? (match.statusNote ?? 'Canceled')
+                  : isLive
+                    ? 'Live'
+                    : 'Pending'}
               </span>
             )}
             <span
@@ -331,9 +336,14 @@ export const VersusCard = ({
 
       {/* Footer: Directions until the final whistle · Calendar before kickoff · Share always */}
       <div
-        className={cn('flex gap-(--space-stack-sm)', isFinal && 'justify-end')}
+        className={cn(
+          'flex gap-(--space-stack-sm)',
+          (isFinal || isCanceled) && 'justify-end',
+        )}
       >
-        {!isFinal && <DirectionsButton location={match.location} />}
+        {!isFinal && !isCanceled && (
+          <DirectionsButton location={match.location} />
+        )}
         {isUpcoming && <CalendarButton match={match} />}
         <ShareButton match={match} />
       </div>

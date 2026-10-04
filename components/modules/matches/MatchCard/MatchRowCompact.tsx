@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { ChevronDown, Flag, TriangleAlert } from 'lucide-react';
+import { ChevronDown, Flag, TriangleAlert, XCircle } from 'lucide-react';
 import { Match } from '@/types/match';
 import { cn } from '@/lib/utils';
 import { cleanTeamName, hasScores } from '@/lib/matches/match-utils';
@@ -58,6 +58,7 @@ export const MatchRowCompact = ({
   const [clock, meridiem] = (isTBD ? 'TBD' : formatTime(match.time)).split(' ');
   const isFinal = status === 'final';
   const isLive = status === 'live';
+  const isCanceled = status === 'canceled';
   const result = isFinal ? club.result : undefined;
 
   return (
@@ -69,9 +70,20 @@ export const MatchRowCompact = ({
       aria-controls={controlsId}
       className='pressable flex min-h-16 w-full items-center gap-(--space-stack-md) rounded-2xl bg-(--color-bg-surface) px-(--space-card-pad) py-3 text-left shadow-(--shadow-card)'
     >
-      {/* Rail: time → live → score (or pending) */}
+      {/* Rail: time → live → score (or pending) · called off = struck time */}
       <span className='flex w-14 shrink-0 flex-col items-start'>
-        {isFinal && !hasScores(match) ? (
+        {isCanceled ? (
+          <>
+            <span className='text-score leading-none text-(--color-text-secondary) line-through decoration-2'>
+              {clock}
+            </span>
+            {meridiem && (
+              <span className='text-label mt-1 text-(--color-text-secondary)'>
+                {meridiem}
+              </span>
+            )}
+          </>
+        ) : isFinal && !hasScores(match) ? (
           <>
             <span className='text-score leading-none text-(--color-text-secondary)'>
               FT
@@ -83,7 +95,7 @@ export const MatchRowCompact = ({
         ) : isFinal ? (
           <>
             <span className='text-score leading-none text-(--color-text-primary)'>
-              {club.score} - {opponent.score}
+              {club.score} – {opponent.score}
             </span>
             <span
               className={cn(
@@ -140,7 +152,15 @@ export const MatchRowCompact = ({
         </span>
         {/* WHERE — venue chip + field */}
         <span className='flex min-w-0 items-center gap-(--space-stack-sm)'>
-          <Badge size='xs'>{isHomeGame ? 'Home' : 'Away'}</Badge>
+          {/* Called off: the reason takes the chip's slot — Home/Away no longer matters */}
+          {isCanceled ? (
+            <Badge variant='destructive' size='xs'>
+              <XCircle aria-hidden='true' />
+              {match.statusNote ?? 'Canceled'}
+            </Badge>
+          ) : (
+            <Badge size='xs'>{isHomeGame ? 'Home' : 'Away'}</Badge>
+          )}
           <span className='text-meta truncate text-(--color-text-secondary)'>
             {match.location}
           </span>

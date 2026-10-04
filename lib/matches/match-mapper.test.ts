@@ -17,6 +17,36 @@ const raw = (over: Partial<Parameters<typeof mapApiToMatch>[0]> = {}) => ({
   ...over,
 });
 
+describe('mapApiToMatch · called-off games', () => {
+  it.each([
+    ['Rained Out', 'Rained out'],
+    ['CANCELLED', 'Cancelled'],
+    ['Canceled', 'Canceled'],
+    ['Postponed', 'Postponed'],
+    ['Weather Delay', 'Weather delay'],
+  ])('%j → canceled with note %j (never "Pending")', (scoreOrStatus, note) => {
+    const m = mapApiToMatch(
+      raw({ date_time: 'Sep 27, 2026 1:00PM', score_or_status: scoreOrStatus }),
+    );
+    expect(m.status).toBe('canceled');
+    expect(m.statusNote).toBe(note);
+  });
+
+  it.each(['Rescheduled', 'Scheduled', '-', '', 'Y', 'N'])(
+    '%j is not a called-off status',
+    (scoreOrStatus) => {
+      const m = mapApiToMatch(raw({ score_or_status: scoreOrStatus }));
+      expect(m.status).not.toBe('canceled');
+      expect(m.statusNote).toBeUndefined();
+    },
+  );
+
+  it('a real score is never treated as called off', () => {
+    const m = mapApiToMatch(raw({ score_or_status: '2 - 4' }));
+    expect(m.status).toBe('final');
+  });
+});
+
 describe('mapApiToMatch · dates & times (real messy source strings)', () => {
   it.each([
     ['Nov 14, 2026 1:00 PM', 'Nov 14, 2026', '1:00 PM'],
