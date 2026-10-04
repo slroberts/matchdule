@@ -33,6 +33,18 @@ export const Today: Story = {
   args: { match: u9Home },
   parameters: { now: NOW.gameDayMorning },
 };
+/** Urgency — Figma: Urgency=Tight gap / Urgency=Conflict */
+export const TightGap: Story = {
+  args: { match: { ...u9Home, isTightGap: true } },
+};
+export const Conflict: Story = {
+  args: { match: { ...u9Home, isConflict: true } },
+};
+/** Called off by the league — struck time + reason, never "Pending" */
+export const RainedOut: Story = {
+  args: { match: { ...u9Home, status: 'canceled', statusNote: 'Rained out' } },
+  parameters: { now: NOW.afterFirstGame },
+};
 export const AwayGame: Story = {
   args: { match: u13Away },
   parameters: { now: NOW.gameDayMorning },

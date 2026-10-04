@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { ChevronDown, Flag, TriangleAlert, XCircle } from 'lucide-react';
+import { ChevronDown, XCircle } from 'lucide-react';
 import { Match } from '@/types/match';
 import { cn } from '@/lib/utils';
-import { cleanTeamName, hasScores } from '@/lib/matches/match-utils';
+import {
+  cleanTeamName,
+  getUrgency,
+  hasScores,
+} from '@/lib/matches/match-utils';
 import {
   getAgeGroup,
   getClubLabel,
@@ -14,6 +18,7 @@ import { useMatchStatus } from '@/hooks/use-match-status';
 import { Badge } from '@/components/ui/Badge/Badge';
 import { Crest } from '@/components/ui/Crest/Crest';
 import { formatTime } from './MatchHeader';
+import { UrgencyIcon } from './UrgencyIcon';
 
 /**
  * MatchRowCompact — collapsed state in the focus stack (Figma: MatchRowCompact)
@@ -167,18 +172,8 @@ export const MatchRowCompact = ({
         </span>
       </span>
 
-      {/* Urgency — icon + screen-reader text */}
-      {match.isConflict ? (
-        <span className='shrink-0 text-(--color-danger-icon)'>
-          <Flag {...ICON} aria-hidden='true' />
-          <span className='visually-hidden'>Conflict</span>
-        </span>
-      ) : match.isTightGap ? (
-        <span className='shrink-0 text-(--color-warning-icon)'>
-          <TriangleAlert {...ICON} aria-hidden='true' />
-          <span className='visually-hidden'>Tight gap</span>
-        </span>
-      ) : null}
+      {/* Urgency — icon is the only signal here, so it announces its label */}
+      <UrgencyIcon urgency={getUrgency(match)} />
 
       <ChevronDown
         {...ICON}

@@ -1,11 +1,13 @@
 import {
   CheckCircle2,
+  Flag,
   Hourglass,
   Radio,
+  TriangleAlert,
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { Match, MatchStatus } from '@/types/match';
+import { Match, MatchStatus, UrgencyOption } from '@/types/match';
 import { MATCH_PLAY_MINUTES } from '@/lib/matches/match-constants';
 
 /* =====================================================================
@@ -18,6 +20,19 @@ interface StatusConfig {
   icon: LucideIcon;
   /** Token classes (bg + text) merged over the neutral badge */
   className: string;
+}
+
+/** Card-level urgencies — TBD is a filter option, not a card state */
+export type MatchUrgency = Exclude<UrgencyOption, 'tbd'>;
+
+interface UrgencyConfig {
+  /** Sentence case — caps come from the text-label style */
+  label: string;
+  icon: LucideIcon;
+  /** Icon color (UrgencyIcon) */
+  iconClass: string;
+  /** Inline label color on a surface (VersusCard meta line) */
+  textClass: string;
 }
 
 /* =====================================================================
@@ -84,6 +99,31 @@ export const getStatusConfig = (
 
   return configs[status] ?? null;
 };
+
+/**
+ * Urgency config — one source for icon, label and tokens.
+ * Mirrors Figma's `Urgency` variant on VersusCard + MatchRowCompact.
+ */
+export const URGENCY: Record<MatchUrgency, UrgencyConfig> = {
+  conflict: {
+    label: 'Conflict',
+    icon: Flag,
+    iconClass: 'text-(--color-danger-icon)',
+    textClass: 'text-(--color-danger-on-surface)',
+  },
+  'tight-gap': {
+    label: 'Tight gap',
+    icon: TriangleAlert,
+    iconClass: 'text-(--color-warning-icon)',
+    textClass: 'text-(--color-warning-on-surface)',
+  },
+};
+
+/** Conflict outranks tight gap — a card shows one urgency at most */
+export const getUrgency = (
+  m: Pick<Match, 'isConflict' | 'isTightGap'>,
+): MatchUrgency | null =>
+  m.isConflict ? 'conflict' : m.isTightGap ? 'tight-gap' : null;
 
 /* =====================================================================
    DOMAIN & LIST HELPERS

@@ -33,6 +33,11 @@ export const AwayWithTightGap: Story = {
 export const Conflict: Story = {
   args: { match: { ...bgSunday, isConflict: true } },
 };
+/** Called off by the league — struck time + reason, never "Pending" */
+export const RainedOut: Story = {
+  args: { match: { ...u9Home, status: 'canceled', statusNote: 'Rained out' } },
+  parameters: { now: NOW.afterFirstGame },
+};
 export const Live: Story = {
   args: { match: u9Home },
   parameters: { now: NOW.duringGame },

@@ -4,6 +4,7 @@ import {
   cleanTeamName,
   getPaginationBounds,
   getStatusConfig,
+  getUrgency,
   hasScores,
   isAwaitingResult,
   processWeekSpacing,
@@ -151,6 +152,17 @@ describe('processWeekSpacing', () => {
     const out = processWeekSpacing([match({ time: 'TBD' })]);
     expect(out.hasTBD).toBe(true);
     expect(out.tbdDetails[0]).toMatch(/vs/);
+  });
+});
+
+describe('getUrgency (one urgency per card)', () => {
+  it.each([
+    [{}, null],
+    [{ isTightGap: true }, 'tight-gap'],
+    [{ isConflict: true }, 'conflict'],
+    [{ isConflict: true, isTightGap: true }, 'conflict'], // conflict outranks
+  ] as const)('%j → %s', (flags, expected) => {
+    expect(getUrgency(flags)).toBe(expected);
   });
 });
 

@@ -4,7 +4,12 @@ import { useEffect, useRef } from 'react';
 import { ChevronUp } from 'lucide-react';
 import { Match, Team } from '@/types/match';
 import { cn } from '@/lib/utils';
-import { cleanTeamName, hasScores } from '@/lib/matches/match-utils';
+import {
+  cleanTeamName,
+  getUrgency,
+  hasScores,
+  URGENCY,
+} from '@/lib/matches/match-utils';
 import { getAgeGroup, getCrestBrand } from '@/lib/matches/team-meta';
 import { useMatchStatus } from '@/hooks/use-match-status';
 import { Badge } from '@/components/ui/Badge/Badge';
@@ -13,6 +18,7 @@ import { DirectionsButton } from '@/components/ui/buttons/DirectionsButton';
 import { ShareButton } from '@/components/ui/buttons/ShareButton';
 import { CalendarButton } from '@/components/ui/buttons/CalendarButton';
 import { formatTime } from './MatchHeader';
+import { UrgencyIcon } from './UrgencyIcon';
 
 /**
  * VersusCard — Concept 3 "Versus Poster" (canvas: 3 · Versus, 3a pre-game, 3b live & results)
@@ -153,6 +159,8 @@ export const VersusCard = ({
   const clubName = cleanTeamName(club.name);
   const oppName = cleanTeamName(opponent.name);
 
+  const urgency = getUrgency(match);
+
   return (
     <article
       id={id}
@@ -166,8 +174,16 @@ export const VersusCard = ({
     >
       {/* Meta + venue */}
       <div className='-my-2 flex items-center gap-(--space-stack-sm)'>
+        {/* Urgency — icon only; the visible label in the meta line names it */}
+        <UrgencyIcon urgency={urgency} announce={false} />
         <span className='text-label min-w-0 flex-1 truncate text-(--color-text-secondary)'>
           {meta}
+          {urgency && (
+            <span className={URGENCY[urgency].textClass}>
+              {' '}
+              · {URGENCY[urgency].label}
+            </span>
+          )}
         </span>
         <Badge variant='inverse'>{isHomeGame ? 'Home' : 'Away'}</Badge>
         {onCollapse && (
