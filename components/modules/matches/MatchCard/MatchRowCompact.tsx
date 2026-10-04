@@ -83,7 +83,7 @@ export const MatchRowCompact = ({
         ) : isFinal ? (
           <>
             <span className='text-score leading-none text-(--color-text-primary)'>
-              {club.score}–{opponent.score}
+              {club.score} - {opponent.score}
             </span>
             <span
               className={cn(
