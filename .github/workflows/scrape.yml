@@ -17,7 +17,8 @@ permissions:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Worst case with JS rendering: 2 teams × (3 attempts × 180 s + 15 s backoff) ≈ 19 min
+    timeout-minutes: 25
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -41,28 +42,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Get Playwright version
-        id: pw
-        run: echo "version=$(pip show playwright | awk '/^Version:/ {print $2}')" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Playwright browsers
-        id: pw-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
-
-      - name: Install Playwright browser
-        if: steps.pw-cache.outputs.cache-hit != 'true'
-        run: playwright install --with-deps chromium
-
-      - name: Install Playwright system deps (cached browser)
-        if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: playwright install-deps chromium
-
       - name: Run scraper
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        # Exit 2 = GotSport served a CAPTCHA (stop, don't retry) · Exit 1 = other failure
+          ZENROWS_KEY: ${{ secrets.ZENROWS_KEY }}
+          # Flip to "false" if the match rows are in GotSport's page source (faster, far fewer credits)
+          ZENROWS_JS_RENDER: 'true'
+        # Exit 2 = hard block (bad key, no credits, persistent CAPTCHA) · Exit 1 = other failure
         run: python main.py
