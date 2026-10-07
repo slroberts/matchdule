@@ -12,9 +12,14 @@ export type TabOption = (typeof TABS)[number];
 export type MatchStatus = 'upcoming' | 'live' | 'final' | 'canceled';
 export type MatchResult = 'W' | 'L' | 'D' | null;
 
+/** League age group, e.g. "U9" — from the scraper's TEAMS config, never parsed from names */
+export type AgeGroup = `U${number}`;
+
 export interface Team {
   name: string;
   utility: 'b-and-g' | 'soricha' | 'away';
+  /** Set only on our tracked teams (opponents have none) */
+  age?: AgeGroup;
   score?: number;
   result?: MatchResult;
 }

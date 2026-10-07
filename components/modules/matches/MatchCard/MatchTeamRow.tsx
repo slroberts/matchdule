@@ -27,7 +27,7 @@ const MatchTeamRow = ({
   isClub: boolean;
 }) => {
   const name = cleanTeamName(team.name);
-  const age = getAgeGroup(team.name);
+  const age = getAgeGroup(team);
   // Only when a score exists — a finished game without one shows "Awaiting score" in the header instead
   const showScore =
     (status === 'live' || status === 'final') && score !== undefined;

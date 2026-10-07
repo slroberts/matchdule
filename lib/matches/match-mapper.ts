@@ -1,4 +1,4 @@
-import { Match, MatchStatus, MatchResult, Team } from '@/types/match';
+import { AgeGroup, Match, MatchStatus, MatchResult, Team } from '@/types/match';
 import { MATCH_LENGTH_MS } from '@/lib/matches/match-constants';
 
 interface RawScrapedMatch {
@@ -9,7 +9,16 @@ interface RawScrapedMatch {
   score_or_status: string;
   away_team: string;
   venue: string;
+  /** Age of whichever side is one of our tracked teams (scraper TEAMS config) */
+  home_age?: string | null;
+  away_age?: string | null;
 }
+
+/** "U9" / " u13 " → AgeGroup; anything else (null, junk) → undefined */
+const toAgeGroup = (raw: string | null | undefined): AgeGroup | undefined => {
+  const age = raw?.trim().toUpperCase();
+  return age && /^U\d{1,2}$/.test(age) ? (age as AgeGroup) : undefined;
+};
 
 /** Called-off games. GotSport uses several words; "Rescheduled"/"Scheduled" are NOT here. */
 const CALLED_OFF_RE = /cancel|rain|postpon|abandon|weather|lightning|suspend/i;
@@ -208,17 +217,22 @@ export function mapApiToMatch(raw: RawScrapedMatch): Match {
     else if (now >= timestamp) status = 'live';
   }
 
+  const homeAge = toAgeGroup(raw.home_age);
+  const awayAge = toAgeGroup(raw.away_age);
+
   return {
     id: raw.game_id,
     homeTeam: {
       name: cleanTeamName(raw.home_team),
       utility: getTeamUtility(raw.home_team),
+      ...(homeAge && { age: homeAge }),
       score: homeScore,
       result: getResult(homeScore, awayScore),
     },
     awayTeam: {
       name: cleanTeamName(raw.away_team),
       utility: getTeamUtility(raw.away_team),
+      ...(awayAge && { age: awayAge }),
       score: awayScore,
       result: getResult(awayScore, homeScore),
     },

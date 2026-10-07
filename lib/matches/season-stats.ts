@@ -57,8 +57,11 @@ export const nextSeasonName = (season: string) => {
   return term === 'Fall' ? `Spring ${Number(year) + 1}` : `Fall ${year}`;
 };
 
-const ageFor = (name: string) =>
-  getAgeGroup(name) ?? name.match(/\bU\d{1,2}\b/i)?.[0].toUpperCase() ?? null;
+/** Data first; a "U12" in the team name covers rows scraped before ages existed */
+const ageFor = (team: Team) =>
+  getAgeGroup(team) ??
+  team.name.match(/\bU\d{1,2}\b/i)?.[0].toUpperCase() ??
+  null;
 
 /**
  * Flags — computed from the full chronological record:
@@ -128,7 +131,7 @@ export const getSeasonStats = (
         teams.set(us.name, {
           key: us.name,
           label: getClubLabel(us, cleanTeamName(us.name)),
-          age: ageFor(us.name),
+          age: ageFor(us),
           utility: us.utility,
           gp: 0,
           w: 0,

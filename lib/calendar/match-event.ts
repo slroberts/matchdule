@@ -64,7 +64,7 @@ export const getMatchEvent = (match: Match): MatchEvent => {
   const club = isHomeGame ? match.homeTeam : match.awayTeam;
   const opponent = isHomeGame ? match.awayTeam : match.homeTeam;
 
-  const age = getAgeGroup(club.name);
+  const age = getAgeGroup(club);
   const clubLabel = getClubLabel(club, cleanTeamName(club.name));
   const title = `${clubLabel}${age ? ` ${age}` : ''} vs ${cleanTeamName(opponent.name)}`;
 
@@ -192,14 +192,14 @@ const clubOf = (match: Match) =>
 /** Stable feed key per tracked team: "soricha-u9", "soricha-u13", "b-and-g" */
 export const feedKey = (match: Match) => {
   const club = clubOf(match);
-  const age = getAgeGroup(club.name);
+  const age = getAgeGroup(club);
   return `${club.utility}${age ? `-${age.toLowerCase()}` : ''}`;
 };
 
 /** Human label for the same team: "Soricha U9", "B&G" */
 export const feedLabel = (match: Match) => {
   const club = clubOf(match);
-  const age = getAgeGroup(club.name);
+  const age = getAgeGroup(club);
   return `${getClubLabel(club, cleanTeamName(club.name))}${age ? ` ${age}` : ''}`;
 };
 

@@ -124,7 +124,7 @@ export const VersusCard = ({
   const club = isHomeGame ? match.homeTeam : match.awayTeam;
   const opponent = isHomeGame ? match.awayTeam : match.homeTeam;
 
-  const age = getAgeGroup(club.name);
+  const age = getAgeGroup(club);
   const isTBD = match.time === 'TBD';
   const when = isTBD ? 'Time TBD' : formatTime(match.time);
 

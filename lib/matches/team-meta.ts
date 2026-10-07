@@ -1,28 +1,19 @@
-import { Team } from '@/types/match';
+import { AgeGroup, Team } from '@/types/match';
 
 /**
  * Team presentation helpers shared by MatchTeamRow, MatchRowCompact and VersusCard.
- * TODO(scraper): age group should come from the data, not this list — add an `age` field per team in scraper/main.py's team config and a column in Supabase, then read it in mapApiToMatch. Until then, a new team needs a row in AGE_GROUPS below.
+ * Age comes from the data (scraper TEAMS config → home_age / away_age → Team.age).
+ * Adding a team = one entry in scraper/main.py, nothing here.
  */
 
-/* The scraper's YEAR_RE now strips whole season ranges ("SFA 2017/18 CJSL" → "SFA CJSL"),
-   so the U9 key changed. '/18' stays for rows scraped before that change. */
-const AGE_GROUPS: [nameIncludes: string, age: 'U13' | 'U9'][] = [
-  ['Soricha Foot SFA EDP', 'U13'],
-  ['Soricha Foot SFA CJSL', 'U9'],
-  ['Soricha Foot SFA /18', 'U9'],
-];
+export const getAgeGroup = (team?: Pick<Team, 'age'>): AgeGroup | undefined =>
+  team?.age;
 
-export const getAgeGroup = (name?: string) =>
-  AGE_GROUPS.find(([match]) => name?.includes(match))?.[1];
-
-/** Single source for the age filter — never hard-code a team name needle again */
+/** Does either side of the match belong to this age group? (U9 / U13 filter) */
 export const hasAgeGroup = (
-  match: { homeTeam: Pick<Team, 'name'>; awayTeam: Pick<Team, 'name'> },
-  age: 'U13' | 'U9',
-) =>
-  getAgeGroup(match.homeTeam.name) === age ||
-  getAgeGroup(match.awayTeam.name) === age;
+  match: { homeTeam: Pick<Team, 'age'>; awayTeam: Pick<Team, 'age'> },
+  age: AgeGroup,
+) => match.homeTeam.age === age || match.awayTeam.age === age;
 
 /** Crest colorway. Soricha = yellow/blue ball; every other team (incl. B&G) = graphite ball. */
 export type CrestBrand = 'soricha' | 'opponent';

@@ -57,7 +57,7 @@ export const MatchRowCompact = ({
   const opponent = isHomeGame ? match.awayTeam : match.homeTeam;
   const clubLabel = getClubLabel(club, cleanTeamName(club.name));
   const oppName = cleanTeamName(opponent.name);
-  const age = getAgeGroup(club.name);
+  const age = getAgeGroup(club);
 
   const isTBD = match.time === 'TBD';
   const [clock, meridiem] = (isTBD ? 'TBD' : formatTime(match.time)).split(' ');

@@ -208,3 +208,42 @@ describe('mapApiToMatch · hyphenated venue names (regression)', () => {
     expect(mapApiToMatch(raw({ venue })).location).toBe(expected);
   });
 });
+
+describe('mapApiToMatch · age groups (scraper home_age / away_age)', () => {
+  it('puts the age on the side it was scraped for', () => {
+    const m = mapApiToMatch(raw({ home_age: 'U13', away_age: null }));
+    expect(m.homeTeam.age).toBe('U13');
+    expect(m.awayTeam.age).toBeUndefined();
+  });
+
+  it('works when our team is away', () => {
+    const m = mapApiToMatch(
+      raw({
+        home_team: 'Triboro United SC Jade',
+        away_team: 'Soricha Foot SFA CJSL',
+        away_age: 'U9',
+      }),
+    );
+    expect(m.homeTeam.age).toBeUndefined();
+    expect(m.awayTeam.age).toBe('U9');
+  });
+
+  it('two of our teams playing each other keep both ages', () => {
+    const m = mapApiToMatch(raw({ home_age: 'U13', away_age: 'U13' }));
+    expect([m.homeTeam.age, m.awayTeam.age]).toEqual(['U13', 'U13']);
+  });
+
+  it.each([
+    [' u9 ', 'U9'],
+    ['', undefined],
+    ['Under 9', undefined],
+    [undefined, undefined],
+  ])('%j → %j', (input, expected) => {
+    expect(mapApiToMatch(raw({ home_age: input })).homeTeam.age).toBe(expected);
+  });
+
+  it('never reads the age from the team name', () => {
+    const m = mapApiToMatch(raw({ home_team: 'Soricha Foot SFA EDP' }));
+    expect(m.homeTeam.age).toBeUndefined();
+  });
+});

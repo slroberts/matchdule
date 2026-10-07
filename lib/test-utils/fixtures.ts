@@ -32,9 +32,19 @@ export const team = (init: TeamInit = {}): Team => ({
 });
 
 export const soricha = (init: TeamInit = {}) =>
-  team({ name: 'Soricha Foot SFA EDP', utility: 'soricha', ...init });
+  team({
+    name: 'Soricha Foot SFA EDP',
+    utility: 'soricha',
+    age: 'U13',
+    ...init,
+  });
 export const soricha9 = (init: TeamInit = {}) =>
-  team({ name: 'Soricha Foot SFA /18', utility: 'soricha', ...init });
+  team({
+    name: 'Soricha Foot SFA CJSL',
+    utility: 'soricha',
+    age: 'U9',
+    ...init,
+  });
 export const bg = (init: TeamInit = {}) =>
   team({ name: 'B&G Soccer Academy', utility: 'b-and-g', ...init });
 

@@ -3,16 +3,27 @@ import {
   getAgeGroup,
   getClubLabel,
   getCrestBrand,
+  hasAgeGroup,
 } from '@/lib/matches/team-meta';
 
 describe('team identity', () => {
-  it('age group from the raw team name', () => {
-    expect(getAgeGroup('Soricha Foot SFA EDP')).toBe('U13');
-    expect(getAgeGroup('Soricha Foot SFA /18')).toBe('U9');
-    // Current scraper output ("SFA 2017/18 CJSL" → "SFA CJSL")
-    expect(getAgeGroup('Soricha Foot SFA CJSL')).toBe('U9');
-    expect(getAgeGroup('Albion SC Brooklyn')).toBeUndefined();
+  it('age group comes from the data, never the name', () => {
+    expect(getAgeGroup({ age: 'U13' })).toBe('U13');
+    expect(getAgeGroup({ age: 'U9' })).toBe('U9');
+    // An opponent — or a row scraped before ages existed — has none
+    expect(getAgeGroup({})).toBeUndefined();
     expect(getAgeGroup(undefined)).toBeUndefined();
+  });
+
+  it('hasAgeGroup matches either side', () => {
+    const vs = (home?: 'U9' | 'U13', away?: 'U9' | 'U13') => ({
+      homeTeam: { age: home },
+      awayTeam: { age: away },
+    });
+    expect(hasAgeGroup(vs('U9'), 'U9')).toBe(true);
+    expect(hasAgeGroup(vs(undefined, 'U9'), 'U9')).toBe(true);
+    expect(hasAgeGroup(vs('U13'), 'U9')).toBe(false);
+    expect(hasAgeGroup(vs(), 'U13')).toBe(false);
   });
 
   it('short club label matches the team tabs', () => {

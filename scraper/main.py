@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -32,11 +33,16 @@ HARD_STOP = {401, 402, 403}
 # 422 ZenRows couldn't fetch the target · 429 concurrency limit · 5xx transient
 RETRYABLE = {422, 429, 500, 502, 503, 504}
 
-# (event_id, team_id) — one entry per team per season/event
+# One entry per tracked team per season/event. `age` is the source of truth for the
+# app's age badge, U9/U13 filter and calendar feed keys — set it when adding a team.
+# CONFIRM the ages below with the verify query in
+# supabase/migrations/20261007_add_team_age.sql before the first run.
 TEAMS = [
-    ("54578", "4108117"),
-    ("55206", "4243561"),
+    {"event_id": "54578", "team_id": "4108117", "age": "U13"},
+    {"event_id": "55206", "team_id": "4243561", "age": "U9"},
 ]
+
+AGE_RE = re.compile(r"^U\d{1,2}$")
 
 # Brackets emptied by the year/noise removal: "SK (2017)" → "SK ()" → "SK"
 EMPTY_BRACKETS_RE = re.compile(r"\(\s*\)|\[\s*\]")
@@ -158,6 +164,29 @@ def fetch(target_url: str, team_id: str) -> tuple[str | None, str]:
     return None, "failed"
 
 
+def queried_team_name(rows: list[dict]) -> str | None:
+    """The tracked team is the one name present in EVERY row of its schedule page.
+    None when that's ambiguous (e.g. a single row) — ages are then left empty
+    rather than guessed onto the wrong side."""
+    counts = Counter(
+        name for r in rows for name in {r["home_team"], r["away_team"]})
+    full = [name for name, n in counts.items() if n == len(rows)]
+    return full[0] if len(full) == 1 else None
+
+
+def tag_ages(rows: list[dict], age: str, team_id: str) -> None:
+    """Stamp the tracked team's age on whichever side it played (home_age / away_age)."""
+    ours = queried_team_name(rows)
+    if ours is None:
+        print(
+            f"⚠️  Couldn't tell which side is {team_id} — keeping stored ages")
+    if ours is None:
+        return  # no age keys → sync() leaves the stored ages untouched
+    for r in rows:
+        r["home_age"] = age if r["home_team"] == ours else None
+        r["away_age"] = age if r["away_team"] == ours else None
+
+
 def parse_rows(html: str, event_id: str, team_id: str) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
     rows_out: list[dict] = []
@@ -204,7 +233,8 @@ def scrape_teams(teams):
     failed: list[str] = []
     blocked = False
 
-    for event_id, team_id in teams:
+    for team in teams:
+        event_id, team_id, age = team["event_id"], team["team_id"], team["age"]
         print(
             f"📡 Scraping team {team_id} (event {event_id}) via ZenRows "
             f"[js_render={'on' if JS_RENDER else 'off'}]…")
@@ -226,6 +256,7 @@ def scrape_teams(teams):
         rows_out = parse_rows(html, event_id, team_id)
 
         if rows_out:
+            tag_ages(rows_out, age, team_id)
             results[(event_id, team_id)] = rows_out
             print(f"✅ {len(rows_out)} matches for {team_id}")
         else:
@@ -240,11 +271,28 @@ def scrape_teams(teams):
 
 def dedupe(rows: list[dict]) -> list[dict]:
     """Two of our teams can play each other → same game_id twice in one batch.
-    Postgres rejects an upsert that touches a row twice, so keep one copy."""
+    Postgres rejects an upsert that touches a row twice, so keep one copy —
+    merging the ages, since each copy only knows its own team's side."""
     by_id: dict[str, dict] = {}
     for r in rows:
-        by_id.setdefault(r["game_id"], r)
+        kept = by_id.setdefault(r["game_id"], r)
+        if kept is not r and "home_age" in r:
+            kept["home_age"] = kept.get("home_age") or r["home_age"]
+            kept["away_age"] = kept.get("away_age") or r["away_age"]
     return list(by_id.values())
+
+
+def validate_teams(teams) -> list[str]:
+    """Config mistakes fail fast, before any ZenRows credits are spent."""
+    problems = []
+    for t in teams:
+        missing = {"event_id", "team_id", "age"} - t.keys()
+        if missing:
+            problems.append(f"{t}: missing {sorted(missing)}")
+        elif not AGE_RE.match(t["age"]):
+            problems.append(
+                f"{t['team_id']}: age {t['age']!r} isn't like 'U9'")
+    return problems
 
 
 def sync(results) -> bool:
@@ -260,8 +308,16 @@ def sync(results) -> bool:
     rows = dedupe([r for team_rows in results.values() for r in team_rows])
     for r in rows:
         r["scraped_at"] = scraped_at
+    # Rows without age keys (side couldn't be determined) go in their own batch:
+    # a batch that omits a column leaves it untouched on conflict, so a stored
+    # age is never overwritten with NULL.
+    with_age = [r for r in rows if "home_age" in r]
+    without_age = [r for r in rows if "home_age" not in r]
     try:
-        supabase.table("matches").upsert(rows, on_conflict="game_id").execute()
+        for batch in (with_age, without_age):
+            if batch:
+                supabase.table("matches").upsert(
+                    batch, on_conflict="game_id").execute()
         print(f"✅ Upserted {len(rows)} matches")
     except Exception as e:
         print(f"❌ Supabase upsert error: {e}")
@@ -301,6 +357,11 @@ if __name__ == "__main__":
 
     if not ZENROWS_KEY:
         print("❌ Missing ZENROWS_KEY")
+        sys.exit(1)
+
+    config_problems = validate_teams(TEAMS)
+    if config_problems:
+        print("❌ Bad TEAMS config:\n   " + "\n   ".join(config_problems))
         sys.exit(1)
 
     results, failed, blocked = scrape_teams(TEAMS)
