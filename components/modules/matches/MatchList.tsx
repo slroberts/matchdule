@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import { CalendarOff, FilterX } from 'lucide-react';
 import { Match } from '@/types/match';
 import { MatchCard } from './MatchCard/MatchCard';
 import { cn } from '@/lib/utils';
-import { Button, buttonClasses } from '@/components/ui/buttons/Button';
+import { Button } from '@/components/ui/buttons/Button';
+import { NextUpLink } from './NextUpLink';
 import { EmptyState } from '@/components/ui/EmptyState/EmptyState';
 
 /**
@@ -18,8 +18,8 @@ interface MatchListProps {
   className?: string;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
-  /** Rest-week escape hatch, e.g. { href: '/?date=2026-10-12', label: 'Oct 12 – 18' } */
-  nextMatch?: { href: string; label: string };
+  /** Rest-week action: this team's next game → dark "Next up" link */
+  nextMatch?: Match;
 }
 
 const formatDay = (date: string) => {
@@ -115,7 +115,7 @@ const ScheduleEmpty = ({
 }: {
   hasActiveFilters: boolean;
   onClearFilters?: () => void;
-  nextMatch?: { href: string; label: string };
+  nextMatch?: Match;
 }) => (
   <EmptyState
     icon={hasActiveFilters ? FilterX : CalendarOff}
@@ -129,9 +129,8 @@ const ScheduleEmpty = ({
       hasActiveFilters && onClearFilters ? (
         <Button onClick={onClearFilters}>Clear filters</Button>
       ) : !hasActiveFilters && nextMatch ? (
-        <Link href={nextMatch.href} className={buttonClasses()}>
-          Go to {nextMatch.label}
-        </Link>
+        /* Same Next up link as a finished week — previews the game, not just a date */
+        <NextUpLink match={nextMatch} className='mt-(--space-stack-sm)' />
       ) : undefined
     }
   />

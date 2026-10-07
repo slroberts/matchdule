@@ -1,19 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { Match } from '@/types/match';
 import { cn } from '@/lib/utils';
 import { deriveStatus, useMatchClock } from '@/hooks/use-match-status';
-import { cleanTeamName } from '@/lib/matches/match-utils';
 import { MatchList } from './MatchList';
 import { MatchCard } from './MatchCard/MatchCard';
 import { VersusCard } from './MatchCard/VersusCard';
 import { MatchRowCompact } from './MatchCard/MatchRowCompact';
 import { formatTime } from './MatchCard/MatchHeader';
 import { SeasonWrapCard } from './MatchCard/SeasonWrapCard';
+import { NextUpLink, describeMatch, shortDay, toDateParam } from './NextUpLink';
 import {
   getSeasonStats,
   nextSeasonName,
@@ -59,18 +57,13 @@ interface Props {
   className?: string;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
-  nextMatch?: { href: string; label: string };
+  /** Rest-week action: this team's next game after the viewed week */
+  nextMatch?: Match;
 }
 
 const SPRING = { type: 'spring', stiffness: 400, damping: 35 } as const;
 
 const byTime = (a: Match, b: Match) => a.timestamp - b.timestamp;
-
-/** Local YYYY-MM-DD for ?date= links (any day inside the target week) */
-const toDateParam = (timestamp: number) => {
-  const d = new Date(timestamp);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 
 /**
  * Day grouping is keyed by the game's TIMESTAMP (local calendar day), never the raw
@@ -99,20 +92,6 @@ const groupByDay = (matches: Match[]) => {
     groups.set(key, day);
   }
   return [...groups.entries()];
-};
-
-const shortDay = (timestamp: number) =>
-  new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(timestamp));
-
-const describe = (m: Match) => {
-  const isHome = Boolean(m.homeTeam.utility && m.homeTeam.utility !== 'away');
-  const opp = cleanTeamName((isHome ? m.awayTeam : m.homeTeam).name);
-  const when = m.time === 'TBD' ? 'time TBD' : formatTime(m.time);
-  return `${when} ${isHome ? 'vs' : 'at'} ${opp}`;
 };
 
 export const CollapsibleMatchList = ({
@@ -281,7 +260,7 @@ export const CollapsibleMatchList = ({
 
   const focusMatch = sorted.find((m) => focusIds.has(m.id));
   const announcement = focusMatch
-    ? `${statusOf(focusMatch) === 'live' ? 'Live now' : 'Next up'}: ${describe(focusMatch)}`
+    ? `${statusOf(focusMatch) === 'live' ? 'Live now' : 'Next up'}: ${describeMatch(focusMatch)}`
     : '';
   /** The IntersectionObserver watches the first highlighted card (derived, not mutated) */
   const heroId = focusMatch?.id;
@@ -406,30 +385,7 @@ export const CollapsibleMatchList = ({
           !offSeason &&
           !focusMatch &&
           next &&
-          !visible.has(next.id) && (
-            /* Dark Versus split — previews the highlight it leads to (Figma: NextUpLink) */
-            <Link
-              href={`/?date=${toDateParam(next.timestamp)}`}
-              data-theme='dark'
-              className='pressable flex min-h-16 items-center gap-(--space-stack-md) rounded-2xl bg-(image:--gradient-versus) px-(--space-card-pad) py-3 shadow-[0_10px_24px_-10px_rgb(11_15_36/0.35)]'
-            >
-              <span className='flex min-w-0 flex-1 flex-col gap-1'>
-                <span className='text-label text-(--color-text-accent)'>
-                  Next up
-                </span>
-                <span className='text-control truncate text-(--color-text-primary)'>
-                  {shortDay(next.timestamp)} · {describe(next)}
-                </span>
-              </span>
-              <ChevronRight
-                size={16}
-                strokeWidth={1.5}
-                absoluteStrokeWidth
-                aria-hidden='true'
-                className='shrink-0 text-(--color-icon-default)'
-              />
-            </Link>
-          )}
+          !visible.has(next.id) && <NextUpLink match={next} />}
       </div>
     </MotionConfig>
   );

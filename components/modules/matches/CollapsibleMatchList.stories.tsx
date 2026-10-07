@@ -102,6 +102,6 @@ export const RestWeek: Story = {
     weekStart: new Date('2026-10-05T00:00:00-04:00').getTime(),
     weekEnd: new Date('2026-10-11T23:59:00-04:00').getTime(),
     focusPool: [...fallResults, ...week],
-    nextMatch: { href: '/?date=2026-10-17', label: 'Sat, Oct 17' },
+    nextMatch: week[0],
   },
 };

@@ -24,6 +24,7 @@ import { TabBar } from './TabBar';
 import { LoadError } from '@/components/modules/matches/LoadError';
 import { DataFreshness } from '@/components/modules/matches/DataFreshness';
 import { useViewMode } from '@/hooks/use-view-mode';
+import { hasAgeGroup } from '@/lib/matches/team-meta';
 
 interface ClientViewProps {
   allMatches: Match[];
@@ -53,14 +54,6 @@ const isTeamMatch = (match: Match, team: TabOption) => {
   return (
     match.homeTeam.utility === utility || match.awayTeam.utility === utility
   );
-};
-
-/** Local YYYY-MM-DD for ?date= links (any day inside the target week) */
-const toDateParam = (timestamp: number) => {
-  const d = new Date(timestamp);
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${mm}-${dd}`;
 };
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -150,16 +143,6 @@ export const ClientView = ({
     .reduce<
       Match | undefined
     >((soonest, m) => (!soonest || m.timestamp < soonest.timestamp ? m : soonest), undefined);
-  const nextMatch = nextTeamMatch
-    ? {
-        href: `/?date=${toDateParam(nextTeamMatch.timestamp)}`,
-        label: new Intl.DateTimeFormat('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-        }).format(new Date(nextTeamMatch.timestamp)),
-      }
-    : undefined;
 
   // Main filtration engine
   // Team + drawer filters, across ALL weeks (the focus stack looks ahead for the next game)
@@ -169,15 +152,11 @@ export const ClientView = ({
     const targetUtility = getUtilityFromTab(currentTeam);
 
     // A: Age group
-    if (filters.ageGroup !== 'all') {
-      const home = match.homeTeam.name || '';
-      const away = match.awayTeam.name || '';
-      const needle =
-        filters.ageGroup === 'u13'
-          ? 'Soricha Foot SFA EDP'
-          : 'Soricha Foot SFA /18';
-      if (!home.includes(needle) && !away.includes(needle)) return false;
-    }
+    if (
+      filters.ageGroup !== 'all' &&
+      !hasAgeGroup(match, filters.ageGroup === 'u13' ? 'U13' : 'U9')
+    )
+      return false;
 
     // B: Team side
     if (filters.homeAway !== 'all') {
@@ -342,7 +321,7 @@ export const ClientView = ({
               onViewSeason={(s) => go('season', s)}
               hasActiveFilters={activeFilterCount > 0}
               onClearFilters={() => setFilters(DEFAULT_FILTERS)}
-              nextMatch={nextMatch}
+              nextMatch={nextTeamMatch}
             />
             {/* How fresh the data is (last scraper write) — quiet unless it's > 24 h old */}
             <div className='mx-auto w-full max-w-lg px-(--space-gutter)'>

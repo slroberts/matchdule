@@ -9,6 +9,8 @@ describe('team identity', () => {
   it('age group from the raw team name', () => {
     expect(getAgeGroup('Soricha Foot SFA EDP')).toBe('U13');
     expect(getAgeGroup('Soricha Foot SFA /18')).toBe('U9');
+    // Current scraper output ("SFA 2017/18 CJSL" → "SFA CJSL")
+    expect(getAgeGroup('Soricha Foot SFA CJSL')).toBe('U9');
     expect(getAgeGroup('Albion SC Brooklyn')).toBeUndefined();
     expect(getAgeGroup(undefined)).toBeUndefined();
   });

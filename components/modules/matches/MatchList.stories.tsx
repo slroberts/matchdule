@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { fn } from 'storybook/test';
 import { MatchList } from './MatchList';
+import { u9Home } from '@/lib/test-utils/story-data';
 
 /**
  * MatchList now renders the EMPTY states only — the list itself is CollapsibleMatchList
@@ -23,7 +24,7 @@ export default meta;
 type Story = StoryObj<typeof MatchList>;
 
 export const RestWeek: Story = {
-  args: { nextMatch: { href: '/?date=2026-09-13', label: 'Sun, Sep 13' } },
+  args: { nextMatch: u9Home },
 };
 export const RestWeekNothingAhead: Story = {};
 export const NoFilterResults: Story = {
